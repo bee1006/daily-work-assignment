@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>每日派工｜工作台</title>
+  <style>
+    :root{--ink:#172a3a;--muted:#6d7b86;--line:#dce5e9;--paper:#fff;--bg:#f3f7f8;--teal:#087f78;--teal2:#dff3ef;--navy:#17364c;--amber:#fff4dc;--shadow:0 12px 32px #1832450c}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;font-size:15px}
+    header{background:var(--navy);color:#fff;padding:22px max(24px,calc((100% - 1240px)/2));display:flex;align-items:center;justify-content:space-between;gap:18px}
+    .brand{display:flex;gap:12px;align-items:center}.mark{height:40px;width:40px;border-radius:12px;background:#59c5b2;display:grid;place-items:center;color:#123344;font-weight:900;font-size:20px}.brand strong{display:block;font-size:18px;letter-spacing:.04em}.brand span{font-size:12px;color:#b8cbd4}.topnote{font-size:12px;color:#c6d8df}
+    main{max-width:1240px;margin:30px auto;padding:0 24px 60px}.intro{display:flex;justify-content:space-between;align-items:end;margin-bottom:22px;gap:16px}.eyebrow{font-size:11px;letter-spacing:.16em;color:var(--teal);font-weight:800}.intro h1{font-size:27px;letter-spacing:.02em;margin:7px 0 6px}.intro p{margin:0;color:var(--muted);font-size:14px}.step{padding:8px 12px;background:#e8f3f2;color:#216b67;border-radius:20px;font-size:12px;font-weight:700;white-space:nowrap}
+    .setup{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}.card{background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}.card-head{padding:20px 22px 13px;display:flex;align-items:center;gap:12px}.num{width:27px;height:27px;border-radius:9px;background:var(--teal2);color:var(--teal);display:grid;place-items:center;font-size:13px;font-weight:800}.card-head h2{font-size:16px;margin:0}.card-head small{margin-left:auto;color:var(--muted);font-size:12px}.card-body{padding:0 22px 21px}
+    .drop{border:1.5px dashed #abc4ca;background:#f8fbfb;border-radius:12px;padding:19px 18px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:.2s}.drop:hover,.drop.drag{border-color:var(--teal);background:#f0faf8}.fileicon{width:42px;height:42px;border-radius:12px;background:#e3f3ef;color:var(--teal);display:grid;place-items:center;font-weight:900;font-size:19px}.drop strong{display:block;font-size:14px}.drop span{font-size:12px;color:var(--muted);display:block;margin-top:4px}.drop button{margin-left:auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-weight:700;color:var(--navy);cursor:pointer}.filename{font-size:12px;color:var(--teal);margin:10px 0 0 56px;min-height:16px}
+    .controls{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:17px}.field label{display:block;font-size:12px;color:#596c78;font-weight:700;margin-bottom:7px}.field select,.field input{width:100%;border:1px solid var(--line);border-radius:9px;padding:11px 12px;font:inherit;background:#fff;color:var(--ink);outline:none}.field select:focus,.field input:focus{border-color:var(--teal);box-shadow:0 0 0 3px #087f7818}.help{font-size:11px;color:#82909a;margin:6px 0 0}.roster{margin-top:15px;border-top:1px solid #edf1f3;padding-top:14px}.roster summary{font-size:12px;font-weight:700;color:#526673;cursor:pointer}.roster-panel{margin-top:12px}.roster-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}.roster-toolbar span{font-size:11px;color:var(--muted)}.small-btn{border:1px solid var(--line);background:white;border-radius:7px;padding:6px 9px;color:var(--navy);font-size:11px;font-weight:700;cursor:pointer}.roster-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:9px}.roster-table{width:100%;min-width:690px;border-collapse:collapse}.roster-table th{padding:9px 10px;font-size:10px;white-space:nowrap}.roster-table td{padding:8px 9px;font-size:12px}.roster-table select,.roster-table input{font:inherit;font-size:12px;border:1px solid var(--line);border-radius:6px;padding:6px 7px;background:#fff;color:var(--ink)}.roster-table input{width:95px}.roster-table select{width:72px}.roster-actions{white-space:nowrap}.roster-actions button{border:0;background:none;color:#526673;cursor:pointer;font-size:12px;padding:3px}.qual-fixed{color:#596c78;font-size:11px}.roster-help{font-size:11px;color:#82909a;line-height:1.5;margin:8px 0 0}
+    .rulebox{background:#f6f9fa;border-radius:10px;padding:12px 14px;margin-top:14px;font-size:12px;color:#536672;line-height:1.65}.rulebox b{color:var(--navy)}.actions{margin-top:17px;display:flex;gap:10px;align-items:center}.primary{border:0;border-radius:9px;background:var(--teal);color:#fff;padding:11px 18px;font:700 14px inherit;cursor:pointer}.primary:hover{background:#066b65}.primary:disabled{opacity:.45;cursor:not-allowed}.status{font-size:12px;color:var(--muted)}
+    .aside{padding:22px}.aside h2{font-size:15px;margin:0 0 14px}.flow{display:grid;gap:10px}.flowrow{display:flex;gap:11px;align-items:flex-start}.flowicon{width:28px;height:28px;border-radius:9px;background:#eef5f6;color:#357079;display:grid;place-items:center;font-weight:800;font-size:12px;flex:0 0 auto}.flowrow strong{font-size:13px;display:block;margin:2px 0 3px}.flowrow span{color:var(--muted);font-size:11px;line-height:1.45;display:block}.notice{margin-top:17px;padding:11px 12px;border-radius:9px;background:var(--amber);color:#75571d;font-size:11px;line-height:1.55}
+    .results{margin-top:22px;display:none}.result-head{padding:19px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}.result-head h2{margin:0;font-size:17px}.counts{margin-left:auto;display:flex;gap:8px}.pill{background:#f0f5f6;color:#49616b;border-radius:20px;padding:6px 10px;font-size:11px;font-weight:700}.datebadge{color:var(--teal);background:#e5f5f1}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:850px}th{text-align:left;background:#f8fafb;color:#71818a;font-size:11px;letter-spacing:.04em;padding:12px 16px;font-weight:700}td{border-top:1px solid #edf1f3;padding:13px 16px;vertical-align:top;font-size:13px;line-height:1.5}.person{font-weight:800;color:var(--teal);white-space:nowrap}.crew{font-weight:800;color:var(--navy)}.jobno{font-size:11px;color:#7c8991;margin-top:4px}.loc{max-width:310px;color:#536672}.subtle{font-size:11px;color:#82909a}.empty{padding:34px;text-align:center;color:var(--muted);font-size:13px}.error{color:#a33c32}.foot{color:#84919a;text-align:center;font-size:11px;margin-top:20px}.class-tag{display:inline-flex;align-items:center;justify-content:center;min-width:34px;padding:4px 9px;border-radius:7px;font-size:12px;font-weight:800}.class-a{background:#e5f2fb;color:#27618b}.class-b{background:#e9f5e9;color:#387545}.class-c{background:#f1edf9;color:#695393}
+    .staff-summary{padding:18px 22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;border-bottom:1px solid var(--line)}.staff-card{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}.staff-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}.staff-card-head strong{font-size:14px;color:var(--navy)}.staff-card-head span{font-size:10px;color:var(--muted);background:#f1f5f6;border-radius:12px;padding:5px 8px}.brief-job{border-top:1px solid #edf1f3;padding:10px 0 2px}.brief-job:first-of-type{border-top:0;padding-top:0}.brief-title{font-size:12px;font-weight:800;display:flex;gap:7px;align-items:center;color:#344a58}.brief-work{font-size:12px;color:#405967;margin:6px 0}.brief-place{font-size:11px;color:#72808a;line-height:1.5}.grid-code-list{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}.grid-code{font:700 10px ui-monospace,SFMono-Regular,Menlo,monospace;background:#e9f2f4;color:#245863;padding:4px 6px;border-radius:5px}.grid-code.expanded{background:#fff2d8;color:#795d21}.grid-point{display:inline-flex;flex-direction:column;gap:3px}.grid-coord{font:9px ui-monospace,SFMono-Regular,Menlo,monospace;color:#536672}.grid-code-note{font-size:10px;color:#8a9296;margin-top:4px}
+    .distance-setting{margin-top:12px;max-width:280px}.distance-setting input{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 10px;font:inherit;color:var(--ink)}.assignment-note{margin-top:5px;font-size:10px;color:#8a6a25}
+    .distance-summary{margin:4px 0 10px;padding:9px 10px;background:#f4f8f9;border-radius:8px}.distance-summary strong{display:block;color:#526673;font-size:10px;margin-bottom:5px}.distance-pair{font-size:11px;color:#304957;line-height:1.6}.distance-pair b{color:var(--teal)}.distance-pair small{color:#84919a;font-size:9px}.grid-role{font-size:8px;color:#087f78;font-weight:800}
+    .assignment-audit{padding:12px 22px;background:#f8fbfb;border-bottom:1px solid var(--line);font-size:12px;color:#536672;line-height:1.65}.assignment-audit strong{color:var(--navy)}.assignment-audit .audit-warning{color:#8b5a15}.route-legs{margin-top:5px;padding-top:5px;border-top:1px dashed var(--line)}
+    .analysis-preview{display:none;margin-top:18px;padding:16px 20px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}.analysis-preview h2{margin:0 0 6px;font-size:15px}.analysis-preview p{margin:0 0 10px;color:var(--muted);font-size:11px}.analysis-table{overflow:auto;max-height:360px}.analysis-table table{min-width:680px}.analysis-table td,.analysis-table th{padding:8px 10px;font-size:11px}.analysis-bundles{padding:10px 12px;background:#f4f8f9;border-radius:9px;font-size:11px;line-height:1.7;color:#405967}.analysis-bundles strong{color:var(--navy)}
+    @media(max-width:850px){header{padding:16px 20px}.topnote{display:none}main{padding:0 16px 40px;margin-top:22px}.setup{grid-template-columns:1fr}.intro{align-items:flex-start;flex-direction:column}.intro h1{font-size:23px}.step{align-self:flex-start}.controls{grid-template-columns:1fr}.counts{display:none}}
+  </style>
+</head>
+<body>
+  <header><div class="brand"><div class="mark">派</div><div><strong>每日派工</strong><span>DAILY WORK ASSIGNMENT</span></div></div><div class="topnote">第三版 · 解碼台電圖號　›　準備計算工作點距離</div></header>
+  <main>
+    <section class="intro"><div><div class="eyebrow">WORKFLOW / 03</div><h1>配對施工點位與座標</h1><p>直接將台電圖號換算為 TWD67 平面座標；政府電桿資料只用來補充桿號等資訊。</p></div><div class="step">第三版 · 點位計算</div></section>
+    <section class="setup">
+      <article class="card">
+        <div class="card-head"><div class="num">1</div><h2>匯入施工資料</h2><small>支援 .xlsx</small></div>
+        <div class="card-body">
+          <div class="drop" id="drop" role="button" tabindex="0" aria-label="選擇或拖曳 Excel 檔案"><div class="fileicon">↑</div><div><strong>選擇或拖曳 Excel 檔案</strong><span>讀取日期、工作班、契約、工作內容與施工地點</span></div><button type="button" id="browse">選擇檔案</button><input id="file" type="file" accept=".xlsx,.xlsm" hidden></div>
+          <div class="filename" id="filename"></div>
+          <div class="controls">
+            <div class="field"><label for="workdate">派工日期</label><select id="workdate" disabled><option value="">上傳檔案後選擇日期</option></select><p class="help">只會顯示檔案中有施工資料的日期</p></div>
+            <div class="field"><label for="first">今日輪替第一位</label><select id="first"></select><p class="help">按名單由上到下循環，選定人員作為起點</p></div>
+          </div>
+            <div class="field distance-setting"><label for="proximity-km">C 類附近併派門檻（直線公里）</label><input id="proximity-km" type="number" min="1" max="100" step="1" value="10"><p class="help">上傳後先依代表圖號找出附近的 C 類候選包；候選包最多 2 組，距離是直線距離</p></div>
+          <details class="roster" open><summary>同仁名單管理（可新增、調整順序與每日狀態）</summary><div class="roster-panel"><div class="roster-toolbar"><span id="roster-date">請先上傳檔案並選擇派工日期</span><button class="small-btn" id="add-staff" type="button">＋ 新增同仁</button></div><div class="roster-table-wrap"><table class="roster-table"><thead><tr><th>姓名</th><th>今日出勤</th><th>非關鍵性作業</th><th>監造人員證照（固定資格）</th><th>順序／移除</th></tr></thead><tbody id="roster-rows"></tbody></table></div><p class="roster-help">今日出勤與非關鍵性作業依派工日期分別記錄；證照是固定資格設定。非關鍵性作業為 Y 時，該員今日只會分配 C 類；B 類另需監造證照。</p></div></details>
+          <div class="rulebox"><b>目前草案規則</b><br>一個契約＋工作班視為一組工作，每組只會派給一位同仁。負載級別：單組 A／B／C 為第 1 級；A+C、B+C、2C 為第 2 級；A+B、B+2C、2B、3C 為第 3 級；A+B+C 為第 4 級。距離為硬限制：同仁已有工作時，新工作組的所有代表點必須與其每一組既有工作的代表點都在設定公里內；超距或無法核實距離時，不併給該同仁。剔除超距人選後，將距離合格的既有人選與尚未分到工作的合格同仁一起比較工作量級別；同級時優先靠近既有工作點，再依輪替順序。附近的 C 類會先組成最多 2 組的候選包，整包交給同一人，包內工作也須符合距離限制。每人最多一組 A、三組 C；非關鍵性作業 Y 者只接 C，B 類須有監造證照。沒有合適人選時列為待人工指派，不會超距或重複派工。</div>
+          <div class="actions"><button id="assign" class="primary" disabled>產生派工草案</button><span id="status" class="status">請先上傳施工資料</span></div>
+        </div>
+      </article>
+      <aside class="card aside"><h2>第三版 · 點位資料</h2><div class="flow">
+        <div class="flowrow"><div class="flowicon">01</div><div><strong>讀取工作圖號</strong><span>從工作內容和施工地點擷取台電圖號。</span></div></div>
+        <div class="flowrow"><div class="flowicon">02</div><div><strong>換算台電圖號</strong><span>圖號直接轉成 TWD67 座標；CSV 僅補充桿號資訊，配電場所即使不在 CSV 也可計算。</span></div></div>
+        <div class="flowrow"><div class="flowicon">03</div><div><strong>標示無法定位的圖號</strong><span>只要圖號格式有效，即可直接換算位置，不必先在電桿 CSV 找到資料。</span></div></div>
+        <div class="flowrow"><div class="flowicon">04</div><div><strong>作為車程計算的點位基礎</strong><span>下一階段需加入道路路網，才可算實際行車路線。</span></div></div>
+      </div><div class="notice">圖號座標直接解碼為 TWD67 TM2 平面位置，距離以圖號格網中心估算；9 碼圖號格網精度約 10 公尺，11 碼約 1 公尺。這是直線距離，不是實際車程。</div></aside>
+    </section>
+    <section class="analysis-preview" id="analysis-preview"><h2>上傳後工作與點位預分析</h2><p id="analysis-meta"></p><div class="analysis-bundles" id="analysis-bundles"></div><div class="analysis-table" id="analysis-table"></div></section>
+    <section class="card results" id="results"><div class="result-head"><div class="num">2</div><h2>派工草案</h2><span id="datebadge" class="pill datebadge"></span><div class="counts"><span id="crewcount" class="pill"></span><span id="jobcount" class="pill"></span><span id="coordcount" class="pill"></span></div></div><div class="assignment-audit" id="assignment-audit"></div><div class="staff-summary" id="staff-summary"></div><div class="table-wrap" id="tablewrap"></div></section>
+    <div class="foot">Excel 與座標 CSV 僅在本機處理；目前尚未使用外部路線服務。</div>
+  </main>
+  <script>
+    const state={jobs:[],roster:[],daily:{},filename:"",coordinates:{matched:0,decoded:0,total:0,available:false}};
+    const $=id=>document.getElementById(id);
+    const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    const rocDate=d=>{const [y,m,day]=d.split("-").map(Number);return `${y-1911}/${String(m).padStart(2,"0")}/${String(day).padStart(2,"0")}`};
+    const contractOrder=[
+      "蘆竹區配電線路設備維護暨事故搶修工作","龜山區配電線路設備維護暨事故搶修工作","桃園區配電線路設備維護暨事故搶修工作","八德區配電線路設備維護暨事故搶修工作","乙工區配電線路設備維護暨事故搶修工作","大園區配電線路設備維護暨事故搶修工作","中壢區配電線路設備維護暨事故搶修工作","觀音區配電線路設備維護暨事故搶修工作","丁工區配電線路設備維護暨事故搶修工作","變壓器現場停電檢測工作","甲工區人手孔加固維護工作","乙工區人手孔加固維護工作","丙工區人手孔加固維護工作","自動化開關設備檢點維護工作","甲工區人手孔及配電場所設備檢點維護工作","乙工區人手孔及配電場所設備檢點維護工作","設備油漆及美化工作","人手孔及配電場所防水維護作業","電桿牌裝設暨桿上設備檢點維護工作"
+    ];
+    function contractRank(name){const index=contractOrder.findIndex(key=>name.includes(key));return index<0?contractOrder.length:index}
+    function workCategory(name){const rank=contractRank(name);return rank<10?"A":rank<13?"B":"C"}
+    function buildTeams(jobs){const groups=new Map();for(const job of jobs){const key=`${job.contract}|||${job.crew}`;if(!groups.has(key))groups.set(key,{contract:job.contract,crew:job.crew,jobs:[]});groups.get(key).jobs.push(job)}return [...groups.values()].sort((a,b)=>contractRank(a.contract)-contractRank(b.contract)||a.crew.localeCompare(b.crew,"zh-Hant"))}
+    function pointsForTeam(team){return team.jobs.flatMap(job=>{const codes=job.gridCodes||[];const point=codes.find(item=>item.representative&&item.gridCoordinate)||codes.find(item=>item.gridCoordinate);return point?[{code:point.code,x:Number(point.gridCoordinate.x),y:Number(point.gridCoordinate.y)}]:[]})}
+    function closestTeamPoints(left,right){let nearest=null;for(const a of pointsForTeam(left))for(const b of pointsForTeam(right)){const km=Math.hypot(a.x-b.x,a.y-b.y)/1000;if(!nearest||km<nearest.km)nearest={km,leftCode:a.code,rightCode:b.code}}return nearest}
+    function farthestTeamPoints(left,right){let farthest=null;const leftPoints=pointsForTeam(left),rightPoints=pointsForTeam(right);if(!leftPoints.length||!rightPoints.length)return null;for(const a of leftPoints)for(const b of rightPoints){const km=Math.hypot(a.x-b.x,a.y-b.y)/1000;if(!farthest||km>farthest.km)farthest={km,leftCode:a.code,rightCode:b.code}}return farthest}
+    function teamHasCompletePoints(team){return team.jobs.every(job=>(job.gridCodes||[]).some(point=>point.gridCoordinate))}
+    function createCBundles(teams,limit){const categories=teams.map(team=>workCategory(team.contract)),cIndexes=teams.map((team,index)=>categories[index]==="C"?index:-1).filter(index=>index>=0),bundles=[],used=new Set();for(let p=0;p<cIndexes.length;p++){const first=cIndexes[p];if(used.has(first))continue;let partner=-1,partnerDistance=null;for(let q=p+1;q<cIndexes.length;q++){const candidate=cIndexes[q];if(used.has(candidate)||!teamHasCompletePoints(teams[first])||!teamHasCompletePoints(teams[candidate]))continue;const distance=farthestTeamPoints(teams[first],teams[candidate]);if(distance&&distance.km<=limit&&(!partnerDistance||distance.km<partnerDistance.km)){partner=candidate;partnerDistance=distance}}const indexes=partner>=0?[first,partner]:[first];indexes.forEach(index=>used.add(index));bundles.push({indexes,distance:partnerDistance})}return bundles}
+    function renderAnalysis(){if(!state.jobs.length)return;const date=$("workdate").value;if(!date)return;const dateJobs=state.jobs.filter(job=>job.date===date),teams=buildTeams(dateJobs),categories=teams.map(team=>workCategory(team.contract)),limit=Math.max(0,Number($("proximity-km").value)||0),cBundles=createCBundles(teams,limit),paired=cBundles.filter(bundle=>bundle.indexes.length>1);$("analysis-preview").style.display="block";$("analysis-meta").textContent=`${rocDate(date)}：${dateJobs.length} 筆案件整理為 ${teams.length} 個契約／工作班；按契約順序排列。工作點以代表圖號換算的 TWD67 格網中心計算直線距離。`;$("analysis-bundles").innerHTML=`<strong>C 類鄰近候選包（門檻 ${limit} km；每包最多 2 組）</strong><br>${paired.length?paired.map((bundle,index)=>{const [a,b]=bundle.indexes.map(i=>teams[i]);return `候選包 ${index+1}：${esc(a.contract)}／${esc(a.crew)} ＋ ${esc(b.contract)}／${esc(b.crew)}　${bundle.distance.km.toFixed(1)} km 直線（${esc(bundle.distance.leftCode)} ↔ ${esc(bundle.distance.rightCode)}）`}).join("<br>"):"目前沒有兩組 C 類工作同時有可計算座標且在門檻內；未配對的工作仍會個別進入派工。"}`;$("analysis-table").innerHTML=teams.length?`<table><thead><tr><th>契約順序</th><th>類別</th><th>契約</th><th>工作班</th><th>案件數</th><th>代表點位</th><th>可換算點數</th></tr></thead><tbody>${teams.map((team,index)=>{const codes=team.jobs.flatMap(job=>job.gridCodes||[]),valid=codes.filter(point=>point.gridCoordinate),representative=valid.find(point=>point.representative)||valid[0];return `<tr><td>${index+1}</td><td>${categories[index]}</td><td>${esc(team.contract)}</td><td>${esc(team.crew)}</td><td>${team.jobs.length}</td><td>${representative?esc(representative.code):"無可換算點位"}</td><td>${valid.length}/${codes.length}</td></tr>`}).join("")}</tbody></table>`:"<div class='empty'>所選日期沒有施工資料</div>"}
+    function selectedDateKey(){return $("workdate").value||"__default__"}
+    function flagsFor(staff,date=selectedDateKey()){
+      const dateData=state.daily[date]||(state.daily[date]={});
+      return dateData[staff.id]||(dateData[staff.id]={attending:staff.defaultAttending??true,noncritical:staff.defaultNoncritical??false});
+    }
+    function persistRoster(){try{localStorage.setItem("dispatch-roster-v2",JSON.stringify({roster:state.roster,daily:state.daily}))}catch(e){console.warn("無法儲存名單設定",e)}}
+    function refreshFirstSelect(){const old=$("first").value;$("first").innerHTML=state.roster.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join("");if(state.roster.some(s=>s.id===old))$("first").value=old;}
+    function renderRosterTable(){
+      const date=selectedDateKey();
+      $("roster-date").textContent=date==="__default__"?"尚未選日期：顯示名單初始值":`目前編輯 ${rocDate(date)} 的每日狀態`;
+      $("roster-rows").innerHTML=state.roster.map(staff=>{const flags=flagsFor(staff,date);const yn=(value,field)=>`<select data-field="${field}" data-id="${esc(staff.id)}"><option value="true"${value?" selected":""}>Y</option><option value="false"${!value?" selected":""}>N</option></select>`;return `<tr><td><input data-field="name" data-id="${esc(staff.id)}" value="${esc(staff.name)}" aria-label="同仁姓名"></td><td>${yn(flags.attending,"attending")}</td><td>${yn(flags.noncritical,"noncritical")}</td><td><select data-field="supervisor" data-id="${esc(staff.id)}" aria-label="監造證照" title="監造證照資格"><option value="true"${staff.supervisor?" selected":""}>有</option><option value="false"${!staff.supervisor?" selected":""}>無</option></select></td><td class="roster-actions"><button type="button" data-action="up" data-id="${esc(staff.id)}" aria-label="上移">↑</button><button type="button" data-action="down" data-id="${esc(staff.id)}" aria-label="下移">↓</button><button type="button" data-action="delete" data-id="${esc(staff.id)}">移除</button></td></tr>`}).join("");
+      refreshFirstSelect();
+    }
+    function updateStaffData(){renderRosterTable();persistRoster();if($("results").style.display==="block")renderAssignments(false)}
+    async function upload(file){if(!file)return;$("status").textContent="正在讀取 Excel 並換算台電圖號座標…";$("status").classList.remove("error");$("assign").disabled=true;$("filename").textContent=file.name;try{const buf=await file.arrayBuffer();let binary="";const bytes=new Uint8Array(buf);for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));const response=await fetch("/api/parse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({file:btoa(binary)})});const result=await response.json();if(!response.ok)throw new Error(result.error||"無法讀取檔案");state.jobs=result.jobs;state.coordinates=result.coordinates||{matched:0,decoded:0,total:0,available:false};state.filename=file.name;const dates=[...new Set(state.jobs.map(j=>j.date))].sort();$("workdate").innerHTML=dates.length?dates.map(d=>`<option value="${esc(d)}">${esc(rocDate(d))}</option>`).join(""):"<option value=''>檔案中沒有可用資料</option>";$("workdate").disabled=!dates.length;$("assign").disabled=!dates.length;$("status").textContent=`已讀取 ${state.jobs.length} 筆工作；圖號可換算 ${state.coordinates.decoded}/${state.coordinates.total} 個；電桿 CSV 補充 ${state.coordinates.matched} 個${state.coordinates.available?"":"（沒有 all.csv，仍可用圖號定位）"}`;$("results").style.display="none";renderAnalysis();}catch(e){$("status").textContent=e.message;$("status").classList.add("error");$("workdate").disabled=true;}}
+    function renderAssignmentsLegacy(scroll=true){
+      if(!state.jobs.length)return;
+      const selected=$("workdate").value;
+      const jobs=state.jobs.filter(j=>j.date===selected);
+      const teams=buildTeams(jobs);
+      let cursor=Math.max(0,state.roster.findIndex(s=>s.id===$("first").value));
+      const rows=teams.map((team,i)=>{
+        const category=workCategory(team.contract);let selectedStaff=null;
+        for(let offset=0;offset<state.roster.length;offset++){
+          const candidateIndex=(cursor+offset)%state.roster.length;const candidate=state.roster[candidateIndex];const flags=flagsFor(candidate,selected);
+          const eligible=flags.attending&&!(flags.noncritical&&category!=="C")&&!(category==="B"&&!candidate.supervisor);
+          if(eligible){selectedStaff=candidate;cursor=(candidateIndex+1)%state.roster.length;break}
+        }
+        const jobsHtml=team.jobs.map(j=>`<div class="jobno">${esc(j.jobNo)}${j.time?` · ${esc(j.time)}`:""}</div>`).join("");
+        const desc=[...new Set(team.jobs.map(j=>j.description).filter(Boolean))].join("／");const loc=[...new Set(team.jobs.map(j=>j.location).filter(Boolean))].join("；");const contractors=[...new Set(team.jobs.map(j=>j.contractor).filter(Boolean))].join("、");
+        return `<tr><td><div class="${selectedStaff?"person":"error"}">${esc(selectedStaff?.name||"待人工指派")}</div><div class="subtle">輪替第 ${i+1} 組</div></td><td><span class="class-tag class-${category.toLowerCase()}">${category} 類</span></td><td><div class="crew">${esc(team.crew)}</div><div class="subtle">${esc(team.contract)}</div><div class="subtle">${esc(contractors)}</div></td><td>${jobsHtml}</td><td>${esc(desc||"—")}</td><td class="loc">${esc(loc||"—")}</td></tr>`
+      }).join("");
+      $("datebadge").textContent=rocDate(selected);$("crewcount").textContent=`${teams.length} 個契約／工作班`;$ ("jobcount").textContent=`${jobs.length} 筆工作`;
+      $("tablewrap").innerHTML=rows?`<table><thead><tr><th>指派同仁</th><th>類別</th><th>契約／工作班</th><th>案件 / 時段</th><th>工作內容</th><th>施工地點</th></tr></thead><tbody>${rows}</tbody></table>`:`<div class="empty">所選日期沒有施工資料</div>`;$("results").style.display="block";if(scroll)$("results").scrollIntoView({behavior:"smooth",block:"start"});
+    }
+    function renderAssignments(scroll=true){
+      if(!state.jobs.length)return;
+      const selected=$("workdate").value;
+      const jobs=state.jobs.filter(j=>j.date===selected);
+      const teams=buildTeams(jobs);
+      let cursor=Math.max(0,state.roster.findIndex(s=>s.id===$("first").value));
+      const categories=teams.map(team=>workCategory(team.contract));
+      const assigned=Array(teams.length);
+      const nearestPoints=closestTeamPoints;
+      const workloadFor=staff=>assigned.reduce((counts,item)=>{if(item?.staff?.id===staff.id)counts[item.category.toLowerCase()]++;return counts},{a:0,b:0,c:0});
+      // Mirrors the agreed tiers; a second A and a fourth C are never assigned automatically.
+      const workloadTier=counts=>{const {a,b,c}=counts;if(a>1||c>3)return Infinity;if(a&&b&&c)return 3+(b-1)+c;if(a&&b)return 3+(b-1);if(a&&c)return 2+(c-1);if(b&&c)return 2+(b-1)+(c-1);if(b>=2)return 3+(b-2);if(c>=2)return c;return a||b||c?1:0};
+      const canTake=(staff,category)=>{const flags=flagsFor(staff,selected);return flags.attending&&!(flags.noncritical&&category!=="C")&&!(category==="B"&&!staff.supervisor)};
+      const proximityLimit=Math.max(0,Number($("proximity-km").value)||0);
+      const existingDistance=(newTeams,previous)=>{
+        if(!previous.length)return {feasible:true,maxKm:0,anchor:null};
+        let maxKm=0,anchor=null;
+        for(const team of newTeams)for(const item of previous){const distance=teamHasCompletePoints(team)&&teamHasCompletePoints(item.team)?farthestTeamPoints(team,item.team):null;if(!distance||distance.km>proximityLimit)return {feasible:false,maxKm:distance?.km??Infinity,anchor:{item,distance}};if(distance.km>=maxKm){maxKm=distance.km;anchor={item,distance}}}
+        return {feasible:true,maxKm,anchor};
+      };
+      const chooseCandidate=(indexes,category)=>{
+        const newTeams=indexes.map(i=>teams[i]);
+        const candidates=state.roster.map((staff,index)=>{
+          if(!canTake(staff,category))return null;
+          const counts=workloadFor(staff);counts[category.toLowerCase()]+=indexes.length;
+          const tier=workloadTier(counts);if(!Number.isFinite(tier))return null;
+          const previous=assigned.filter(item=>item?.staff?.id===staff.id),distance=existingDistance(newTeams,previous);
+          if(!distance.feasible)return null;
+          const rotation=(index-cursor+state.roster.length)%Math.max(state.roster.length,1),hasWork=previous.length>0;
+          // Preserve fairness first; at equal load, an already-working nearby person beats an idle person.
+          const distanceScore=hasWork?distance.maxKm:(assigned.some(Boolean)?proximityLimit+0.001:0);
+          return {staff,index,tier,distance:distanceScore,anchor:distance.anchor,hasWork,rotation};
+        }).filter(Boolean);
+        return candidates.sort((a,b)=>a.tier-b.tier||a.distance-b.distance||a.rotation-b.rotation)[0]||null;
+      };
+      const assignBundle=indexes=>{
+        const category="C",choice=chooseCandidate(indexes,category);
+        if(!choice){
+          const reason=state.roster.some(staff=>canTake(staff,category))?`沒有同時符合資格、負載與 ${proximityLimit} 公里距離限制的同仁；也沒有可接整包的空檔同仁`:`沒有符合出勤資格的人員`;
+          indexes.forEach(i=>{assigned[i]={team:teams[i],category,staff:null,order:i+1,proximity:null,reason,bundle:indexes.length>1}});return;
+        }
+        indexes.forEach(i=>{const team=teams[i],peerIndex=indexes.find(j=>j!==i),peer=peerIndex===undefined?null:teams[peerIndex],inner=peer?farthestTeamPoints(team,peer):null;assigned[i]={team,category,staff:choice.staff,order:i+1,proximity:inner?{km:inner.km,anchorCrew:peer.crew,anchorCategory:"C",bundle:true}:(choice.anchor?{km:choice.anchor.distance.km,anchorCrew:choice.anchor.item.team.crew,anchorCategory:choice.anchor.item.category,bundle:false}:null),reason:null,bundle:indexes.length>1}});
+        cursor=(choice.index+1)%state.roster.length;
+      };
+      const assignSingle=i=>{
+        const team=teams[i],category=categories[i];
+        const choice=chooseCandidate([i],category);
+        if(!choice){const reason=state.roster.some(staff=>canTake(staff,category))?`沒有同時符合資格、負載與 ${proximityLimit} 公里距離限制的同仁；也沒有可用的空檔同仁`:category==="A"?"沒有出勤且符合 A 類資格的人員":category==="C"?"沒有出勤且未達三組 C 類上限的人員":"沒有出勤且符合 B 類證照與作業資格的同仁";assigned[i]={team,category,staff:null,order:i+1,proximity:null,reason};return}
+        assigned[i]={team,category,staff:choice.staff,order:i+1,proximity:choice.anchor?{km:choice.anchor.distance.km,anchorCrew:choice.anchor.item.team.crew,anchorCategory:choice.anchor.item.category}:null,reason:null};cursor=(choice.index+1)%state.roster.length;
+      };
+      ["A","B"].forEach(category=>teams.forEach((team,i)=>{if(categories[i]===category)assignSingle(i)}));
+      const cBundles=createCBundles(teams,proximityLimit);cBundles.forEach(bundle=>assignBundle(bundle.indexes));
+      const codesFor=items=>{const codes=new Map();for(const item of items)for(const job of item.team.jobs)for(const code of job.gridCodes||[])if(!codes.has(code.code)||!code.expanded)codes.set(code.code,!!code.expanded);return [...codes]};
+      const codeListFor=items=>codesFor(items).map(([code,expanded])=>{
+        const allCodes=items.flatMap(item=>item.team.jobs).flatMap(job=>job.gridCodes||[]);
+        const point=allCodes.find(item=>item.code===code&&item.representative)||allCodes.find(item=>item.code===code);
+        const coordinate=point?.coordinate;
+        const grid=point?.gridCoordinate;
+        const title=coordinate?`${point.representative?"代表定位點 · ":""}${coordinate.county||""}${coordinate.district||""} · 桿號 ${coordinate.poleNo||"未提供"}`:grid?"台電圖號已直接換算，可定位且無須匹配 all.csv":"圖號格式無法換算座標";
+        const role=point?.representative?'<span class="grid-role">代表定位點</span>':"";
+        const position=grid?'<span class="grid-coord">TWD67 '+esc(Number(grid.x).toFixed(1))+', '+esc(Number(grid.y).toFixed(1))+' · 約'+grid.precision+'m</span>':'<span class="grid-coord">無法換算</span>';
+        const pole=coordinate?'<span class="grid-coord">電桿 CSV 桿號 '+esc(coordinate.poleNo||"未提供")+'</span>':"";
+        return '<span class="grid-code grid-point'+(expanded?" expanded":"")+'" title="'+esc(title)+'"><span>'+(expanded?"↳ ":"")+esc(code)+"</span>"+role+position+pole+"</span>";
+      }).join("");
+      const rows=assigned.map(({team,category,staff,order,proximity},i)=>{
+        const jobsHtml=team.jobs.map(j=>`<div class="jobno">${esc(j.jobNo)}${j.time?` · ${esc(j.time)}`:""}</div>`).join("");
+        const desc=[...new Set(team.jobs.map(j=>j.description).filter(Boolean))].join("／");const loc=[...new Set(team.jobs.map(j=>j.location).filter(Boolean))].join("；");const contractors=[...new Set(team.jobs.map(j=>j.contractor).filter(Boolean))].join("、");
+        const codes=codeListFor([{team}]);
+        const proximityLabel=proximity?`<div class="assignment-note">${proximity.bundle?`C 類候選包同派，與 ${esc(proximity.anchorCrew)} 相距`:`距最近已派工作 ${proximity.anchorCategory} 類 ${esc(proximity.anchorCrew)} · 直線`} ${proximity.km.toFixed(1)} km${proximity.km>proximityLimit?"（超過併派上限）":""}</div>`:"";
+        return `<tr><td><div class="${staff?"person":"error"}">${esc(staff?.name||"待人工指派")}</div><div class="subtle">輪替第 ${order} 組</div>${staff?proximityLabel:`<div class="assignment-note">${esc(assigned[i].reason||"需人工確認")}</div>`}</td><td><span class="class-tag class-${category.toLowerCase()}">${category} 類</span></td><td><div class="crew">${esc(team.crew)}</div><div class="subtle">${esc(team.contract)}</div><div class="subtle">${esc(contractors)}</div></td><td>${jobsHtml}</td><td>${esc(desc||"—")}</td><td class="loc">${esc(loc||"—")}${codes?`<div class="grid-code-list">${codes}</div>`:""}</td></tr>`
+      }).join("");
+      const people=new Map();let pendingCard=0;for(const item of assigned){const key=item.staff?.id||`__unassigned__${pendingCard++}`;if(!people.has(key))people.set(key,{staff:item.staff,items:[]});people.get(key).items.push(item)}
+      const positions=new Map(state.roster.map((staff,index)=>[staff.id,index]));
+      const summary=[...people.values()].sort((a,b)=>a.staff&&b.staff?positions.get(a.staff.id)-positions.get(b.staff.id):a.staff?-1:1).map(({staff,items})=>{
+        const count=items.reduce((n,item)=>n+item.team.jobs.length,0);
+        const presentCategories=new Set(items.map(item=>item.category));
+        const distancePairs=[["A","B"],["A","C"],["B","C"]].filter(([left,right])=>presentCategories.has(left)&&presentCategories.has(right));
+        for(const category of ["A","B","C"])if(items.filter(item=>item.category===category).length>1)distancePairs.push([category,category]);
+        const farthestBetweenItems=(leftItems,rightItems,same=false)=>{let farthest=null;for(let i=0;i<leftItems.length;i++)for(let j=0;j<rightItems.length;j++){if(same&&j<=i)continue;const distance=farthestTeamPoints(leftItems[i].team,rightItems[j].team);if(distance&&(!farthest||distance.km>farthest.km))farthest=distance}return farthest};
+        const categoryDistance=distancePairs.map(([left,right])=>{const leftItems=items.filter(item=>item.category===left);const rightItems=items.filter(item=>item.category===right);const distance=farthestBetweenItems(leftItems,rightItems,left===right);return `<div class="distance-pair"><b>${left}${left===right?"↔":"→"}${right}</b>　${distance?`${distance.km.toFixed(1)} km 最遠直線 <small>(${esc(distance.leftCode)} ↔ ${esc(distance.rightCode)})</small>`:"無可換算點位"}</div>`}).join("");
+        const routeLegs=()=>{const pending=[...items];const start=Math.max(0,pending.findIndex(item=>item.category==="A"));let current=pending.splice(start,1)[0];const legs=[];while(pending.length){const options=pending.map((item,index)=>({item,index,distance:nearestPoints(current.team,item.team)})).sort((a,b)=>{if(a.distance&&b.distance)return a.distance.km-b.distance.km;if(a.distance)return -1;if(b.distance)return 1;return a.index-b.index});const next=options[0];legs.push(`<div class="distance-pair">${esc(current.category)} ${esc(current.team.crew)} → ${esc(next.item.category)} ${esc(next.item.team.crew)}　${next.distance?`${next.distance.km.toFixed(1)} km 直線 <small>(${esc(next.distance.leftCode)} ↔ ${esc(next.distance.rightCode)})</small>`:"無可換算點位"}</div>`);current=next.item;pending.splice(next.index,1)}return legs.join("")};
+        const routeHtml=items.length>1?`<div class="route-legs"><div class="distance-pair"><b>建議工作順序的相鄰點距離</b></div>${routeLegs()}</div>`:"";
+        const workload=items.reduce((counts,item)=>{counts[item.category.toLowerCase()]++;return counts},{a:0,b:0,c:0});
+        const loadTier=workloadTier(workload);
+        const detail=items.map(({team,category,proximity})=>{const work=[...new Set(team.jobs.map(j=>j.workSummary||j.description.split(/\r?\n/)[0]).filter(Boolean))].join("／");const place=[...new Set(team.jobs.map(j=>j.location).filter(Boolean))].join("；");const time=[...new Set(team.jobs.map(j=>j.time).filter(Boolean))].join("、");const proximityLabel=proximity?`<div class="assignment-note">${proximity.bundle?`C 類候選包同派 · 與 ${esc(proximity.anchorCrew)} 相距`:`${category} 類鄰近併派`} · ${proximity.km.toFixed(1)} km 直線</div>`:"";return `<div class="brief-job"><div class="brief-title"><span class="class-tag class-${category.toLowerCase()}">${category}</span>${esc(team.crew)} <span class="subtle">${esc(time)}</span></div>${proximityLabel}<div class="brief-work">${esc(work||"未填工作內容")}</div><div class="brief-place">${esc(place||"未填施工地點")}</div></div>`}).join("");
+        const codes=codeListFor(items);const number=codesFor(items).length;
+        return `<article class="staff-card"><div class="staff-card-head"><strong>${esc(staff?.name||"待人工指派")}</strong><span>${items.length} 組 · ${count} 案件 · 負載第 ${Number.isFinite(loadTier)?loadTier:"—"} 級（A${workload.a}/B${workload.b}/C${workload.c}）</span></div>${categoryDistance||routeHtml?`<div class="distance-summary"><strong>同仁工作組間代表點距離（直線公里）</strong>${categoryDistance}${routeHtml}</div>`:""}${detail}<div class="grid-code-list">${codes||"<span class='subtle'>未擷取到完整圖號座標，請核對原始地點文字</span>"}</div></article>`
+      }).join("");
+      const unassigned=assigned.filter(item=>!item.staff);
+      const missingLocationGroups=teams.filter(team=>team.jobs.some(job=>!(job.gridCodes||[]).some(point=>point.gridCoordinate)));
+      const auditLines=[`工作單位：每個契約＋工作班一組，${assigned.filter(item=>item.staff).length}/${teams.length} 組已各指派一位同仁。`,`公平規則：每人最多 1 組 A 類、最多 3 組 C 類；距離上限 ${proximityLimit} km 為硬限制，距離可行後才比較工作量級別，最後依直線距離與輪替順序決定。`];
+      if(unassigned.length)auditLines.push(`<span class="audit-warning">${unassigned.length} 組待人工指派：${unassigned.map(item=>`${esc(item.team.crew)}（${esc(item.reason)}）`).join("；")}</span>`);
+      if(missingLocationGroups.length)auditLines.push(`<span class="audit-warning">${missingLocationGroups.length} 組工作含有無法換算的來源案件，這些案件的點位距離會標示「無可換算點位」：${missingLocationGroups.map(team=>esc(team.crew)).join("、")}</span>`);
+      $("assignment-audit").innerHTML=`<strong>派工檢核</strong><br>${auditLines.join("<br>")}`;
+      $("datebadge").textContent=rocDate(selected);$("crewcount").textContent=`${teams.length} 個契約／工作班`;$ ("jobcount").textContent=`${jobs.length} 筆工作`;$ ("coordcount").textContent=`可換算座標 ${state.coordinates.decoded}/${state.coordinates.total}`;
+      $("staff-summary").innerHTML=summary||"<div class='empty'>所選日期沒有施工資料</div>";
+      $("tablewrap").innerHTML=rows?`<table><thead><tr><th>指派同仁</th><th>類別</th><th>契約／工作班</th><th>案件 / 時段</th><th>工作內容</th><th>施工地點／圖號座標</th></tr></thead><tbody>${rows}</tbody></table>`:`<div class="empty">所選日期沒有施工資料</div>`;$ ("results").style.display="block";if(scroll)$ ("results").scrollIntoView({behavior:"smooth",block:"start"});
+    }
+    async function initializeRoster(){try{const saved=JSON.parse(localStorage.getItem("dispatch-roster-v2")||"null");if(saved?.roster?.length){state.roster=saved.roster.map(staff=>({...staff,defaultAttending:true,defaultNoncritical:staff.id==="staff-1"}));state.daily=saved.daily||{}}else{const response=await fetch("/api/roster");const initial=await response.json();state.roster=initial.map((s,i)=>({...s,id:`staff-${i+1}`,defaultAttending:true,defaultNoncritical:i===0}));state.daily={}}}catch(e){state.roster=[];state.daily={}}renderRosterTable()}
+    $("roster-rows").addEventListener("change",e=>{const control=e.target;const staff=state.roster.find(s=>s.id===control.dataset.id);if(!staff)return;const field=control.dataset.field;if(field==="name"){const value=control.value.trim();if(value)staff.name=value;else control.value=staff.name}else if(field==="supervisor")staff.supervisor=control.value==="true";else if(field==="attending"||field==="noncritical")flagsFor(staff)[field]=control.value==="true";updateStaffData()});
+    $("roster-rows").addEventListener("click",e=>{const button=e.target.closest("button[data-action]");if(!button)return;const i=state.roster.findIndex(s=>s.id===button.dataset.id);if(i<0)return;const action=button.dataset.action;if(action==="delete"){state.roster.splice(i,1);for(const day of Object.values(state.daily))delete day[button.dataset.id]}else{const to=action==="up"?i-1:i+1;if(to<0||to>=state.roster.length)return;[state.roster[i],state.roster[to]]=[state.roster[to],state.roster[i]]}persistRoster();renderRosterTable();if($("results").style.display==="block")renderAssignments(false)});
+    $("add-staff").addEventListener("click",()=>{const id=`staff-${Date.now()}`;state.roster.push({id,name:"新同仁",supervisor:true,defaultAttending:true,defaultNoncritical:false});persistRoster();renderRosterTable()});
+    $("browse").addEventListener("click",e=>{e.preventDefault();e.stopPropagation();$("file").click()});
+    $("drop").addEventListener("click",e=>{if(e.target.closest("button"))return;$("file").click()});
+    $("drop").addEventListener("keydown",e=>{if(e.target.closest("button"))return;if(e.key==="Enter"||e.key===" "){e.preventDefault();$("file").click()}});
+    $("file").addEventListener("change",e=>{const file=e.target.files?.[0];if(file)upload(file).then(()=>renderRosterTable());e.target.value=""});$("assign").addEventListener("click",()=>renderAssignments());
+    $("workdate").addEventListener("change",()=>{renderRosterTable();renderAnalysis();if($("results").style.display==="block")renderAssignments(false)});
+    $("first").addEventListener("change",()=>{if($("results").style.display==="block")renderAssignments(false)});
+    $("proximity-km").addEventListener("change",()=>{renderAnalysis();if($("results").style.display==="block")renderAssignments(false)});
+    ["dragenter","dragover"].forEach(ev=>$ ("drop").addEventListener(ev,e=>{e.preventDefault();$("drop").classList.add("drag")}));["dragleave","drop"].forEach(ev=>$ ("drop").addEventListener(ev,e=>{e.preventDefault();$("drop").classList.remove("drag")}));$("drop").addEventListener("drop",e=>upload(e.dataTransfer.files[0]).then(()=>renderRosterTable()));
+    initializeRoster();
+  </script>
+</body>
+</html>
