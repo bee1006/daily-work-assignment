@@ -1,0 +1,12 @@
+# Company source data: keep local and out of GitHub
+*.xlsx
+*.xlsm
+all.csv
+
+# Local Python artifacts and credentials
+__pycache__/
+*.py[cod]
+.env
+.env.*
+!.env.example
+.DS_Store
