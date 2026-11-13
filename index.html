@@ -3,18 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>每日派工｜工作台</title>
+  <title>台電檢驗員｜每日派工</title>
   <style>
     :root{--ink:#172a3a;--muted:#6d7b86;--line:#dce5e9;--paper:#fff;--bg:#f3f7f8;--teal:#087f78;--teal2:#dff3ef;--navy:#17364c;--amber:#fff4dc;--shadow:0 12px 32px #1832450c}
     *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;font-size:15px}
-    header{background:var(--navy);color:#fff;padding:22px max(24px,calc((100% - 1240px)/2));display:flex;align-items:center;justify-content:space-between;gap:18px}
+    header{background:var(--navy);color:#fff;padding:16px max(24px,calc((100% - 1120px)/2));display:flex;align-items:center;justify-content:space-between;gap:18px}
     .brand{display:flex;gap:12px;align-items:center}.mark{height:40px;width:40px;border-radius:12px;background:#59c5b2;display:grid;place-items:center;color:#123344;font-weight:900;font-size:20px}.brand strong{display:block;font-size:18px;letter-spacing:.04em}.brand span{font-size:12px;color:#b8cbd4}.topnote{font-size:12px;color:#c6d8df}
     main{max-width:1240px;margin:30px auto;padding:0 24px 60px}.intro{display:flex;justify-content:space-between;align-items:end;margin-bottom:22px;gap:16px}.eyebrow{font-size:11px;letter-spacing:.16em;color:var(--teal);font-weight:800}.intro h1{font-size:27px;letter-spacing:.02em;margin:7px 0 6px}.intro p{margin:0;color:var(--muted);font-size:14px}.step{padding:8px 12px;background:#e8f3f2;color:#216b67;border-radius:20px;font-size:12px;font-weight:700;white-space:nowrap}
     .setup{display:grid;grid-template-columns:1fr;gap:18px}.card{background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}.card-head{padding:20px 22px 13px;display:flex;align-items:center;gap:12px}.num{width:27px;height:27px;border-radius:9px;background:var(--teal2);color:var(--teal);display:grid;place-items:center;font-size:13px;font-weight:800}.card-head h2{font-size:16px;margin:0}.card-head small{margin-left:auto;color:var(--muted);font-size:12px}.card-body{padding:0 22px 21px}
     .drop{border:1.5px dashed #abc4ca;background:#f8fbfb;border-radius:12px;padding:19px 18px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:.2s}.drop:hover,.drop.drag{border-color:var(--teal);background:#f0faf8}.fileicon{width:42px;height:42px;border-radius:12px;background:#e3f3ef;color:var(--teal);display:grid;place-items:center;font-weight:900;font-size:19px}.drop strong{display:block;font-size:14px}.drop span{font-size:12px;color:var(--muted);display:block;margin-top:4px}.drop button{margin-left:auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-weight:700;color:var(--navy);cursor:pointer}.filename{font-size:12px;color:var(--teal);margin:10px 0 0 56px;min-height:16px}
     .controls{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:17px}.field label{display:block;font-size:12px;color:#596c78;font-weight:700;margin-bottom:7px}.field select,.field input{width:100%;border:1px solid var(--line);border-radius:9px;padding:11px 12px;font:inherit;background:#fff;color:var(--ink);outline:none}.field select:focus,.field input:focus{border-color:var(--teal);box-shadow:0 0 0 3px #087f7818}.help{font-size:11px;color:#82909a;margin:6px 0 0}.roster{margin-top:15px;border-top:1px solid #edf1f3;padding-top:14px}.roster summary{font-size:12px;font-weight:700;color:#526673;cursor:pointer}.roster-panel{margin-top:12px}.roster-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}.roster-toolbar span{font-size:11px;color:var(--muted)}.small-btn{border:1px solid var(--line);background:white;border-radius:7px;padding:6px 9px;color:var(--navy);font-size:11px;font-weight:700;cursor:pointer}.roster-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:9px}.roster-table{width:100%;min-width:690px;border-collapse:collapse}.roster-table th{padding:9px 10px;font-size:10px;white-space:nowrap}.roster-table td{padding:8px 9px;font-size:12px}.roster-table select,.roster-table input{font:inherit;font-size:12px;border:1px solid var(--line);border-radius:6px;padding:6px 7px;background:#fff;color:var(--ink)}.roster-table input{width:95px}.roster-table select{width:72px}.roster-actions{white-space:nowrap}.roster-actions button{border:0;background:none;color:#526673;cursor:pointer;font-size:12px;padding:3px}.qual-fixed{color:#596c78;font-size:11px}.roster-help{font-size:11px;color:#82909a;line-height:1.5;margin:8px 0 0}
     .rulebox{background:#f6f9fa;border-radius:10px;padding:12px 14px;margin-top:14px;font-size:12px;color:#536672;line-height:1.65}.rulebox b{color:var(--navy)}.rulebox ul{margin:6px 0 0;padding-left:19px}.rulebox li{margin:2px 0}.actions{margin-top:17px;display:flex;gap:10px;align-items:center}.primary{border:0;border-radius:9px;background:var(--teal);color:#fff;padding:11px 18px;font:700 14px inherit;cursor:pointer}.primary:hover{background:#066b65}.primary:disabled{opacity:.45;cursor:not-allowed}.status{font-size:12px;color:var(--muted)}
-    .aside{padding:22px}.aside h2{font-size:15px;margin:0 0 14px}.flow{display:grid;gap:10px}.flowrow{display:flex;gap:11px;align-items:flex-start}.flowicon{width:28px;height:28px;border-radius:9px;background:#eef5f6;color:#357079;display:grid;place-items:center;font-weight:800;font-size:12px;flex:0 0 auto}.flowrow strong{font-size:13px;display:block;margin:2px 0 3px}.flowrow span{color:var(--muted);font-size:11px;line-height:1.45;display:block}.notice{margin-top:17px;padding:11px 12px;border-radius:9px;background:var(--amber);color:#75571d;font-size:11px;line-height:1.55}
+    .aside{padding:22px}.aside h2{font-size:15px;margin:0 0 14px}.flow{display:grid;gap:10px}.flowrow{display:flex;gap:11px;align-items:flex-start}.flowicon{width:28px;height:28px;border-radius:9px;background:#eef5f6;color:#357079;display:grid;place-items:center;font-weight:800;font-size:12px;flex:0 0 auto}.flowrow strong{font-size:13px;display:block;margin:2px 0 3px}.flowrow span{color:var(--muted);font-size:11px;line-height:1.45;display:block}.notice{margin-top:17px;padding:11px 12px;border-radius:9px;background:var(--amber);color:#75571d;font-size:11px;line-height:1.55}.preview-notice{margin:0 0 18px;padding:12px 15px;border:1px solid #f0d28c;border-radius:10px;background:#fff8e9;color:#70551c;font-size:13px;line-height:1.6}.module-nav{display:flex;align-items:center;justify-content:flex-end;gap:5px 12px;flex-wrap:wrap;max-width:660px}.module-nav a,.module-nav span{font-size:11px;line-height:1.2;text-decoration:none;white-space:nowrap}.module-nav a{color:#dce9ed}.module-nav a:hover{color:#fff}.module-nav .current{font-weight:800;color:#6fe0c9}.module-nav .muted{color:#91a9b2}@media(max-width:560px){header{align-items:flex-start;flex-direction:column;padding-top:16px;padding-bottom:16px}.module-nav{justify-content:flex-start;gap:8px 13px;max-width:100%}}
     .results{margin-top:22px;display:none}.result-head{padding:19px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}.result-head h2{margin:0;font-size:17px}.counts{margin-left:auto;display:flex;gap:8px}.pill{background:#f0f5f6;color:#49616b;border-radius:20px;padding:6px 10px;font-size:11px;font-weight:700}.datebadge{color:var(--teal);background:#e5f5f1}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:850px}th{text-align:left;background:#f8fafb;color:#71818a;font-size:11px;letter-spacing:.04em;padding:12px 16px;font-weight:700}td{border-top:1px solid #edf1f3;padding:13px 16px;vertical-align:top;font-size:13px;line-height:1.5}.person{font-weight:800;color:var(--teal);white-space:nowrap}.crew{font-weight:800;color:var(--navy)}.jobno{font-size:11px;color:#7c8991;margin-top:4px}.loc{max-width:310px;color:#536672}.subtle{font-size:11px;color:#82909a}.empty{padding:34px;text-align:center;color:var(--muted);font-size:13px}.error{color:#a33c32}.foot{color:#84919a;text-align:center;font-size:11px;margin-top:20px}.class-tag{display:inline-flex;align-items:center;justify-content:center;min-width:34px;padding:4px 9px;border-radius:7px;font-size:12px;font-weight:800}.class-a{background:#e5f2fb;color:#27618b}.class-b{background:#e9f5e9;color:#387545}.class-c{background:#f1edf9;color:#695393}
     .staff-summary{padding:18px 22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;border-bottom:1px solid var(--line)}.staff-card{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}.staff-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}.staff-card-head strong{font-size:14px;color:var(--navy)}.staff-card-head span{font-size:10px;color:var(--muted);background:#f1f5f6;border-radius:12px;padding:5px 8px}.brief-job{border-top:1px solid #edf1f3;padding:10px 0 2px}.brief-job:first-of-type{border-top:0;padding-top:0}.brief-title{font-size:12px;font-weight:800;display:flex;gap:7px;align-items:center;color:#344a58}.brief-work{font-size:12px;color:#405967;margin:6px 0}.brief-place{font-size:11px;color:#72808a;line-height:1.5}.grid-code-list{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}.grid-code{font:700 10px ui-monospace,SFMono-Regular,Menlo,monospace;background:#e9f2f4;color:#245863;padding:4px 6px;border-radius:5px}.grid-code.expanded{background:#fff2d8;color:#795d21}.grid-point{display:inline-flex;flex-direction:column;gap:3px}.grid-coord{font:9px ui-monospace,SFMono-Regular,Menlo,monospace;color:#536672}.grid-code-note{font-size:10px;color:#8a9296;margin-top:4px}
     .distance-setting{margin-top:12px;max-width:280px}.distance-setting input{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 10px;font:inherit;color:var(--ink)}.assignment-note{margin-top:5px;font-size:10px;color:#8a6a25}
@@ -22,17 +22,48 @@
     .assignment-audit{padding:12px 22px;background:#f8fbfb;border-bottom:1px solid var(--line);font-size:12px;color:#536672;line-height:1.65}.assignment-audit strong{color:var(--navy)}.assignment-audit .audit-warning{color:#8b5a15}.route-legs{margin-top:5px;padding-top:5px;border-top:1px dashed var(--line)}
     .analysis-preview{display:none;margin-top:18px;padding:16px 20px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}.analysis-preview h2{margin:0 0 6px;font-size:15px}.analysis-preview p{margin:0 0 10px;color:var(--muted);font-size:11px}.analysis-table{overflow:auto;max-height:360px}.analysis-table table{min-width:680px}.analysis-table td,.analysis-table th{padding:8px 10px;font-size:11px}.analysis-bundles{padding:10px 12px;background:#f4f8f9;border-radius:9px;font-size:11px;line-height:1.7;color:#405967}.analysis-bundles strong{color:var(--navy)}
     .manual-hint{padding:10px 22px;background:#f2f8f8;border-bottom:1px solid var(--line);font-size:11px;color:#536672}.manual-assignee{display:block;margin-top:6px;max-width:190px;border:1px solid var(--line);border-radius:6px;padding:5px 7px;background:#fff;color:var(--ink);font:inherit;font-size:11px}.manual-distance-warning{display:inline-block;margin-left:5px;color:#b42318;font-size:10px;font-weight:800;white-space:normal}.staff-card{transition:border-color .15s,background .15s}.staff-card.drop-ready{border:2px dashed var(--teal);background:#f0faf8}.staff-drop-help{font-size:10px;color:#82909a;margin:0 0 8px}.brief-job[draggable="true"]{cursor:grab}.brief-job[draggable="true"]:active{cursor:grabbing}.pending-manual{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;padding:14px 22px 0}.pending-work-card{border:1px solid #e7c4a0;background:#fffaf4;border-radius:12px;padding:12px}.pending-work-card>strong{font-size:12px;color:#8b5a15}.pending-work-card .brief-job{cursor:grab}
+    .cloud-panel{margin-top:15px;border-top:1px solid #edf1f3;padding-top:14px}.cloud-panel summary{font-size:12px;font-weight:700;color:#526673;cursor:pointer}.cloud-body{margin-top:10px;padding:12px;background:#f7fafb;border-radius:9px}.cloud-fields,.cloud-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.cloud-fields input{min-width:180px;max-width:250px;border:1px solid var(--line);border-radius:7px;padding:8px 9px;font:inherit;font-size:12px}.cloud-btn{border:1px solid var(--line);border-radius:7px;padding:8px 10px;background:#fff;color:var(--navy);font:700 11px inherit;cursor:pointer}.cloud-btn.primary{background:var(--teal);border-color:var(--teal);color:white}.cloud-btn:disabled{opacity:.45;cursor:not-allowed}.cloud-status{font-size:11px;color:var(--muted);margin:8px 0 0;line-height:1.5}.cloud-status.error{color:#a33c32}.history-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:11px 22px;border-bottom:1px solid var(--line);background:#fbfcfc}.history-actions select{max-width:260px;border:1px solid var(--line);border-radius:7px;padding:7px 9px;background:white;color:var(--ink);font:inherit;font-size:11px}.history-note{font-size:10px;color:var(--muted)}
+    .nav-btn{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;border-radius:6px;padding:4px 9px;font:700 11px inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px;line-height:1.2;transition:all .15s}
+    .nav-btn:hover{background:var(--teal);border-color:var(--teal);color:#fff}
+    .cloud-dot{width:7px;height:7px;border-radius:50%;background:#9bb0b8;display:inline-block;transition:all .2s}
+    .cloud-dot.connected{background:#38d39f;box-shadow:0 0 6px #38d39f}
+    .cloud-quick-hint{display:flex;align-items:center;justify-content:space-between;background:#eef7f6;border:1px solid #c8e7e3;color:#185854;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;gap:12px;line-height:1.4}
+    .modal-overlay{position:fixed;inset:0;background:rgba(18,40,56,0.6);backdrop-filter:blur(3px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
+    .modal-overlay[hidden]{display:none!important}
+    .modal-card{background:var(--paper);border-radius:16px;box-shadow:0 24px 48px rgba(0,0,0,0.25);width:100%;max-width:620px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line);animation:modalPop .2s ease-out}
+    @keyframes modalPop{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+    .modal-head{padding:16px 20px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:space-between}
+    .modal-head h3{margin:0;font-size:15px;display:flex;align-items:center;gap:8px;font-weight:800}
+    .modal-close{background:none;border:0;color:#c6d8df;font-size:22px;cursor:pointer;line-height:1;padding:0 4px}
+    .modal-close:hover{color:#fff}
+    .modal-body{padding:18px 20px;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+    .modal-auth-box{background:#f7fafb;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+    .modal-auth-box h4{margin:0 0 8px;font-size:12px;color:var(--navy);display:flex;align-items:center;justify-content:space-between}
+    .modal-auth-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .modal-auth-row input{min-width:160px;flex:1;border:1px solid var(--line);border-radius:7px;padding:7px 9px;font:inherit;font-size:12px}
+    .modal-history-box{display:flex;flex-direction:column;gap:8px}
+    .modal-history-box h4{margin:0;font-size:12px;color:var(--navy);display:flex;align-items:center;justify-content:space-between}
+    .history-list{display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;padding:8px;background:#fbfcfc}
+    .history-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#fff;border:1px solid var(--line);border-radius:8px;gap:12px;transition:border-color .15s,box-shadow .15s}
+    .history-item:hover{border-color:var(--teal);box-shadow:0 2px 8px rgba(8,127,120,0.08)}
+    .history-date{font-size:13px;font-weight:800;color:var(--navy)}
+    .history-badge{font-size:10px;color:var(--teal);background:var(--teal2);padding:2px 6px;border-radius:4px;font-weight:normal;margin-left:6px}
+    .history-meta{font-size:11px;color:var(--muted);margin-top:2px}
+    .history-empty{padding:24px 16px;text-align:center;color:var(--muted);font-size:12px}
+    .modal-notice{font-size:11px;color:var(--muted);line-height:1.5;background:#f4f8f9;padding:8px 11px;border-radius:8px}
     @media(max-width:850px){header{padding:16px 20px}.topnote{display:none}main{padding:0 16px 40px;margin-top:22px}.setup{grid-template-columns:1fr}.intro{align-items:flex-start;flex-direction:column}.intro h1{font-size:23px}.step{align-self:flex-start}.controls{grid-template-columns:1fr}.counts{display:none}}
   </style>
 </head>
 <body>
-  <header><div class="brand"><div class="mark">派</div><div><strong>每日派工</strong><span>DAILY WORK ASSIGNMENT</span></div></div><div class="topnote">V1 · 個人試用版</div></header>
+  <header><div class="brand"><div class="mark">台</div><div><strong>台電檢驗員</strong><span>TAIPOWER INSPECTOR</span></div></div><nav class="module-nav" aria-label="系統功能"><span class="muted">每月出勤</span><a class="current" href="index.html" aria-current="page">派工</a><a href="coordinates.html">圖號座標</a><span class="muted">路程安排</span><span class="muted">匯出雲端</span><span class="muted">報表列印</span><button class="nav-btn nav-history-btn" id="nav-history-btn" type="button" title="查詢並直接載入雲端派工紀錄"><span class="cloud-dot" id="nav-cloud-dot"></span>歷史查詢</button></nav></header>
   <main>
-    <section class="intro"><div><div class="eyebrow">WORKFLOW / V1</div><h1>每日派工工作台</h1><p>上傳每日施工資料，選擇派工日期與輪替起點，產生並調整派工結果。</p></div><div class="step">V1 · 個人使用</div></section>
+    <div id="preview-notice" class="preview-notice" hidden>這是 GitHub Pages 預覽頁，可以查看派工介面；Excel 上傳與派工分析需要 Python 後端，請在本機啟動 app.py 使用完整功能。</div>
+    <section class="intro"><div><div class="eyebrow">WORKFLOW / V2</div><h1>每日派工工作台</h1><p>上傳每日施工資料，或透過右上角【歷史查詢】讀取雲端紀錄，產生並調整派工結果。</p></div><div class="step">V2 · 個人使用</div></section>
     <section class="setup">
       <article class="card">
         <div class="card-head"><div class="num">1</div><h2>匯入施工資料</h2><small>支援 .xlsx</small></div>
         <div class="card-body">
+          <div class="cloud-quick-hint"><span>☁ 想要查看已排好的工作？無須重新上傳 Excel，可直接透過右上角<strong>【歷史查詢】</strong>讀取雲端紀錄。</span><button type="button" class="small-btn" id="quick-history-btn">歷史查詢</button></div>
           <div class="drop" id="drop" role="button" tabindex="0" aria-label="選擇或拖曳 Excel 檔案"><div class="fileicon">↑</div><div><strong>選擇或拖曳 Excel 檔案</strong><span>讀取日期、工作班、契約、工作內容與施工地點</span></div><button type="button" id="browse">選擇檔案</button><input id="file" type="file" accept=".xlsx,.xlsm" hidden></div>
           <div class="filename" id="filename"></div>
           <div class="controls">
@@ -42,16 +73,56 @@
             <div class="field distance-setting"><label for="proximity-km">鄰近併派門檻（直線公里）</label><input id="proximity-km" type="number" min="1" max="100" step="1" value="10"><p class="help">用於 A＋B 鄰近配對及 C 類候選包；C 類候選包最多 2 組，距離是直線距離</p></div>
           <details class="roster"><summary>同仁名單管理（可新增、調整順序與每日狀態）</summary><div class="roster-panel"><div class="roster-toolbar"><span id="roster-date">請先上傳檔案並選擇派工日期</span><button class="small-btn" id="add-staff" type="button">＋ 新增同仁</button></div><div class="roster-table-wrap"><table class="roster-table"><thead><tr><th>姓名</th><th>今日出勤</th><th>非關鍵性作業</th><th>監造人員證照（固定資格）</th><th>順序／移除</th></tr></thead><tbody id="roster-rows"></tbody></table></div><p class="roster-help">今日出勤與非關鍵性作業依派工日期分別記錄；證照是固定資格設定。非關鍵性作業為 Y 時，該員今日只會分配 C 類；B 類另需監造證照。</p></div></details>
           <div class="rulebox"><b>指派準則</b><ul><li>同一契約、同一工作班算一組，每組只派給一位同仁。</li><li>A/B 工作組數達到可執行關鍵作業人數時，優先配對鄰近的 A＋B。</li><li>附近 C 類可合併指派；自動派工會考量出勤、資格、負載與距離。</li><li>手動指派可覆蓋自動準則；超過距離門檻時會顯示紅字提醒。</li></ul></div>
+          <details class="cloud-panel"><summary>Supabase 雲端登入</summary><div class="cloud-body"><div class="cloud-fields"><input id="cloud-email" type="email" autocomplete="username" placeholder="電子郵件" aria-label="Supabase 電子郵件"><input id="cloud-password" type="password" autocomplete="current-password" placeholder="密碼" aria-label="Supabase 密碼"><button id="cloud-login" class="cloud-btn primary" type="button">登入</button><button id="cloud-signup" class="cloud-btn" type="button">建立帳號</button><button id="cloud-logout" class="cloud-btn" type="button" hidden>登出</button></div><p id="cloud-status" class="cloud-status" role="status">正在初始化雲端連線…</p></div></details>
           <div class="actions"><button id="assign" class="primary" disabled>確認指派</button><span id="status" class="status">請先上傳施工資料</span></div>
         </div>
       </article>
     </section>
     <section class="analysis-preview" id="analysis-preview"><h2>上傳後工作與點位預分析</h2><p id="analysis-meta"></p><div class="analysis-bundles" id="analysis-bundles"></div><div class="analysis-table" id="analysis-table"></div></section>
-    <section class="card results" id="results"><div class="result-head"><div class="num">2</div><h2>派工草案</h2><span id="datebadge" class="pill datebadge"></span><div class="counts"><span id="crewcount" class="pill"></span><span id="jobcount" class="pill"></span><span id="coordcount" class="pill"></span></div></div><div class="manual-hint">手動指派：直接拖曳同仁卡內的工作項目到另一位同仁卡；待人工指派的工作會列在待處理卡，也可拖曳過去。派工表保留人員下拉選單。手動可凌駕自動資格、負載及距離規則；超過設定距離會在姓名旁以紅字警示，所有距離與建議順序會同步更新。同仁卡只顯示今日出勤者。</div><div class="assignment-audit" id="assignment-audit"></div><div class="pending-manual" id="pending-manual"></div><div class="staff-summary" id="staff-summary"></div><div class="table-wrap" id="tablewrap"></div></section>
-    <div class="foot">Excel 與座標 CSV 僅在本機處理；目前尚未使用外部路線服務。</div>
+    <section class="card results" id="results"><div class="result-head"><div class="num">2</div><h2>派工草案</h2><span id="datebadge" class="pill datebadge"></span><div class="counts"><span id="crewcount" class="pill"></span><span id="jobcount" class="pill"></span><span id="coordcount" class="pill"></span></div></div><div class="manual-hint">手動指派：直接拖曳同仁卡內的工作項目到另一位同仁卡；待人工指派的工作會列在待處理卡，也可拖曳過去。派工表保留人員下拉選單。手動可凌駕自動資格、負載及距離規則；超過距離門檻會在姓名旁以紅字警示，所有距離與建議順序會同步更新。同仁卡只顯示今日出勤者。</div><div class="history-actions"><button id="cloud-save" class="cloud-btn primary" type="button" disabled>儲存今日派工到雲端</button><select id="cloud-history" aria-label="雲端歷史紀錄" disabled><option value="">登入後載入歷史紀錄</option></select><button id="cloud-load" class="cloud-btn" type="button" disabled>讀取紀錄</button><span class="history-note">同一使用者同一天儲存會更新該日最新版本</span></div><div class="assignment-audit" id="assignment-audit"></div><div class="pending-manual" id="pending-manual"></div><div class="staff-summary" id="staff-summary"></div><div class="table-wrap" id="tablewrap"></div></section>
+    <div class="foot">Excel 與 all.csv 在本機處理；只有登入後按下雲端儲存，才會將所選日期的派工資料送至 Supabase。尚未使用外部路線服務。</div>
   </main>
+  <div class="modal-overlay" id="history-modal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-head">
+        <h3 id="modal-title">☁ 雲端派工歷史查詢</h3>
+        <button class="modal-close" id="history-modal-close" type="button" aria-label="關閉視窗">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-auth-box">
+          <h4><span>雲端帳號狀態</span><span id="modal-user-status" class="subtle">檢查連線中…</span></h4>
+          <div class="modal-auth-row" id="modal-auth-inputs">
+            <input id="modal-cloud-email" type="email" autocomplete="username" placeholder="Supabase 電子郵件" aria-label="電子郵件">
+            <input id="modal-cloud-password" type="password" autocomplete="current-password" placeholder="密碼" aria-label="密碼">
+            <button id="modal-cloud-login" class="cloud-btn primary" type="button">登入</button>
+            <button id="modal-cloud-signup" class="cloud-btn" type="button">建立帳號</button>
+          </div>
+          <div class="modal-auth-row" id="modal-auth-logged" hidden>
+            <span id="modal-auth-email-label" style="font-size:12px;color:var(--navy);font-weight:700"></span>
+            <button id="modal-cloud-refresh" class="cloud-btn" type="button">重新整理列表</button>
+            <button id="modal-cloud-logout" class="cloud-btn" type="button">登出</button>
+          </div>
+          <p id="modal-auth-msg" class="cloud-status" role="status" style="margin-top:6px"></p>
+        </div>
+        <div class="modal-history-box">
+          <h4>
+            <span>已安排工作歷史紀錄</span>
+            <small style="font-size:11px;color:var(--muted)">點擊即可直接載入派工，無須重新上傳 Excel</small>
+          </h4>
+          <div class="history-list" id="modal-history-list">
+            <div class="history-empty">正在初始化雲端…</div>
+          </div>
+        </div>
+        <div class="modal-notice">
+          💡 <strong>功能說明：</strong>此處紀錄為您先前在系統派工後點擊「儲存今日派工到雲端」所儲存的資料。點擊【讀取並查看】會將該日的所有案件、人員出勤設定、手動與自動派工狀態完整還原，方便您直接檢閱或再次調整。
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
   <script>
-    const state={jobs:[],roster:[],daily:{},manualAssignments:{},filename:"",coordinates:{matched:0,decoded:0,total:0,available:false}};
+    const state={jobs:[],roster:[],daily:{},manualAssignments:{},cloudAssignments:{},currentAssignments:{},supabase:null,user:null,filename:"",staticPreview:location.hostname.endsWith("github.io"),coordinates:{matched:0,decoded:0,total:0,available:false}};
     try{state.manualAssignments=JSON.parse(localStorage.getItem("dispatch-manual-v1")||"{}")||{}}catch(e){state.manualAssignments={}}
     const $=id=>document.getElementById(id);
     const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -63,6 +134,8 @@
     function workCategory(name){const rank=contractRank(name);return rank<10?"A":rank<13?"B":"C"}
     function buildTeams(jobs){const groups=new Map();for(const job of jobs){const key=`${job.contract}|||${job.crew}`;if(!groups.has(key))groups.set(key,{contract:job.contract,crew:job.crew,jobs:[]});groups.get(key).jobs.push(job)}return [...groups.values()].sort((a,b)=>contractRank(a.contract)-contractRank(b.contract)||a.crew.localeCompare(b.crew,"zh-Hant"))}
     function pointsForTeam(team){return team.jobs.flatMap(job=>{const codes=job.gridCodes||[];const point=codes.find(item=>item.representative&&item.gridCoordinate)||codes.find(item=>item.gridCoordinate);return point?[{code:point.code,x:Number(point.gridCoordinate.x),y:Number(point.gridCoordinate.y)}]:[]})}
+    const companyGridPoint={code:"B3529AC8946",x:278084.5,y:2764796.5};
+    function distanceFromPointToTeam(point,team){let nearest=null;for(const candidate of pointsForTeam(team)){const km=Math.hypot(point.x-candidate.x,point.y-candidate.y)/1000;if(!nearest||km<nearest.km)nearest={km,leftCode:point.code,rightCode:candidate.code}}return nearest}
     function closestTeamPoints(left,right){let nearest=null;for(const a of pointsForTeam(left))for(const b of pointsForTeam(right)){const km=Math.hypot(a.x-b.x,a.y-b.y)/1000;if(!nearest||km<nearest.km)nearest={km,leftCode:a.code,rightCode:b.code}}return nearest}
     function farthestTeamPoints(left,right){let farthest=null;const leftPoints=pointsForTeam(left),rightPoints=pointsForTeam(right);if(!leftPoints.length||!rightPoints.length)return null;for(const a of leftPoints)for(const b of rightPoints){const km=Math.hypot(a.x-b.x,a.y-b.y)/1000;if(!farthest||km>farthest.km)farthest={km,leftCode:a.code,rightCode:b.code}}return farthest}
     function teamHasCompletePoints(team){return team.jobs.every(job=>(job.gridCodes||[]).some(point=>point.gridCoordinate))}
@@ -77,6 +150,227 @@
     function persistRoster(){try{localStorage.setItem("dispatch-roster-v2",JSON.stringify({roster:state.roster,daily:state.daily}))}catch(e){console.warn("無法儲存名單設定",e)}}
     function teamAssignmentKey(team){return `${team.contract}|||${team.crew}`}
     function persistManualAssignments(){try{localStorage.setItem("dispatch-manual-v1",JSON.stringify(state.manualAssignments))}catch(e){console.warn("無法儲存手動指派",e)}}
+    function openHistoryModal(){
+      const modal=$("history-modal");
+      if(!modal)return;
+      modal.hidden=false;
+      updateCloudControls();
+      if(state.supabase&&state.user)refreshCloudHistory();
+    }
+    function closeHistoryModal(){
+      const modal=$("history-modal");
+      if(modal)modal.hidden=true;
+    }
+    function cloudStatus(message,isError=false){
+      const node=$("cloud-status");
+      if(node){node.textContent=message;node.classList.toggle("error",isError)}
+      const modalNode=$("modal-auth-msg");
+      if(modalNode){modalNode.textContent=message;modalNode.classList.toggle("error",isError)}
+    }
+    function updateCloudControls(){
+      const signedIn=!!state.user;
+      $("cloud-login").hidden=signedIn;
+      $("cloud-signup").hidden=signedIn;
+      $("cloud-logout").hidden=!signedIn;
+      $("cloud-password").hidden=signedIn;
+      $("cloud-email").hidden=signedIn;
+      $("cloud-save").disabled=!signedIn||!Object.keys(state.currentAssignments).length;
+      $("cloud-history").disabled=!signedIn;
+      $("cloud-load").disabled=!signedIn||!$("cloud-history").value;
+      const dot=$("nav-cloud-dot");
+      if(dot)dot.classList.toggle("connected",signedIn);
+      const navBtn=$("nav-history-btn");
+      if(navBtn)navBtn.title=signedIn?`雲端已連線：${state.user.email}（點擊查看歷史）`:"雲端歷史查詢（點擊登入並載入紀錄）";
+      const authInputs=$("modal-auth-inputs"),authLogged=$("modal-auth-logged");
+      if(authInputs)authInputs.hidden=signedIn;
+      if(authLogged)authLogged.hidden=!signedIn;
+      const emailLabel=$("modal-auth-email-label");
+      if(emailLabel&&state.user)emailLabel.textContent=`已登入：${state.user.email}`;
+      const userStatus=$("modal-user-status");
+      if(userStatus)userStatus.textContent=signedIn?"連線正常（已登入）":"尚未登入";
+    }
+    function renderModalHistoryList(data=[]){
+      const list=$("modal-history-list");
+      if(!list)return;
+      if(!state.user){
+        list.innerHTML='<div class="history-empty">請先在上方登入 Supabase 帳號，以載入歷史派工紀錄。</div>';
+        return;
+      }
+      if(!data.length){
+        list.innerHTML='<div class="history-empty">目前雲端尚無已儲存的派工紀錄。<br>在工作台產生派工後點擊「儲存今日派工到雲端」即可儲存。</div>';
+        return;
+      }
+      list.innerHTML=data.map(row=>{
+        const jobsCount=row.payload?.jobs?.length||0;
+        const crewCount=row.payload?.assignments?Object.keys(row.payload.assignments).length:0;
+        const timeStr=new Date(row.updated_at).toLocaleString("zh-TW",{hour12:false});
+        return `<div class="history-item"><div class="history-item-info"><div class="history-date">${esc(rocDate(row.work_date))} <span class="history-badge">已排工</span></div><div class="history-meta">更新：${esc(timeStr)}${jobsCount?` · ${jobsCount} 筆案件`:""}${crewCount?` · ${crewCount} 組工作`:""}</div></div><button class="cloud-btn primary" type="button" data-load-date="${esc(row.work_date)}">讀取並查看</button></div>`;
+      }).join("");
+    }
+    async function refreshCloudHistory(){
+      if(!state.supabase||!state.user){
+        renderModalHistoryList([]);
+        return;
+      }
+      const select=$("cloud-history");
+      if(select)select.innerHTML="<option value=\"\">載入雲端歷史紀錄…</option>";
+      const list=$("modal-history-list");
+      if(list&&!list.querySelector(".history-item"))list.innerHTML='<div class="history-empty">正在讀取雲端歷史紀錄…</div>';
+      const{data,error}=await state.supabase.from("dispatch_history").select("work_date,updated_at,payload").order("work_date",{ascending:false});
+      if(error){
+        if(select)select.innerHTML="<option value=\"\">資料表尚未就緒</option>";
+        cloudStatus(`登入成功，但讀取歷史紀錄失敗：${error.message}。請先在 Supabase 執行資料表 SQL。`,true);
+        if(list)list.innerHTML=`<div class="history-empty error">讀取歷史失敗：${esc(error.message)}</div>`;
+        updateCloudControls();
+        return;
+      }
+      if(select){
+        select.innerHTML=data.length?`<option value=\"\">選擇要讀取的日期</option>${data.map(row=>`<option value=\"${esc(row.work_date)}\">${esc(rocDate(row.work_date))}（更新 ${esc(new Date(row.updated_at).toLocaleDateString("zh-TW"))}）</option>`).join("")}`:`<option value=\"\">尚無雲端派工紀錄</option>`;
+      }
+      renderModalHistoryList(data);
+      cloudStatus(data.length?`已登入 ${state.user.email}，雲端有 ${data.length} 筆每日派工紀錄。`:`已登入 ${state.user.email}，目前尚無派工紀錄。`);
+      updateCloudControls();
+    }
+    async function initializeCloud(){
+      const config=window.APP_SUPABASE_CONFIG;
+      if(!config?.url||!config?.publishableKey||!window.supabase?.createClient){
+        cloudStatus("雲端 SDK 或本機設定檔未載入；本機派工功能仍可使用。",true);
+        return;
+      }
+      state.supabase=window.supabase.createClient(config.url,config.publishableKey);
+      const{data,error}=await state.supabase.auth.getSession();
+      if(error){
+        cloudStatus(`Supabase 連線初始化失敗：${error.message}`,true);
+        return;
+      }
+      state.user=data.session?.user||null;
+      updateCloudControls();
+      if(state.user)await refreshCloudHistory();
+      else {
+        cloudStatus("雲端連線可用，請登入後儲存或讀取派工紀錄。");
+        renderModalHistoryList([]);
+      }
+      state.supabase.auth.onAuthStateChange((event,session)=>{
+        state.user=session?.user||null;
+        updateCloudControls();
+        if(state.user){
+          setTimeout(()=>refreshCloudHistory(),0);
+        }else{
+          const select=$("cloud-history");
+          if(select)select.innerHTML="<option value=\"\">登入後載入歷史紀錄</option>";
+          renderModalHistoryList([]);
+          cloudStatus(event==="INITIAL_SESSION"?"Supabase 雲端已連線，請登入後儲存或讀取派工紀錄。":"已登出 Supabase；本機派工功能仍可使用。");
+        }
+      });
+    }
+    async function cloudLogin(createAccount=false,fromModal=false){
+      if(!state.supabase){
+        cloudStatus("Supabase 尚未初始化，請確認設定檔與網路。",true);
+        return;
+      }
+      const emailField=fromModal?$("modal-cloud-email"):$("cloud-email");
+      const passwordField=fromModal?$("modal-cloud-password"):$("cloud-password");
+      const email=emailField.value.trim(),password=passwordField.value;
+      if(!email||!password){
+        cloudStatus("請輸入電子郵件和密碼。",true);
+        return;
+      }
+      const btnId=fromModal?(createAccount?"modal-cloud-signup":"modal-cloud-login"):(createAccount?"cloud-signup":"cloud-login");
+      const button=$(btnId);
+      if(button)button.disabled=true;
+      cloudStatus(createAccount?"正在建立帳號…":"正在登入…");
+      const result=createAccount?await state.supabase.auth.signUp({email,password}):await state.supabase.auth.signInWithPassword({email,password});
+      if(button)button.disabled=false;
+      if(result.error){
+        cloudStatus(result.error.message,true);
+        return;
+      }
+      if(createAccount&&!result.data.session){
+        cloudStatus("帳號已建立，請先到信箱完成驗證，再回來登入。");
+        return;
+      }
+      state.user=result.data.user;
+      $("cloud-password").value="";
+      if($("modal-cloud-password"))$("modal-cloud-password").value="";
+      cloudStatus(createAccount?"帳號建立並登入成功。":"登入成功。");
+      await refreshCloudHistory();
+    }
+    async function saveCloudRecord(){
+      if(!state.supabase||!state.user){
+        cloudStatus("請先登入 Supabase。",true);
+        return;
+      }
+      const date=$("workdate").value;
+      if(!date||!state.jobs.length||!Object.keys(state.currentAssignments).length){
+        cloudStatus("請先確認派工，再儲存紀錄。",true);
+        return;
+      }
+      const button=$("cloud-save");
+      button.disabled=true;
+      cloudStatus("正在儲存今日派工到 Supabase…");
+      const payload={
+        version:1,
+        filename:state.filename,
+        jobs:state.jobs.filter(job=>job.date===date),
+        roster:state.roster,
+        daily:{[date]:state.daily[date]||{}},
+        manualAssignments:{[date]:state.manualAssignments[date]||{}},
+        assignments:state.currentAssignments,
+        coordinates:state.coordinates,
+        proximityKm:Number($("proximity-km").value)||10
+      };
+      const{error}=await state.supabase.from("dispatch_history").upsert({
+        user_id:state.user.id,
+        work_date:date,
+        first_staff:$("first").value,
+        payload,
+        updated_at:new Date().toISOString()
+      },{onConflict:"user_id,work_date"});
+      button.disabled=false;
+      if(error){
+        cloudStatus(`雲端儲存失敗：${error.message}`,true);
+        return;
+      }
+      cloudStatus(`${rocDate(date)} 派工紀錄已儲存到 Supabase。`);
+      await refreshCloudHistory();
+    }
+    async function loadCloudRecord(selectedDate){
+      if(!state.supabase||!state.user)return;
+      const date=selectedDate||$("cloud-history").value;
+      if(!date)return;
+      cloudStatus(`正在讀取 ${rocDate(date)} 雲端派工紀錄…`);
+      const{data,error}=await state.supabase.from("dispatch_history").select("work_date,first_staff,payload").eq("work_date",date).maybeSingle();
+      if(error||!data){
+        cloudStatus(`讀取失敗：${error?.message||"找不到紀錄"}`,true);
+        return;
+      }
+      const payload=data.payload||{};
+      state.jobs=payload.jobs||[];
+      state.roster=payload.roster||[];
+      state.daily=payload.daily||{};
+      state.manualAssignments=payload.manualAssignments||{};
+      state.cloudAssignments={[date]:payload.assignments||{}};
+      state.filename=payload.filename||"雲端歷史紀錄";
+      state.coordinates=payload.coordinates||{matched:0,decoded:0,total:0,available:false};
+      localStorage.setItem("dispatch-roster-v2",JSON.stringify({roster:state.roster,daily:state.daily}));
+      localStorage.setItem("dispatch-manual-v1",JSON.stringify(state.manualAssignments));
+      $("filename").textContent=state.filename;
+      $("workdate").innerHTML=`<option value="${esc(date)}">${esc(rocDate(date))}</option>`;
+      $("workdate").disabled=false;
+      $("proximity-km").value=payload.proximityKm||10;
+      renderRosterTable();
+      $("workdate").value=date;
+      $("first").value=data.first_staff;
+      renderRosterTable();
+      renderAnalysis();
+      renderAssignments(false);
+      $("assign").disabled=false;
+      $("status").textContent=`已從雲端載入 ${rocDate(date)} 派工紀錄（共 ${state.jobs.length} 筆案件）`;
+      $("status").classList.remove("error");
+      cloudStatus(`${rocDate(date)} 雲端紀錄已載入。`);
+      closeHistoryModal();
+      $("results").scrollIntoView({behavior:"smooth",block:"start"});
+    }
     function refreshFirstSelect(){const old=$("first").value;$("first").innerHTML=state.roster.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join("");if(state.roster.some(s=>s.id===old))$("first").value=old;}
     function renderRosterTable(){
       const date=selectedDateKey();
@@ -85,7 +379,7 @@
       refreshFirstSelect();
     }
     function updateStaffData(){renderRosterTable();persistRoster();if($("results").style.display==="block")renderAssignments(false)}
-    async function upload(file){if(!file)return;$("status").textContent="正在讀取 Excel 並換算台電圖號座標…";$("status").classList.remove("error");$("assign").disabled=true;$("filename").textContent=file.name;try{const buf=await file.arrayBuffer();let binary="";const bytes=new Uint8Array(buf);for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));const response=await fetch("/api/parse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({file:btoa(binary)})});const result=await response.json();if(!response.ok)throw new Error(result.error||"無法讀取檔案");state.jobs=result.jobs;state.coordinates=result.coordinates||{matched:0,decoded:0,total:0,available:false};state.filename=file.name;const dates=[...new Set(state.jobs.map(j=>j.date))].sort();$("workdate").innerHTML=dates.length?dates.map(d=>`<option value="${esc(d)}">${esc(rocDate(d))}</option>`).join(""):"<option value=''>檔案中沒有可用資料</option>";$("workdate").disabled=!dates.length;$("assign").disabled=!dates.length;$("status").textContent=`已讀取 ${state.jobs.length} 筆工作；圖號可換算 ${state.coordinates.decoded}/${state.coordinates.total} 個；電桿 CSV 補充 ${state.coordinates.matched} 個${state.coordinates.available?"":"（沒有 all.csv，仍可用圖號定位）"}`;$("results").style.display="none";renderAnalysis();}catch(e){$("status").textContent=e.message;$("status").classList.add("error");$("workdate").disabled=true;}}
+    async function upload(file){if(!file)return;if(state.staticPreview){$("status").textContent="GitHub Pages 僅提供介面預覽；Excel分析需要 Python 後端。";$("status").classList.add("error");return;}$("status").textContent="正在讀取 Excel 並換算台電圖號座標…";$("status").classList.remove("error");$("assign").disabled=true;$("filename").textContent=file.name;try{const buf=await file.arrayBuffer();let binary="";const bytes=new Uint8Array(buf);for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));const response=await fetch("/api/parse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({file:btoa(binary)})});const result=await response.json();if(!response.ok)throw new Error(result.error||"無法讀取檔案");state.jobs=result.jobs;state.cloudAssignments={};state.currentAssignments={};state.coordinates=result.coordinates||{matched:0,decoded:0,total:0,available:false};state.filename=file.name;const dates=[...new Set(state.jobs.map(j=>j.date))].sort();$("workdate").innerHTML=dates.length?dates.map(d=>`<option value="${esc(d)}">${esc(rocDate(d))}</option>`).join(""):"<option value=''>檔案中沒有可用資料</option>";$("workdate").disabled=!dates.length;$("assign").disabled=!dates.length;$("status").textContent=`已讀取 ${state.jobs.length} 筆工作；圖號可換算 ${state.coordinates.decoded}/${state.coordinates.total} 個；電桿 CSV 補充 ${state.coordinates.matched} 個${state.coordinates.available?"":"（沒有 all.csv，仍可用圖號定位）"}`;$("results").style.display="none";renderAnalysis();}catch(e){$("status").textContent=e.message;$("status").classList.add("error");$("workdate").disabled=true;}}
     function renderAssignmentsLegacy(scroll=true){
       if(!state.jobs.length)return;
       const selected=$("workdate").value;
@@ -187,6 +481,8 @@
         assignSingle(i);
       }
       const cBundles=createCBundles(teams,proximityLimit);cBundles.forEach(bundle=>assignBundle(bundle.indexes));
+      const savedCloud=state.cloudAssignments[selected]||{};
+      teams.forEach((team,index)=>{const key=teamAssignmentKey(team);if(!Object.prototype.hasOwnProperty.call(savedCloud,key))return;const saved=savedCloud[key],staff=state.roster.find(person=>person.id===saved?.staffId);assigned[index]={...assigned[index],team,category:categories[index],staff:staff||null,order:index+1,manual:!!saved?.manual,reason:staff?null:"雲端紀錄中的同仁已不存在"}});
       const savedManual=state.manualAssignments[selected]||{};
       teams.forEach((team,index)=>{const staffId=savedManual[teamAssignmentKey(team)];if(!staffId)return;const staff=state.roster.find(person=>person.id===staffId);if(staff)assigned[index]={team,category:categories[index],staff,order:index+1,proximity:null,reason:null,manual:true}});
       assigned.forEach(item=>{
@@ -202,6 +498,7 @@
         else if(maxDistance&&anchor)item.proximity={km:maxDistance.km,anchorCrew:anchor.team.crew,anchorCategory:anchor.category,bundle:false};
         else item.proximity=null;
       });
+      state.currentAssignments=Object.fromEntries(teams.map((team,index)=>[teamAssignmentKey(team),{staffId:assigned[index]?.staff?.id||null,manual:!!assigned[index]?.manual}]));
       const codesFor=items=>{const codes=new Map();for(const item of items)for(const job of item.team.jobs)for(const code of job.gridCodes||[])if(!codes.has(code.code)||!code.expanded)codes.set(code.code,!!code.expanded);return [...codes]};
       const codeListFor=items=>codesFor(items).map(([code,expanded])=>{
         const allCodes=items.flatMap(item=>item.team.jobs).flatMap(job=>job.gridCodes||[]);
@@ -234,11 +531,12 @@
         for(const category of ["A","B","C"])if(items.filter(item=>item.category===category).length>1)distancePairs.push([category,category]);
         const farthestBetweenItems=(leftItems,rightItems,same=false)=>{let farthest=null;for(let i=0;i<leftItems.length;i++)for(let j=0;j<rightItems.length;j++){if(same&&j<=i)continue;const distance=farthestTeamPoints(leftItems[i].team,rightItems[j].team);if(distance&&(!farthest||distance.km>farthest.km))farthest=distance}return farthest};
         const categoryDistance=distancePairs.map(([left,right])=>{const leftItems=items.filter(item=>item.category===left);const rightItems=items.filter(item=>item.category===right);const distance=farthestBetweenItems(leftItems,rightItems,left===right);return `<div class="distance-pair"><b>${left}${left===right?"↔":"→"}${right}</b>　${distance?`${distance.km.toFixed(1)} km 最遠直線 <small>(${esc(distance.leftCode)} ↔ ${esc(distance.rightCode)})</small>`:"無可換算點位"}</div>`}).join("");
-        const routeLegs=()=>{const pending=[...items];const start=Math.max(0,pending.findIndex(item=>item.category==="A"));let current=pending.splice(start,1)[0];const legs=[];while(pending.length){const options=pending.map((item,index)=>({item,index,distance:nearestPoints(current.team,item.team)})).sort((a,b)=>{if(a.distance&&b.distance)return a.distance.km-b.distance.km;if(a.distance)return -1;if(b.distance)return 1;return a.index-b.index});const next=options[0];legs.push(`<div class="distance-pair">${esc(current.category)} ${esc(current.team.crew)} → ${esc(next.item.category)} ${esc(next.item.team.crew)}　${next.distance?`${next.distance.km.toFixed(1)} km 直線 <small>(${esc(next.distance.leftCode)} ↔ ${esc(next.distance.rightCode)})</small>`:"無可換算點位"}</div>`);current=next.item;pending.splice(next.index,1)}return legs.join("")};
-        const routeHtml=items.length>1?`<div class="route-legs"><div class="distance-pair"><b>建議工作順序的相鄰點距離</b></div>${routeLegs()}</div>`:"";
+        const routeOrder=()=>{const pending=[...items],ordered=[];let current=null;while(pending.length){const options=pending.map((item,index)=>({item,index,distance:current?nearestPoints(current.team,item.team):distanceFromPointToTeam(companyGridPoint,item.team)})).sort((a,b)=>{if(a.distance&&b.distance)return a.distance.km-b.distance.km;if(a.distance)return -1;if(b.distance)return 1;return a.index-b.index});const next=options[0];ordered.push(next.item);current=next.item;pending.splice(next.index,1)}return ordered};
+        const routeLegs=()=>{const ordered=routeOrder(),legs=[];let previous=null;for(const item of ordered){const distance=previous?nearestPoints(previous.team,item.team):distanceFromPointToTeam(companyGridPoint,item.team);const from=previous?`${previous.category} ${previous.team.crew}`:"公司";legs.push(`<div class="distance-pair">${esc(from)} → ${esc(item.category)} ${esc(item.team.crew)}　${distance?`${distance.km.toFixed(1)} km 直線 <small>(${esc(distance.leftCode)} ↔ ${esc(distance.rightCode)})</small>`:"無可換算點位"}</div>`);previous=item}if(previous){const distance=distanceFromPointToTeam(companyGridPoint,previous.team);legs.push(`<div class="distance-pair">${esc(previous.category)} ${esc(previous.team.crew)} → 公司　${distance?`${distance.km.toFixed(1)} km 直線 <small>(${esc(distance.rightCode)} ↔ ${esc(distance.leftCode)})</small>`:"無可換算點位"}</div>`)}return legs.join("")};
+        const routeHtml=items.length?`<div class="route-legs"><div class="distance-pair"><b>建議環狀工作順序（公司出發並返回）</b></div>${routeLegs()}</div>`:"";
         const workload=items.reduce((counts,item)=>{counts[item.category.toLowerCase()]++;return counts},{a:0,b:0,c:0});
         const loadTier=workloadTier(workload);
-        const detail=items.map(({team,category,proximity})=>{const work=[...new Set(team.jobs.map(j=>j.workSummary||j.description.split(/\r?\n/)[0]).filter(Boolean))].join("／");const place=[...new Set(team.jobs.map(j=>j.location).filter(Boolean))].join("；");const time=[...new Set(team.jobs.map(j=>j.time).filter(Boolean))].join("、");const proximityLabel=proximity?`<div class="assignment-note">${proximity.pairType==="AB"?`A＋B 鄰近配對 · 與 ${esc(proximity.anchorCrew)} 相距`:(proximity.bundle?`C 類候選包同派 · 與 ${esc(proximity.anchorCrew)} 相距`:`${category} 類鄰近併派`)} · ${proximity.km.toFixed(1)} km 直線</div>`:"";return `<div class="brief-job" draggable="true" data-team-key="${esc(teamAssignmentKey(team))}"><div class="brief-title"><span class="class-tag class-${category.toLowerCase()}">${category}</span>${esc(team.crew)} <span class="subtle">${esc(time)}</span></div>${proximityLabel}<div class="brief-work">${esc(work||"未填工作內容")}</div><div class="brief-place">${esc(place||"未填施工地點")}</div></div>`}).join("");
+        const detail=routeOrder().map(({team,category,proximity})=>{const work=[...new Set(team.jobs.map(j=>j.workSummary||j.description.split(/\r?\n/)[0]).filter(Boolean))].join("／");const place=[...new Set(team.jobs.map(j=>j.location).filter(Boolean))].join("；");const time=[...new Set(team.jobs.map(j=>j.time).filter(Boolean))].join("、");const proximityLabel=proximity?`<div class="assignment-note">${proximity.pairType==="AB"?`A＋B 鄰近配對 · 與 ${esc(proximity.anchorCrew)} 相距`:(proximity.bundle?`C 類候選包同派 · 與 ${esc(proximity.anchorCrew)} 相距`:`${category} 類鄰近併派`)} · ${proximity.km.toFixed(1)} km 直線</div>`:"";return `<div class="brief-job" draggable="true" data-team-key="${esc(teamAssignmentKey(team))}"><div class="brief-title"><span class="class-tag class-${category.toLowerCase()}">${category}</span>${esc(team.crew)} <span class="subtle">${esc(time)}</span></div>${proximityLabel}<div class="brief-work">${esc(work||"未填工作內容")}</div><div class="brief-place">${esc(place||"未填施工地點")}</div></div>`}).join("");
         const codes=codeListFor(items);const number=codesFor(items).length;
         return `<article class="staff-card" data-drop-staff="${esc(staff?.id||"")}"><div class="staff-card-head"><strong>${esc(staff?.name||"待人工指派")}</strong><span>${items.length} 組 · ${count} 案件 · 負載第 ${Number.isFinite(loadTier)?loadTier:"—"} 級（A${workload.a}/B${workload.b}/C${workload.c}）</span></div>${items.length?"":`<p class="staff-drop-help">將工作列拖曳至此指派</p>`}${categoryDistance||routeHtml?`<div class="distance-summary"><strong>同仁工作組間代表點距離（直線公里）</strong>${categoryDistance}${routeHtml}</div>`:""}${detail}<div class="grid-code-list">${codes||""}</div></article>`
       }).join("");
@@ -251,9 +549,9 @@
       $("assignment-audit").innerHTML=`<strong>派工檢核</strong><br>${auditLines.join("<br>")}`;
       $("datebadge").textContent=rocDate(selected);$("crewcount").textContent=`${teams.length} 個契約／工作班`;$ ("jobcount").textContent=`${jobs.length} 筆工作`;$ ("coordcount").textContent=`可換算座標 ${state.coordinates.decoded}/${state.coordinates.total}`;
       $("staff-summary").innerHTML=summary||"<div class='empty'>所選日期沒有施工資料</div>";
-      $("tablewrap").innerHTML=rows?`<table><thead><tr><th>指派同仁</th><th>類別</th><th>契約／工作班</th><th>案件 / 時段</th><th>工作內容</th><th>施工地點／圖號座標</th></tr></thead><tbody>${rows}</tbody></table>`:`<div class="empty">所選日期沒有施工資料</div>`;$ ("results").style.display="block";if(scroll)$ ("results").scrollIntoView({behavior:"smooth",block:"start"});
+      $("tablewrap").innerHTML=rows?`<table><thead><tr><th>指派同仁</th><th>類別</th><th>契約／工作班</th><th>案件 / 時段</th><th>工作內容</th><th>施工地點／圖號座標</th></tr></thead><tbody>${rows}</tbody></table>`:`<div class="empty">所選日期沒有施工資料</div>`;$ ("results").style.display="block";updateCloudControls();if(scroll)$ ("results").scrollIntoView({behavior:"smooth",block:"start"});
     }
-    async function initializeRoster(){try{const saved=JSON.parse(localStorage.getItem("dispatch-roster-v2")||"null");if(saved?.roster?.length){state.roster=saved.roster.map(staff=>({...staff,defaultAttending:true,defaultNoncritical:staff.id==="staff-1"}));state.daily=saved.daily||{}}else{const response=await fetch("/api/roster");const initial=await response.json();state.roster=initial.map((s,i)=>({...s,id:`staff-${i+1}`,defaultAttending:true,defaultNoncritical:i===0}));state.daily={}}}catch(e){state.roster=[];state.daily={}}renderRosterTable()}
+    async function initializeRoster(){if(state.staticPreview){const names=["魏沐翔","張德忠","吳貴立","羅俊麟","黃偉均","吳東穎","楊捷先","陳宗偉","余中仁"];state.roster=names.map((name,i)=>({id:`staff-${i+1}`,name,attending:true,noncritical:i===0,supervisor:i!==0,defaultAttending:true,defaultNoncritical:i===0}));state.daily={};$("preview-notice").hidden=false;$("status").textContent="目前為介面預覽；Excel分析需要 Python 後端。";renderRosterTable();return;}try{const saved=JSON.parse(localStorage.getItem("dispatch-roster-v2")||"null");if(saved?.roster?.length){state.roster=saved.roster.map(staff=>({...staff,defaultAttending:true,defaultNoncritical:staff.id==="staff-1"}));state.daily=saved.daily||{}}else{const response=await fetch("/api/roster");const initial=await response.json();state.roster=initial.map((s,i)=>({...s,id:`staff-${i+1}`,defaultAttending:true,defaultNoncritical:i===0}));state.daily={}}}catch(e){state.roster=[];state.daily={}}renderRosterTable()}
     $("roster-rows").addEventListener("change",e=>{const control=e.target;const staff=state.roster.find(s=>s.id===control.dataset.id);if(!staff)return;const field=control.dataset.field;if(field==="name"){const value=control.value.trim();if(value)staff.name=value;else control.value=staff.name}else if(field==="supervisor")staff.supervisor=control.value==="true";else if(field==="attending"||field==="noncritical")flagsFor(staff)[field]=control.value==="true";updateStaffData()});
     $("roster-rows").addEventListener("click",e=>{const button=e.target.closest("button[data-action]");if(!button)return;const i=state.roster.findIndex(s=>s.id===button.dataset.id);if(i<0)return;const action=button.dataset.action;if(action==="delete"){state.roster.splice(i,1);for(const day of Object.values(state.daily))delete day[button.dataset.id]}else{const to=action==="up"?i-1:i+1;if(to<0||to>=state.roster.length)return;[state.roster[i],state.roster[to]]=[state.roster[to],state.roster[i]]}persistRoster();renderRosterTable();if($("results").style.display==="block")renderAssignments(false)});
     $("add-staff").addEventListener("click",()=>{const id=`staff-${Date.now()}`;state.roster.push({id,name:"新同仁",supervisor:true,defaultAttending:true,defaultNoncritical:false});persistRoster();renderRosterTable()});
@@ -270,7 +568,29 @@
     $("first").addEventListener("change",()=>{if($("results").style.display==="block")renderAssignments(false)});
     $("proximity-km").addEventListener("change",()=>{renderAnalysis();if($("results").style.display==="block")renderAssignments(false)});
     ["dragenter","dragover"].forEach(ev=>$ ("drop").addEventListener(ev,e=>{e.preventDefault();$("drop").classList.add("drag")}));["dragleave","drop"].forEach(ev=>$ ("drop").addEventListener(ev,e=>{e.preventDefault();$("drop").classList.remove("drag")}));$("drop").addEventListener("drop",e=>upload(e.dataTransfer.files[0]).then(()=>renderRosterTable()));
+    $("cloud-login").addEventListener("click",()=>cloudLogin(false,false));
+    $("cloud-signup").addEventListener("click",()=>cloudLogin(true,false));
+    $("cloud-logout").addEventListener("click",async()=>{const{error}=await state.supabase.auth.signOut();if(error)cloudStatus(`登出失敗：${error.message}`,true)});
+    $("cloud-save").addEventListener("click",saveCloudRecord);
+    $("cloud-history").addEventListener("change",updateCloudControls);
+    $("cloud-load").addEventListener("click",()=>loadCloudRecord());
+
+    // 歷史查詢 Modal 事件綁定
+    $("nav-history-btn").addEventListener("click",openHistoryModal);
+    const quickBtn=$("quick-history-btn");
+    if(quickBtn)quickBtn.addEventListener("click",openHistoryModal);
+    $("history-modal-close").addEventListener("click",closeHistoryModal);
+    $("history-modal").addEventListener("click",e=>{if(e.target===$("history-modal"))closeHistoryModal()});
+    window.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("history-modal").hidden)closeHistoryModal()});
+    $("modal-cloud-login").addEventListener("click",()=>cloudLogin(false,true));
+    $("modal-cloud-signup").addEventListener("click",()=>cloudLogin(true,true));
+    $("modal-cloud-logout").addEventListener("click",async()=>{const{error}=await state.supabase.auth.signOut();if(error)cloudStatus(`登出失敗：${error.message}`,true)});
+    $("modal-cloud-refresh").addEventListener("click",()=>refreshCloudHistory());
+    $("modal-history-list").addEventListener("click",e=>{const btn=e.target.closest("button[data-load-date]");if(btn)loadCloudRecord(btn.dataset.loadDate)});
+
+    initializeCloud();
     initializeRoster();
+    if(location.hash==="#history")openHistoryModal();
   </script>
 </body>
 </html>

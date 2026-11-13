@@ -3,16 +3,26 @@ from __future__ import annotations
 import base64
 import csv
 import json
+import os
 import re
+import sqlite3
+import threading
 from datetime import date, datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
-from openpyxl import load_workbook
+try:
+    from openpyxl import load_workbook
+except ImportError:
+    load_workbook = None
 
 
 ROOT = Path(__file__).resolve().parent
+POLE_CSV = ROOT / "all.csv"
+POLE_DB = ROOT / "pole-index.sqlite3"
+_pole_index_lock = threading.Lock()
+_pole_index = {"state": "idle", "count": 0, "error": ""}
 ROSTER = [
     {"name": "魏沐翔", "attending": True, "noncritical": True, "supervisor": False},
     {"name": "張德忠", "attending": True, "noncritical": False, "supervisor": True},
@@ -83,6 +93,80 @@ def decode_grid_code(code):
 def normalize_grid_code(value):
     """Normalize whitespace (including zero-width spaces) inside Taipower IDs."""
     return re.sub(r"[\s\u200b\ufeff]+", "", str(value or "")).upper()
+
+
+def _pole_index_is_current():
+    try:
+        return POLE_DB.is_file() and POLE_DB.stat().st_mtime >= POLE_CSV.stat().st_mtime
+    except OSError:
+        return False
+
+
+def _build_pole_index():
+    temporary = ROOT / "pole-index.sqlite3.tmp"
+    try:
+        if not POLE_CSV.is_file():
+            _pole_index.update(state="missing", error="找不到網站資料夾中的 all.csv")
+            return
+        temporary.unlink(missing_ok=True)
+        connection = sqlite3.connect(temporary)
+        connection.execute("PRAGMA journal_mode=OFF")
+        connection.execute("PRAGMA synchronous=OFF")
+        connection.execute("CREATE TABLE poles (code TEXT PRIMARY KEY, pole TEXT, county TEXT, district TEXT, x REAL, y REAL)")
+        with POLE_CSV.open("r", encoding="utf-8-sig", newline="") as handle:
+            reader = csv.DictReader(handle)
+            batch = []
+            for row in reader:
+                code = normalize_grid_code(row.get("圖號座標", ""))
+                pole = str(row.get("桿號", "")).strip()
+                if not code or not pole:
+                    continue
+                try:
+                    x, y = float(row.get("TWD_97_X", "")), float(row.get("TWD_97_Y", ""))
+                except (TypeError, ValueError):
+                    continue
+                batch.append((code, pole, str(row.get("縣市", "")).strip(), str(row.get("行政區", "")).strip(), x, y))
+                if len(batch) >= 50000:
+                    connection.executemany("INSERT OR IGNORE INTO poles VALUES (?, ?, ?, ?, ?, ?)", batch)
+                    connection.commit()
+                    _pole_index["count"] = connection.execute("SELECT COUNT(*) FROM poles").fetchone()[0]
+                    batch.clear()
+            if batch:
+                connection.executemany("INSERT OR IGNORE INTO poles VALUES (?, ?, ?, ?, ?, ?)", batch)
+            connection.execute("CREATE INDEX idx_poles_name ON poles(pole COLLATE NOCASE)")
+            connection.execute("CREATE INDEX idx_poles_code ON poles(code COLLATE NOCASE)")
+            connection.commit()
+            count = connection.execute("SELECT COUNT(*) FROM poles").fetchone()[0]
+        connection.close()
+        os.replace(temporary, POLE_DB)
+        _pole_index.update(state="ready", count=count, error="")
+    except Exception as exc:
+        try:
+            connection.close()
+        except Exception:
+            pass
+        temporary.unlink(missing_ok=True)
+        _pole_index.update(state="error", error=str(exc))
+    finally:
+        _pole_index_lock.release()
+
+
+def _ensure_pole_index():
+    if _pole_index_is_current():
+        if _pole_index["state"] != "ready":
+            try:
+                with sqlite3.connect(POLE_DB) as connection:
+                    count = connection.execute("SELECT COUNT(*) FROM poles").fetchone()[0]
+                _pole_index.update(state="ready", count=count, error="")
+            except sqlite3.Error:
+                pass
+        return
+    if not POLE_CSV.is_file():
+        _pole_index.update(state="missing", error="找不到網站資料夾中的 all.csv")
+        return
+    if _pole_index_lock.acquire(blocking=False):
+        _pole_index.update(state="building", count=0, error="")
+        threading.Thread(target=_build_pole_index, daemon=True).start()
 
 
 def add_grid_coordinates(jobs):
@@ -171,6 +255,8 @@ def date_key(value):
 
 
 def read_excel(payload):
+    if load_workbook is None:
+        raise ValueError("伺服器端尚未安裝 openpyxl，請執行 pip install openpyxl 以支援 Excel 解析。")
     data = base64.b64decode(payload)
     workbook = load_workbook(filename=__import__("io").BytesIO(data), read_only=True, data_only=True)
     sheet = workbook.active
@@ -221,11 +307,57 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(encoded)
 
     def do_GET(self):
-        path = urlparse(self.path).path
+        parsed = urlparse(self.path)
+        path = parsed.path
         if path in ("/", "/index.html"):
             return self._send(200, (ROOT / "index.html").read_bytes(), "text/html; charset=utf-8")
+        if path == "/coordinates.html":
+            return self._send(200, (ROOT / "coordinates.html").read_bytes(), "text/html; charset=utf-8")
+        if path == "/supabase-config.js":
+            config = ROOT / "supabase-config.js"
+            if not config.is_file():
+                return self._send(404, "// Supabase local configuration is not installed.", "text/javascript; charset=utf-8")
+            return self._send(200, config.read_bytes(), "text/javascript; charset=utf-8")
         if path == "/api/roster":
             return self._send(200, json.dumps(ROSTER, ensure_ascii=False))
+        if path == "/api/poles/code":
+            query = normalize_grid_code(parse_qs(parsed.query).get("code", [""])[0])
+            if not query or not _pole_index_is_current():
+                return self._send(200, json.dumps({"state": "not_ready", "pole": None}, ensure_ascii=False))
+            try:
+                with sqlite3.connect(POLE_DB, timeout=10) as connection:
+                    connection.row_factory = sqlite3.Row
+                    row = connection.execute(
+                        "SELECT code, pole, county, district, x, y FROM poles WHERE code = ? LIMIT 1",
+                        (query,),
+                    ).fetchone()
+                return self._send(200, json.dumps({"state": "ready", "pole": dict(row) if row else None}, ensure_ascii=False))
+            except sqlite3.Error as exc:
+                return self._send(500, json.dumps({"error": str(exc)}, ensure_ascii=False))
+        if path in ("/api/poles", "/api/poles/status"):
+            _ensure_pole_index()
+            if path.endswith("/status"):
+                return self._send(200, json.dumps(_pole_index, ensure_ascii=False))
+            if _pole_index["state"] == "building":
+                return self._send(202, json.dumps(_pole_index, ensure_ascii=False))
+            if _pole_index["state"] != "ready":
+                status = 404 if _pole_index["state"] == "missing" else 500
+                return self._send(status, json.dumps({"state": _pole_index["state"], "error": _pole_index["error"]}, ensure_ascii=False))
+            query = parse_qs(parsed.query).get("q", [""])[0].strip()
+            if len(query) < 2:
+                return self._send(200, "[]")
+            escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+            try:
+                with sqlite3.connect(POLE_DB, timeout=10) as connection:
+                    connection.row_factory = sqlite3.Row
+                    rows = connection.execute(
+                        "SELECT code, pole, county, district, x, y FROM poles WHERE pole LIKE ? ESCAPE '\\' OR code LIKE ? ESCAPE '\\' ORDER BY pole LIMIT 25",
+                        (escaped, escaped),
+                    ).fetchall()
+                result = [dict(row) for row in rows]
+                return self._send(200, json.dumps(result, ensure_ascii=False))
+            except sqlite3.Error as exc:
+                return self._send(500, json.dumps({"error": str(exc)}, ensure_ascii=False))
         self._send(404, json.dumps({"error": "找不到頁面"}, ensure_ascii=False))
 
     def do_POST(self):
@@ -245,8 +377,11 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    server = ThreadingHTTPServer(("127.0.0.1", 8000), Handler)
-    print("自動派工雛形已啟動：http://127.0.0.1:8000")
+    host = os.environ.get("HOST", "0.0.0.0")
+    port = int(os.environ.get("PORT", "8000"))
+    server = ThreadingHTTPServer((host, port), Handler)
+    print(f"自動派工雛形已啟動：http://{host}:{port}")
+    print(f"同一區域網路的裝置請使用 Mac mini IP，例如：http://192.168.0.134:{port}/")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

@@ -2,6 +2,7 @@
 *.xlsx
 *.xlsm
 all.csv
+pole-index.sqlite3*
 
 # Local Python artifacts and credentials
 __pycache__/
@@ -9,4 +10,5 @@ __pycache__/
 .env
 .env.*
 !.env.example
+supabase-config.js
 .DS_Store
