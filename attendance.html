@@ -1,0 +1,1034 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>台電檢驗員｜每月出勤</title>
+  <style>
+    :root{
+      --ink:#172a3a;--muted:#6d7b86;--line:#dce5e9;--paper:#fff;--bg:#f3f7f8;
+      --teal:#087f78;--teal2:#dff3ef;--navy:#17364c;--amber:#fff4dc;--shadow:0 12px 32px #1832450c;
+      --red-bg:#fef2f2;--red-ink:#b42318;--red-line:#fecaca;
+      --orange-bg:#fff7ed;--orange-ink:#c2410c;--orange-line:#fed7aa;
+      --purple-bg:#f5f3ff;--purple-ink:#6d28d9;--purple-line:#ddd6fe;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;font-size:15px}
+    header{background:var(--navy);color:#fff;padding:16px max(24px,calc((100% - 1120px)/2));display:flex;align-items:center;justify-content:space-between;gap:18px}
+    .brand{display:flex;gap:12px;align-items:center;flex-shrink:0}
+    .mark{height:40px;width:40px;border-radius:12px;background:#59c5b2;display:grid;place-items:center;color:#123344;font-weight:900;font-size:20px}
+    .brand strong{display:block;font-size:18px;letter-spacing:.04em}
+    .brand span{font-size:12px;color:#b8cbd4}
+    .module-nav{display:flex;align-items:center;justify-content:flex-end;gap:5px 12px;flex-wrap:wrap;max-width:660px}
+    .module-nav a,.module-nav span{font-size:11px;line-height:1.2;text-decoration:none;white-space:nowrap}
+    .module-nav a{color:#dce9ed}
+    .module-nav a:hover{color:#fff}
+    .module-nav .current{font-weight:800;color:#6fe0c9}
+    .module-nav .muted{color:#91a9b2}
+
+    main{max-width:1240px;margin:30px auto;padding:0 24px 60px}
+    .intro{display:flex;justify-content:space-between;align-items:end;margin-bottom:22px;gap:16px}
+    .eyebrow{font-size:11px;letter-spacing:.16em;color:var(--teal);font-weight:800}
+    .intro h1{font-size:27px;letter-spacing:.02em;margin:7px 0 6px}
+    .intro p{margin:0;color:var(--muted);font-size:14px}
+    .step{padding:8px 12px;background:#e8f3f2;color:#216b67;border-radius:20px;font-size:12px;font-weight:700;white-space:nowrap}
+
+    .card{background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden}
+    .card-head{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    .num{width:27px;height:27px;border-radius:9px;background:var(--teal2);color:var(--teal);display:grid;place-items:center;font-size:13px;font-weight:800;flex-shrink:0}
+    .card-head h2{font-size:16px;margin:0}
+
+    /* 月曆控制列 */
+    .cal-toolbar{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .cal-title{font-size:16px;font-weight:800;color:var(--navy);min-width:170px;text-align:center}
+    .btn{border:1px solid var(--line);background:#fff;color:var(--navy);border-radius:8px;padding:7px 12px;font:700 12px inherit;cursor:pointer;transition:.15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+    .btn:hover{border-color:var(--teal);color:var(--teal);background:#f4fbfa}
+    .btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+    .btn.primary:hover{background:#066b65;color:#fff}
+
+    .legend{padding:10px 22px;background:#f8fbfb;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:12px;color:#526673}
+    .legend-item{display:inline-flex;align-items:center;gap:6px}
+    .badge-dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+    .dot-work{background:#10b981}
+    .dot-leave{background:#ef4444}
+    .dot-overtime{background:#f97316}
+    .dot-accept{background:#8b5cf6}
+    .dot-weekend{background:#94a3b8}
+
+    /* 月曆網格 */
+    .cal-grid-wrap{padding:16px 22px 22px}
+    .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:8px}
+    .cal-weekday{text-align:center;font-size:12px;font-weight:800;color:var(--muted);padding:4px 0}
+    .cal-weekday.wknd{color:#b45309}
+    .cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+    .cal-cell{
+      min-height:108px;border:1.5px solid var(--line);border-radius:12px;background:#fff;
+      padding:8px;cursor:pointer;display:flex;flex-direction:column;gap:5px;
+      transition:all .15s;text-align:left;position:relative;
+    }
+    .cal-cell:hover{border-color:#78c2ba;box-shadow:0 4px 12px rgba(8,127,120,0.08)}
+    .cal-cell.other-month{background:#f9fbfc;opacity:.48}
+    .cal-cell.weekend{background:#fafbfc}
+    .cal-cell.holiday{background:#fff8f8;border-color:#f5d0d0}
+    .cal-cell.selected{border-color:var(--teal);box-shadow:0 0 0 3px #087f7826;background:#f4fbfa}
+    .cal-cell-top{display:flex;align-items:center;justify-content:space-between;gap:4px}
+    .cal-day-num{font-size:14px;font-weight:800;color:var(--navy);display:inline-flex;align-items:center;gap:4px}
+    .cal-cell.weekend .cal-day-num{color:#b45309}
+    .cal-cell.holiday .cal-day-num{color:#dc2626}
+    .today-tag{font-size:9px;background:var(--teal);color:#fff;padding:1px 5px;border-radius:4px;font-weight:700}
+    .cal-count{font-size:10px;color:var(--muted);font-weight:700}
+    .cal-tags{display:flex;flex-direction:column;gap:3px;margin-top:2px}
+    .cal-tag{
+      font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent;
+    }
+    .tag-leave{background:var(--red-bg);color:var(--red-ink);border-color:var(--red-line)}
+    .tag-overtime{background:var(--orange-bg);color:var(--orange-ink);border-color:var(--orange-line)}
+    .tag-accept{background:var(--purple-bg);color:var(--purple-ink);border-color:var(--purple-line)}
+    .tag-wknd{background:#f1f5f9;color:#64748b;font-weight:600}
+    .tag-holiday{background:#fee2e2;color:#b91c1c;border-color:#fca5a5;font-weight:800}
+    .tag-task{background:#e0f2fe;color:#0369a1;border-color:#bae6fd;font-weight:800}
+
+    .special-task-banner{
+      margin:14px 22px 0;padding:10px 14px;background:#f0f9ff;border:1px solid #bae6fd;
+      border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+      font-size:13px;color:#0c4a6e;
+    }
+    .special-task-banner .task-empty{color:#64748b;font-size:12px}
+
+    .modal-overlay{position:fixed;inset:0;background:rgba(18,40,56,0.55);backdrop-filter:blur(2px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
+    .modal-overlay[hidden]{display:none!important}
+    .modal-card{background:var(--paper);border-radius:16px;box-shadow:0 24px 48px rgba(0,0,0,0.22);width:100%;max-width:440px;overflow:hidden;border:1px solid var(--line);animation:modalPop .18s ease-out}
+    @keyframes modalPop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+    .modal-head{padding:15px 20px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:space-between}
+    .modal-head h3{margin:0;font-size:15px;font-weight:800}
+    .modal-close{background:none;border:0;color:#c6d8df;font-size:22px;cursor:pointer;line-height:1}
+    .modal-close:hover{color:#fff}
+    .modal-body{padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+    .modal-body label{font-size:12px;font-weight:700;color:var(--navy)}
+    .modal-body input[type="text"]{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px 12px;font:inherit;font-size:14px;color:var(--ink)}
+    .modal-body input[type="text"]:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px #087f7818}
+    .quick-chips{display:flex;gap:6px;flex-wrap:wrap}
+    .chip-btn{border:1px solid var(--line);background:#f8fafb;color:#49616b;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer}
+    .chip-btn:hover{border-color:var(--teal);color:var(--teal);background:#f0faf8}
+    .modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+
+    /* 當日出勤明細面板 */
+    .detail-head{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:#fbfdfd}
+    .detail-title-group{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .detail-title-group h2{margin:0;font-size:17px;color:var(--navy)}
+    .pill{background:#f0f5f6;color:#49616b;border-radius:20px;padding:5px 10px;font-size:11px;font-weight:700}
+    .pill.teal{background:var(--teal2);color:var(--teal)}
+    .pill.red{background:var(--red-bg);color:var(--red-ink)}
+    .pill.purple{background:var(--purple-bg);color:var(--purple-ink)}
+    .pill.orange{background:var(--orange-bg);color:var(--orange-ink)}
+    .detail-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+    .detail-notice{margin:16px 22px 0;padding:10px 14px;background:#eef7f6;border:1px solid #c8e7e3;border-radius:10px;font-size:12px;color:#185854;line-height:1.5}
+
+    .staff-grid{padding:18px 22px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+    .staff-item{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff;display:flex;flex-direction:column;gap:10px;transition:border-color .15s}
+    .staff-item.is-leave{background:#fffafa;border-color:#f8d7da}
+    .staff-item.is-overtime{background:#fffcf8;border-color:#fed7aa}
+    .staff-item.is-accept{background:#fcfaff;border-color:#ddd6fe}
+
+    .staff-item-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .staff-name{font-size:15px;font-weight:800;color:var(--navy);display:flex;align-items:center;gap:8px}
+    .qual-tag{font-size:10px;padding:2px 7px;border-radius:5px;background:#f1f5f6;color:#526673;font-weight:700}
+    .qual-tag.sup{background:#e6f4ea;color:#1e7e34}
+    .status-badge{font-size:11px;font-weight:800;padding:3px 8px;border-radius:6px}
+    .sb-normal{background:#e6f7f2;color:#087f78}
+    .sb-leave{background:var(--red-bg);color:var(--red-ink)}
+    .sb-overtime{background:var(--orange-bg);color:var(--orange-ink)}
+    .sb-accept{background:var(--purple-bg);color:var(--purple-ink)}
+
+    .seg-group{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+    .seg-btn{
+      border:1px solid var(--line);background:#f8fafb;color:#49616b;border-radius:8px;
+      padding:8px 6px;font:700 12px inherit;cursor:pointer;transition:.15s;text-align:center;
+    }
+    .seg-btn:hover{background:#eef3f5}
+    .seg-btn.active-normal{background:var(--teal);border-color:var(--teal);color:#fff}
+    .seg-btn.active-leave{background:#dc2626;border-color:#dc2626;color:#fff}
+    .seg-btn.active-overtime{background:#ea580c;border-color:#ea580c;color:#fff}
+    .seg-btn.active-accept{background:#7c3aed;border-color:#7c3aed;color:#fff}
+
+    .staff-extra{display:flex;align-items:center;gap:8px;padding-top:8px;border-top:1px dashed #edf1f3;font-size:11px;color:var(--muted)}
+    .staff-extra label{display:inline-flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap}
+    .note-input{flex:1;min-width:0;border:1px solid var(--line);border-radius:6px;padding:5px 8px;font:inherit;font-size:11px;color:var(--ink)}
+    .note-input:focus{outline:none;border-color:var(--teal)}
+
+    .roster-details summary{padding:16px 22px;cursor:pointer;display:flex;align-items:center;gap:12px;font-weight:800;font-size:16px;color:var(--navy);list-style:none}
+    .roster-details summary::-webkit-details-marker{display:none}
+    .roster-details summary .summary-hint{margin-left:auto;font-size:12px;color:var(--muted);font-weight:600}
+    .roster-details[open] summary{border-bottom:1px solid var(--line)}
+    .roster-card-body{padding:16px 22px 22px}
+    .roster-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+    .roster-toolbar span{font-size:12px;color:var(--muted)}
+    .roster-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px}
+    .roster-table{width:100%;min-width:540px;border-collapse:collapse}
+    .roster-table th{text-align:left;background:#f8fafb;color:#71818a;font-size:11px;padding:10px 12px;font-weight:700}
+    .roster-table td{border-top:1px solid #edf1f3;padding:8px 12px;font-size:12px;vertical-align:middle}
+    .roster-table input,.roster-table select{font:inherit;font-size:12px;border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:#fff;color:var(--ink)}
+    .roster-table input{width:120px}
+    .roster-actions{white-space:nowrap;display:flex;gap:6px;align-items:center}
+    .roster-actions button{border:1px solid var(--line);background:#fff;color:#526673;cursor:pointer;font-size:11px;padding:4px 8px;border-radius:6px;font-weight:700}
+    .roster-actions button:hover{border-color:var(--teal);color:var(--teal)}
+    .roster-actions button.del-btn:hover{border-color:#dc2626;color:#dc2626;background:#fef2f2}
+
+    .foot{color:#84919a;text-align:center;font-size:11px;margin-top:20px}
+    .app-ver-badge{font-size:10px;font-weight:800;color:#93c5fd;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);padding:3px 7px;border-radius:12px;letter-spacing:.04em}
+    .module-nav a.nav-btn,.nav-btn{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;border-radius:6px;padding:4px 9px;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;line-height:1.2;transition:all .15s;text-decoration:none}
+    .module-nav a.nav-btn:hover,.nav-btn:hover{background:var(--teal);border-color:var(--teal);color:#fff}
+    .cloud-dot{width:7px;height:7px;border-radius:50%;background:#9bb0b8;display:inline-block;transition:all .2s}
+    .cloud-dot.connected{background:#38d39f;box-shadow:0 0 6px #38d39f}
+
+    @media(max-width:850px){
+      header{padding:16px 20px}
+      main{padding:0 16px 40px;margin-top:22px}
+      .intro{align-items:flex-start;flex-direction:column}
+      .cal-cell{min-height:82px;padding:5px}
+      .staff-grid{grid-template-columns:1fr}
+    }
+    @media(max-width:560px){
+      header{align-items:flex-start;flex-direction:column;padding-top:16px;padding-bottom:16px}
+      .module-nav{justify-content:flex-start;gap:8px 13px;max-width:100%}
+      .cal-grid-wrap{padding:10px}
+      .cal-days,.cal-weekdays{gap:4px}
+      .cal-cell{min-height:68px;border-radius:8px}
+      .cal-tag{font-size:9px;padding:1px 4px}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="mark">台</div>
+      <div><strong>台電檢驗員</strong><span>TAIPOWER INSPECTOR</span></div>
+    </div>
+    <nav class="module-nav" aria-label="系統功能">
+      <a class="current" href="attendance.html" aria-current="page">每月出勤</a>
+      <a href="daily.html">每日工作</a>
+      <a href="index.html">派工任務</a>
+      <a href="coordinates.html">圖號座標</a>
+      <span class="muted">路程安排</span>
+      <span class="muted">匯出雲端</span>
+      <span class="muted">報表列印</span>
+      <a class="nav-btn nav-history-btn" href="index.html#history" title="查詢並直接載入雲端派工紀錄"><span class="cloud-dot"></span>歷史查詢</a>
+      <span class="app-ver-badge">V2.2</span>
+    </nav>
+  </header>
+
+  <main>
+    <section class="intro">
+      <div>
+        <div class="eyebrow">ATTENDANCE</div>
+        <h1>每月出勤與排班日曆</h1>
+        <p>點選日曆日期即可查看與設定當日休假、假日加班或驗收（非關鍵性作業）人員；設定將即時同步至「派工任務」工作台。</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div class="num">1</div>
+        <h2>出勤日曆總覽</h2>
+        <div class="cal-toolbar">
+          <button class="btn" id="prev-month" type="button">◀ 上個月</button>
+          <div class="cal-title" id="cal-title">載入中…</div>
+          <button class="btn" id="next-month" type="button">下個月 ▶</button>
+          <button class="btn" id="today-btn" type="button">回到本月</button>
+        </div>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="badge-dot dot-work"></span>正常出勤</span>
+        <span class="legend-item"><span class="badge-dot dot-leave"></span>休假 / 缺勤</span>
+        <span class="legend-item"><span class="badge-dot dot-overtime"></span>假日加班</span>
+        <span class="legend-item"><span class="badge-dot dot-accept"></span>驗收（當天不執行關鍵性作業）</span>
+        <span class="legend-item"><span class="badge-dot" style="background:#dc2626"></span>台灣國定假日／補假</span>
+        <span class="legend-item"><span class="badge-dot" style="background:#0284c7"></span>特別任務（雙擊日期編輯）</span>
+        <span class="legend-item"><span class="badge-dot dot-weekend"></span>週六、日例假</span>
+        <span id="month-summary" style="margin-left:auto;font-weight:700;color:var(--navy)"></span>
+      </div>
+      <div class="cal-grid-wrap">
+        <div class="cal-weekdays">
+          <div class="cal-weekday wknd">日</div>
+          <div class="cal-weekday">一</div>
+          <div class="cal-weekday">二</div>
+          <div class="cal-weekday">三</div>
+          <div class="cal-weekday">四</div>
+          <div class="cal-weekday">五</div>
+          <div class="cal-weekday wknd">六</div>
+        </div>
+        <div class="cal-days" id="cal-days"></div>
+      </div>
+    </section>
+
+    <section class="card" id="daily-detail">
+      <div class="detail-head">
+        <div class="detail-title-group">
+          <div class="num">2</div>
+          <h2 id="selected-date-title">請點選上方日期</h2>
+          <span class="pill" id="day-type-pill">工作日</span>
+          <span class="pill teal" id="stat-attending">出勤 0 人</span>
+          <span class="pill red" id="stat-leave">休假 0 人</span>
+          <span class="pill purple" id="stat-accept">驗收/非關鍵 0 人</span>
+        </div>
+        <div class="detail-actions">
+          <button class="btn" id="all-normal-btn" type="button">全員設為正常出勤</button>
+          <button class="btn" id="all-leave-btn" type="button">全員設為休假</button>
+          <a class="btn primary" id="goto-dispatch-btn" href="index.html">前往派工任務 ➔</a>
+        </div>
+      </div>
+      <div class="special-task-banner" id="special-task-banner">
+        <div id="special-task-text"><span class="task-empty">📌 當日尚無特別任務（可在上方日曆對日期「點兩下」快速新增）</span></div>
+        <button class="btn" id="edit-special-task-btn" type="button">✎ 編輯特別任務</button>
+      </div>
+      <div class="detail-notice">
+        💡 <strong>與派工任務連動說明：</strong>設定「<strong>休假</strong>」時，該同仁當日不會被指派任何工作；設定「<strong>驗收（非關鍵）</strong>」時，該同仁當日「非關鍵性作業」自動設為 <strong>Y</strong>，派工時僅會分配 C 類作業，不會安排 A/B 類關鍵作業；週末設定「<strong>假日加班</strong>」才會納入當日出勤派工名單。
+      </div>
+      <div class="staff-grid" id="staff-grid"></div>
+    </section>
+
+    <section class="card">
+      <details class="roster-details" id="roster-details">
+        <summary>
+          <span class="num">3</span>
+          <span>人員名單異動管理（新增／移除／證照資格）</span>
+          <span class="summary-hint" id="roster-total-hint">點擊展開設定</span>
+        </summary>
+        <div class="roster-card-body">
+          <div class="roster-toolbar">
+            <span>人員名單異動會同步更新至「派工任務」；移除同仁後將同時清除其出勤紀錄。</span>
+            <button class="btn primary" id="add-staff-btn" type="button">＋ 新增同仁</button>
+          </div>
+          <div class="roster-table-wrap">
+            <table class="roster-table">
+              <thead>
+                <tr>
+                  <th>同仁姓名</th>
+                  <th>監造人員證照（固定資格）</th>
+                  <th>順序與移除</th>
+                </tr>
+              </thead>
+              <tbody id="roster-manage-rows"></tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <div class="foot">出勤紀錄儲存在目前瀏覽器本機（與派工任務共用同一份人員及每日狀態資料）。</div>
+  </main>
+
+  <div class="modal-overlay" id="task-modal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="task-modal-title">
+      <div class="modal-head">
+        <h3 id="task-modal-title">📌 編輯當日特別任務</h3>
+        <button class="modal-close" id="task-modal-close" type="button" aria-label="關閉">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="task-modal-date" style="font-size:13px;font-weight:800;color:var(--teal)"></div>
+        <label for="task-modal-input">特別任務／重要事項內容</label>
+        <input id="task-modal-input" type="text" placeholder="例如：XX變電所驗收、大修停電會勘、安全講習…" maxlength="60">
+        <div class="quick-chips">
+          <button type="button" class="chip-btn" data-chip="停電驗收">停電驗收</button>
+          <button type="button" class="chip-btn" data-chip="現場會勘">現場會勘</button>
+          <button type="button" class="chip-btn" data-chip="教育訓練">教育訓練</button>
+          <button type="button" class="chip-btn" data-chip="安全檢查">安全檢查</button>
+          <button type="button" class="chip-btn" data-chip="">清除內容</button>
+        </div>
+        <div class="modal-foot">
+          <button type="button" class="btn" id="task-modal-cancel">取消</button>
+          <button type="button" class="btn primary" id="task-modal-save">儲存任務</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const FALLBACK_ROSTER = [
+      { id: "staff-1", name: "魏沐翔", supervisor: false, defaultAttending: true, defaultNoncritical: true },
+      { id: "staff-2", name: "張德忠", supervisor: true, defaultAttending: true, defaultNoncritical: false },
+      { id: "staff-3", name: "吳貴立", supervisor: true, defaultAttending: true, defaultNoncritical: false },
+      { id: "staff-4", name: "羅俊麟", supervisor: true, defaultAttending: true, defaultNoncritical: false },
+      { id: "staff-5", name: "黃偉均", supervisor: true, defaultAttending: true, defaultNoncritical: false },
+      { id: "staff-6", name: "吳東穎", supervisor: true, defaultAttending: true, defaultNoncritical: false },
+      { id: "staff-7", name: "楊捷先", supervisor: true, defaultAttending: true, defaultNoncritical: false },
+      { id: "staff-8", name: "陳宗偉", supervisor: true, defaultAttending: true, defaultNoncritical: false },
+      { id: "staff-9", name: "余中仁", supervisor: true, defaultAttending: true, defaultNoncritical: false }
+    ];
+
+    const now = new Date();
+    const state = {
+      roster: [],
+      daily: {},
+      dayNotes: {},
+      editingTaskDate: null,
+      viewYear: now.getFullYear(),
+      viewMonth: now.getMonth(), // 0-11
+      selectedDate: formatDate(now.getFullYear(), now.getMonth(), now.getDate())
+    };
+
+    function formatDate(y, m, d) {
+      return `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    }
+
+    function rocDateLabel(dateStr) {
+      const [y, m, d] = dateStr.split("-").map(Number);
+      const dt = new Date(y, m - 1, d);
+      const weekdays = ["日", "一", "二", "三", "四", "五", "六"];
+      return `民國 ${y - 1911} 年 ${m} 月 ${d} 日（星期${weekdays[dt.getDay()]}）`;
+    }
+
+    // 台灣人事行政總處 115年(2026) & 116年(2027) 官方國定假日與補假資料
+    const TW_HOLIDAYS = {
+      // 2026 (民國 115 年)
+      "2026-01-01": "開國紀念日",
+      "2026-02-15": "小年夜",
+      "2026-02-16": "農曆除夕",
+      "2026-02-17": "春節初一",
+      "2026-02-18": "春節初二",
+      "2026-02-19": "春節初三",
+      "2026-02-20": "補假(小年夜)",
+      "2026-02-27": "補假(228)",
+      "2026-02-28": "和平紀念日",
+      "2026-04-03": "補假(兒童節)",
+      "2026-04-04": "兒童節",
+      "2026-04-05": "清明節",
+      "2026-04-06": "補假(清明節)",
+      "2026-05-01": "勞動節",
+      "2026-06-19": "端午節",
+      "2026-09-25": "中秋節",
+      "2026-09-28": "教師節",
+      "2026-10-09": "補假(國慶日)",
+      "2026-10-10": "國慶日",
+      "2026-10-25": "臺灣光復節",
+      "2026-10-26": "補假(光復節)",
+      "2026-12-25": "行憲紀念日",
+      // 2027 (民國 116 年)
+      "2027-01-01": "開國紀念日",
+      "2027-02-04": "小年夜",
+      "2027-02-05": "農曆除夕",
+      "2027-02-06": "春節初一",
+      "2027-02-07": "春節初二",
+      "2027-02-08": "春節初三",
+      "2027-02-09": "補假(初一)",
+      "2027-02-10": "補假(初二)",
+      "2027-02-28": "和平紀念日",
+      "2027-03-01": "補假(228)",
+      "2027-04-04": "兒童節",
+      "2027-04-05": "清明節",
+      "2027-04-06": "補假(兒童節)",
+      "2027-04-30": "補假(勞動節)",
+      "2027-05-01": "勞動節",
+      "2027-06-09": "端午節",
+      "2027-09-15": "中秋節",
+      "2027-09-28": "教師節",
+      "2027-10-10": "國慶日",
+      "2027-10-11": "補假(國慶日)",
+      "2027-10-25": "臺灣光復節",
+      "2027-12-24": "補假(行憲日)",
+      "2027-12-25": "行憲紀念日",
+      "2027-12-31": "補假(117元旦)"
+    };
+    const TW_MAKEUP_DAYS = {}; // 115、116年均無週六補班
+    const loadedCalendarYears = new Set([2026, 2027]);
+
+    async function ensureTaiwanCalendarYear(year) {
+      if (loadedCalendarYears.has(year)) return;
+      loadedCalendarYears.add(year);
+      try {
+        const res = await fetch(`https://cdn.jsdelivr.net/gh/ruyut/TaiwanCalendar/data/${year}.json`);
+        if (!res.ok) return;
+        const rows = await res.json();
+        for (const r of rows) {
+          const d = `${r.date.slice(0, 4)}-${r.date.slice(4, 6)}-${r.date.slice(6, 8)}`;
+          if (r.isHoliday) {
+            if (r.description) TW_HOLIDAYS[d] = r.description;
+          } else {
+            const dt = new Date(Number(r.date.slice(0, 4)), Number(r.date.slice(4, 6)) - 1, Number(r.date.slice(6, 8)));
+            if (dt.getDay() === 0 || dt.getDay() === 6) {
+              TW_MAKEUP_DAYS[d] = r.description || "補行上班日";
+            }
+          }
+        }
+        renderCalendar();
+        renderDailyDetail();
+      } catch (_) {}
+    }
+
+    function getHolidayName(dateStr) {
+      return TW_HOLIDAYS[dateStr] || "";
+    }
+
+    function isWeekend(dateStr) {
+      if (TW_MAKEUP_DAYS[dateStr]) return false; // 補班日視為工作日
+      if (TW_HOLIDAYS[dateStr]) return true;     // 國定假日/補假視為放假日
+      const [y, m, d] = dateStr.split("-").map(Number);
+      const day = new Date(y, m - 1, d).getDay();
+      return day === 0 || day === 6;
+    }
+
+    function persistRoster() {
+      try {
+        localStorage.setItem("dispatch-roster-v2", JSON.stringify({ roster: state.roster, daily: state.daily }));
+      } catch (e) {
+        console.warn("無法儲存出勤資料", e);
+      }
+    }
+
+    function persistDayNotes() {
+      try {
+        localStorage.setItem("dispatch-day-notes-v1", JSON.stringify(state.dayNotes));
+      } catch (e) {
+        console.warn("無法儲存特別任務", e);
+      }
+    }
+
+    function getStaffDayRecord(staff, dateStr) {
+      const dayMap = state.daily[dateStr];
+      const weekend = isWeekend(dateStr);
+      if (dayMap && dayMap[staff.id]) {
+        const rec = dayMap[staff.id];
+        // 相容舊資料：推斷 statusType
+        let statusType = rec.statusType;
+        if (!statusType) {
+          if (!rec.attending) statusType = "leave";
+          else if (weekend) statusType = rec.noncritical && !staff.defaultNoncritical ? "acceptance" : "overtime";
+          else if (rec.noncritical && !staff.defaultNoncritical) statusType = "acceptance";
+          else statusType = "normal";
+        }
+        return {
+          attending: !!rec.attending,
+          noncritical: !!rec.noncritical,
+          statusType,
+          note: rec.note || ""
+        };
+      }
+      // 尚未特別設定過的日期預設值
+      if (weekend) {
+        return {
+          attending: false,
+          noncritical: staff.defaultNoncritical ?? false,
+          statusType: "leave",
+          note: ""
+        };
+      }
+      return {
+        attending: staff.defaultAttending ?? true,
+        noncritical: staff.defaultNoncritical ?? false,
+        statusType: "normal",
+        note: ""
+      };
+    }
+
+    function ensureDayInitialized(dateStr) {
+      if (!state.daily[dateStr]) state.daily[dateStr] = {};
+      for (const staff of state.roster) {
+        if (!state.daily[dateStr][staff.id]) {
+          state.daily[dateStr][staff.id] = getStaffDayRecord(staff, dateStr);
+        }
+      }
+    }
+
+    function setStaffStatus(staffId, dateStr, mode) {
+      ensureDayInitialized(dateStr);
+      const staff = state.roster.find(s => s.id === staffId);
+      if (!staff) return;
+      const existing = state.daily[dateStr][staffId] || {};
+      const weekend = isWeekend(dateStr);
+
+      if (mode === "normal") {
+        state.daily[dateStr][staffId] = {
+          attending: true,
+          noncritical: staff.defaultNoncritical ?? false,
+          statusType: "normal",
+          note: existing.note || ""
+        };
+      } else if (mode === "leave") {
+        state.daily[dateStr][staffId] = {
+          attending: false,
+          noncritical: staff.defaultNoncritical ?? false,
+          statusType: "leave",
+          note: existing.note || ""
+        };
+      } else if (mode === "overtime") {
+        state.daily[dateStr][staffId] = {
+          attending: true,
+          noncritical: staff.defaultNoncritical ?? false,
+          statusType: "overtime",
+          note: existing.note || ""
+        };
+      } else if (mode === "acceptance") {
+        state.daily[dateStr][staffId] = {
+          attending: true,
+          noncritical: true,
+          statusType: weekend ? "overtime_acceptance" : "acceptance",
+          note: existing.note || ""
+        };
+      }
+      persistRoster();
+      renderCalendar();
+      renderDailyDetail();
+    }
+
+    function renderCalendar() {
+      const y = state.viewYear;
+      const m = state.viewMonth;
+      ensureTaiwanCalendarYear(y);
+      $("cal-title").textContent = `民國 ${y - 1911} 年 ${m + 1} 月（${y}-${String(m + 1).padStart(2, "0")}）`;
+
+      const firstDay = new Date(y, m, 1);
+      const startOffset = firstDay.getDay();
+      const daysInMonth = new Date(y, m + 1, 0).getDate();
+      const prevMonthDays = new Date(y, m, 0).getDate();
+      const totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+      const todayStr = formatDate(now.getFullYear(), now.getMonth(), now.getDate());
+
+      let workDaysCount = 0, holidayDaysCount = 0;
+      let html = "";
+      for (let i = 0; i < totalCells; i++) {
+        let cellY = y, cellM = m, cellD, isOther = false;
+        if (i < startOffset) {
+          cellD = prevMonthDays - startOffset + i + 1;
+          cellM = m - 1;
+          if (cellM < 0) { cellM = 11; cellY--; }
+          isOther = true;
+        } else if (i >= startOffset + daysInMonth) {
+          cellD = i - startOffset - daysInMonth + 1;
+          cellM = m + 1;
+          if (cellM > 11) { cellM = 0; cellY++; }
+          isOther = true;
+        } else {
+          cellD = i - startOffset + 1;
+        }
+
+        const dateStr = formatDate(cellY, cellM, cellD);
+        const weekend = isWeekend(dateStr);
+        const holidayName = getHolidayName(dateStr);
+        if (!isOther) {
+          if (weekend) holidayDaysCount++;
+          else workDaysCount++;
+        }
+        const isToday = dateStr === todayStr;
+        const isSelected = dateStr === state.selectedDate;
+
+        // 統計當日異常/特殊狀態以便在日曆格顯示
+        const leaves = [];
+        const overtimes = [];
+        const acceptances = [];
+        let attendingCount = 0;
+
+        for (const staff of state.roster) {
+          const rec = getStaffDayRecord(staff, dateStr);
+          if (rec.attending) attendingCount++;
+          if (!rec.attending && (!weekend || rec.note)) {
+            leaves.push(staff.name);
+          } else if (rec.statusType === "overtime" || (weekend && rec.attending && rec.statusType !== "overtime_acceptance")) {
+            overtimes.push(staff.name);
+          } else if (rec.statusType === "acceptance" || rec.statusType === "overtime_acceptance") {
+            if (rec.statusType === "overtime_acceptance") overtimes.push(staff.name);
+            acceptances.push(staff.name);
+          } else if (rec.noncritical && !staff.defaultNoncritical && rec.attending) {
+            acceptances.push(staff.name);
+          }
+        }
+
+        const tags = [];
+        const specialTask = state.dayNotes[dateStr];
+        if (holidayName) {
+          tags.push(`<span class="cal-tag tag-holiday" title="${esc(holidayName)}">${esc(holidayName)}</span>`);
+        } else if (weekend && !overtimes.length && !acceptances.length && !leaves.length && !specialTask) {
+          tags.push('<span class="cal-tag tag-wknd">例假日</span>');
+        }
+        if (specialTask) {
+          tags.push(`<span class="cal-tag tag-task" title="特別任務：${esc(specialTask)}">📌 ${esc(specialTask)}</span>`);
+        }
+        overtimes.forEach(name => tags.push(`<span class="cal-tag tag-overtime" title="假日加班：${esc(name)}">加班：${esc(name)}</span>`));
+        acceptances.forEach(name => tags.push(`<span class="cal-tag tag-accept" title="驗收/非關鍵作業：${esc(name)}">驗收：${esc(name)}</span>`));
+        leaves.forEach(name => tags.push(`<span class="cal-tag tag-leave" title="休假：${esc(name)}">休：${esc(name)}</span>`));
+
+        const countText = weekend
+          ? (attendingCount > 0 ? `加班 ${attendingCount}人` : (holidayName ? "放假" : "休"))
+          : `${attendingCount}/${state.roster.length}人`;
+
+        html += `
+          <button type="button" class="cal-cell${isOther ? " other-month" : ""}${holidayName ? " holiday" : (weekend ? " weekend" : "")}${isSelected ? " selected" : ""}" data-date="${dateStr}">
+            <div class="cal-cell-top">
+              <span class="cal-day-num">${cellD}${isToday ? '<span class="today-tag">今</span>' : ""}</span>
+              <span class="cal-count">${countText}</span>
+            </div>
+            <div class="cal-tags">${tags.join("")}</div>
+          </button>
+        `;
+      }
+      $("cal-days").innerHTML = html;
+      const summaryEl = $("month-summary");
+      if (summaryEl) summaryEl.textContent = `本月工作日 ${workDaysCount} 天 · 假日 ${holidayDaysCount} 天`;
+    }
+
+    function renderDailyDetail() {
+      const dateStr = state.selectedDate;
+      const weekend = isWeekend(dateStr);
+      const holidayName = getHolidayName(dateStr);
+      const makeupName = TW_MAKEUP_DAYS[dateStr];
+      $("selected-date-title").textContent = rocDateLabel(dateStr);
+      if (holidayName) {
+        $("day-type-pill").textContent = `國定假日：${holidayName}`;
+        $("day-type-pill").className = "pill red";
+      } else if (makeupName) {
+        $("day-type-pill").textContent = makeupName;
+        $("day-type-pill").className = "pill";
+      } else {
+        $("day-type-pill").textContent = weekend ? "週六／日例假" : "正常工作日";
+        $("day-type-pill").className = weekend ? "pill orange" : "pill";
+      }
+      $("goto-dispatch-btn").href = `index.html?date=${encodeURIComponent(dateStr)}`;
+      const specialTask = state.dayNotes[dateStr];
+      $("special-task-text").innerHTML = specialTask
+        ? `📌 <strong>當日特別任務：</strong>${esc(specialTask)}`
+        : `<span class="task-empty">📌 當日尚無特別任務（可在上方日曆對日期「點兩下」快速新增）</span>`;
+
+      let attendingCount = 0, leaveCount = 0, noncriticalCount = 0;
+      const cardsHtml = state.roster.map(staff => {
+        const rec = getStaffDayRecord(staff, dateStr);
+        if (rec.attending) attendingCount++;
+        else leaveCount++;
+        if (rec.attending && rec.noncritical) noncriticalCount++;
+
+        const isLeave = !rec.attending;
+        const isOvertime = rec.attending && (rec.statusType === "overtime" || rec.statusType === "overtime_acceptance" || weekend);
+        const isAccept = rec.attending && (rec.statusType === "acceptance" || rec.statusType === "overtime_acceptance" || (rec.noncritical && !staff.defaultNoncritical));
+
+        let badgeClass = "sb-normal", badgeText = "正常出勤";
+        if (isLeave) { badgeClass = "sb-leave"; badgeText = weekend ? "例假休息" : "休假／缺勤"; }
+        else if (rec.statusType === "overtime_acceptance") { badgeClass = "sb-accept"; badgeText = "假日加班＋驗收"; }
+        else if (isOvertime && isAccept) { badgeClass = "sb-accept"; badgeText = "假日加班＋驗收"; }
+        else if (isAccept) { badgeClass = "sb-accept"; badgeText = "驗收（非關鍵）"; }
+        else if (isOvertime) { badgeClass = "sb-overtime"; badgeText = "假日加班"; }
+
+        const cardExtraClass = isLeave ? " is-leave" : isAccept ? " is-accept" : isOvertime ? " is-overtime" : "";
+
+        const buttonsHtml = weekend
+          ? `
+            <button type="button" class="seg-btn${isLeave ? " active-leave" : ""}" data-staff="${esc(staff.id)}" data-mode="leave">例假休息</button>
+            <button type="button" class="seg-btn${!isLeave && !isAccept ? " active-overtime" : ""}" data-staff="${esc(staff.id)}" data-mode="overtime">假日加班</button>
+            <button type="button" class="seg-btn${!isLeave && isAccept ? " active-accept" : ""}" data-staff="${esc(staff.id)}" data-mode="acceptance">加班＋驗收</button>
+          `
+          : `
+            <button type="button" class="seg-btn${!isLeave && !isAccept ? " active-normal" : ""}" data-staff="${esc(staff.id)}" data-mode="normal">正常出勤</button>
+            <button type="button" class="seg-btn${isLeave ? " active-leave" : ""}" data-staff="${esc(staff.id)}" data-mode="leave">休假</button>
+            <button type="button" class="seg-btn${!isLeave && isAccept ? " active-accept" : ""}" data-staff="${esc(staff.id)}" data-mode="acceptance">驗收(非關鍵)</button>
+          `;
+
+        return `
+          <article class="staff-item${cardExtraClass}">
+            <div class="staff-item-head">
+              <div class="staff-name">
+                ${esc(staff.name)}
+                <span class="qual-tag${staff.supervisor ? " sup" : ""}">${staff.supervisor ? "有監造照" : "無監造照"}</span>
+              </div>
+              <span class="status-badge ${badgeClass}">${badgeText}</span>
+            </div>
+            <div class="seg-group">${buttonsHtml}</div>
+            <div class="staff-extra">
+              <label title="勾選後當天僅能分配 C 類工作，不可執行 A/B 類關鍵作業">
+                <input type="checkbox" data-nc-staff="${esc(staff.id)}" ${rec.noncritical ? "checked" : ""} ${isLeave ? "disabled" : ""}>
+                非關鍵性作業 (Y)
+              </label>
+              <input class="note-input" type="text" data-note-staff="${esc(staff.id)}" value="${esc(rec.note)}" placeholder="備註（如：特休、XX驗收）">
+            </div>
+          </article>
+        `;
+      }).join("");
+
+      $("stat-attending").textContent = `出勤 ${attendingCount} 人`;
+      $("stat-leave").textContent = `休假 ${leaveCount} 人`;
+      $("stat-accept").textContent = `非關鍵作業 ${noncriticalCount} 人`;
+      $("staff-grid").innerHTML = cardsHtml;
+    }
+
+    async function initializeRoster() {
+      try {
+        const saved = JSON.parse(localStorage.getItem("dispatch-roster-v2") || "null");
+        if (saved?.roster?.length) {
+          state.roster = saved.roster.map(s => ({ ...s, defaultAttending: true, defaultNoncritical: s.id === "staff-1" }));
+          state.daily = saved.daily || {};
+        } else {
+          const response = await fetch("/api/roster");
+          const initial = await response.json();
+          state.roster = initial.map((s, i) => ({ ...s, id: `staff-${i + 1}`, defaultAttending: true, defaultNoncritical: i === 0 }));
+          state.daily = {};
+        }
+      } catch (e) {
+        state.roster = FALLBACK_ROSTER;
+        state.daily = {};
+      }
+      try {
+        state.dayNotes = JSON.parse(localStorage.getItem("dispatch-day-notes-v1") || "{}") || {};
+      } catch (e) {
+        state.dayNotes = {};
+      }
+      renderCalendar();
+      renderDailyDetail();
+      renderRosterManage();
+    }
+
+    function renderRosterManage() {
+      const hint = $("roster-total-hint");
+      if (hint) hint.textContent = `目前共 ${state.roster.length} 位同仁（點擊展開調整）`;
+      const tbody = $("roster-manage-rows");
+      if (!tbody) return;
+      tbody.innerHTML = state.roster.map((staff, idx) => `
+        <tr>
+          <td>
+            <input type="text" data-rm-field="name" data-id="${esc(staff.id)}" value="${esc(staff.name)}" aria-label="同仁姓名">
+          </td>
+          <td>
+            <select data-rm-field="supervisor" data-id="${esc(staff.id)}" aria-label="監造證照">
+              <option value="true"${staff.supervisor ? " selected" : ""}>有監造證照</option>
+              <option value="false"${!staff.supervisor ? " selected" : ""}>無監造證照</option>
+            </select>
+          </td>
+          <td>
+            <div class="roster-actions">
+              <button type="button" data-rm-action="up" data-id="${esc(staff.id)}" ${idx === 0 ? "disabled" : ""}>↑ 上移</button>
+              <button type="button" data-rm-action="down" data-id="${esc(staff.id)}" ${idx === state.roster.length - 1 ? "disabled" : ""}>↓ 下移</button>
+              <button type="button" class="del-btn" data-rm-action="delete" data-id="${esc(staff.id)}">移除</button>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    // 事件監聽
+    $("prev-month").addEventListener("click", () => {
+      state.viewMonth--;
+      if (state.viewMonth < 0) { state.viewMonth = 11; state.viewYear--; }
+      renderCalendar();
+    });
+    $("next-month").addEventListener("click", () => {
+      state.viewMonth++;
+      if (state.viewMonth > 11) { state.viewMonth = 0; state.viewYear++; }
+      renderCalendar();
+    });
+    $("today-btn").addEventListener("click", () => {
+      const today = new Date();
+      state.viewYear = today.getFullYear();
+      state.viewMonth = today.getMonth();
+      state.selectedDate = formatDate(state.viewYear, state.viewMonth, today.getDate());
+      renderCalendar();
+      renderDailyDetail();
+    });
+
+    $("cal-days").addEventListener("click", e => {
+      const cell = e.target.closest(".cal-cell[data-date]");
+      if (!cell) return;
+      const clickedDate = cell.dataset.date;
+      const [y, m] = clickedDate.split("-").map(Number);
+      state.selectedDate = clickedDate;
+      if (y !== state.viewYear || (m - 1) !== state.viewMonth) {
+        state.viewYear = y;
+        state.viewMonth = m - 1;
+        renderCalendar();
+      } else {
+        const prev = $("cal-days").querySelector(".cal-cell.selected");
+        if (prev) prev.classList.remove("selected");
+        cell.classList.add("selected");
+      }
+      renderDailyDetail();
+    });
+
+    $("staff-grid").addEventListener("click", e => {
+      const btn = e.target.closest("button[data-mode]");
+      if (!btn) return;
+      setStaffStatus(btn.dataset.staff, state.selectedDate, btn.dataset.mode);
+    });
+
+    $("staff-grid").addEventListener("change", e => {
+      const ncCheck = e.target.closest("input[data-nc-staff]");
+      if (ncCheck) {
+        const staffId = ncCheck.dataset.ncStaff;
+        ensureDayInitialized(state.selectedDate);
+        const rec = state.daily[state.selectedDate][staffId];
+        rec.noncritical = ncCheck.checked;
+        const staff = state.roster.find(s => s.id === staffId);
+        const weekend = isWeekend(state.selectedDate);
+        if (rec.attending) {
+          if (ncCheck.checked && !staff?.defaultNoncritical) {
+            rec.statusType = weekend ? "overtime_acceptance" : "acceptance";
+          } else if (!ncCheck.checked) {
+            rec.statusType = weekend ? "overtime" : "normal";
+          }
+        }
+        persistRoster();
+        renderCalendar();
+        renderDailyDetail();
+      }
+    });
+
+    $("staff-grid").addEventListener("input", e => {
+      const noteInput = e.target.closest("input[data-note-staff]");
+      if (noteInput) {
+        ensureDayInitialized(state.selectedDate);
+        state.daily[state.selectedDate][noteInput.dataset.noteStaff].note = noteInput.value;
+        persistRoster();
+      }
+    });
+
+    $("all-normal-btn").addEventListener("click", () => {
+      ensureDayInitialized(state.selectedDate);
+      const weekend = isWeekend(state.selectedDate);
+      for (const staff of state.roster) {
+        state.daily[state.selectedDate][staff.id] = {
+          attending: true,
+          noncritical: staff.defaultNoncritical ?? false,
+          statusType: weekend ? "overtime" : "normal",
+          note: state.daily[state.selectedDate][staff.id]?.note || ""
+        };
+      }
+      persistRoster();
+      renderCalendar();
+      renderDailyDetail();
+    });
+
+    $("all-leave-btn").addEventListener("click", () => {
+      ensureDayInitialized(state.selectedDate);
+      for (const staff of state.roster) {
+        state.daily[state.selectedDate][staff.id] = {
+          attending: false,
+          noncritical: staff.defaultNoncritical ?? false,
+          statusType: "leave",
+          note: state.daily[state.selectedDate][staff.id]?.note || ""
+        };
+      }
+      persistRoster();
+      renderCalendar();
+      renderDailyDetail();
+    });
+
+    // 人員異動管理事件
+    $("add-staff-btn").addEventListener("click", () => {
+      const id = `staff-${Date.now()}`;
+      state.roster.push({ id, name: "新同仁", supervisor: true, defaultAttending: true, defaultNoncritical: false });
+      persistRoster();
+      renderRosterManage();
+      renderCalendar();
+      renderDailyDetail();
+    });
+
+    $("roster-manage-rows").addEventListener("change", e => {
+      const ctrl = e.target;
+      const staff = state.roster.find(s => s.id === ctrl.dataset.id);
+      if (!staff) return;
+      const field = ctrl.dataset.rmField;
+      if (field === "name") {
+        const val = ctrl.value.trim();
+        if (val) staff.name = val;
+        else ctrl.value = staff.name;
+      } else if (field === "supervisor") {
+        staff.supervisor = ctrl.value === "true";
+      }
+      persistRoster();
+      renderRosterManage();
+      renderCalendar();
+      renderDailyDetail();
+    });
+
+    $("roster-manage-rows").addEventListener("click", e => {
+      const btn = e.target.closest("button[data-rm-action]");
+      if (!btn) return;
+      const idx = state.roster.findIndex(s => s.id === btn.dataset.id);
+      if (idx < 0) return;
+      const action = btn.dataset.rmAction;
+      if (action === "delete") {
+        if (!confirm(`確定要移除「${state.roster[idx].name}」嗎？此動作會同步移除該員在派工任務的名單與出勤紀錄。`)) return;
+        const removedId = state.roster[idx].id;
+        state.roster.splice(idx, 1);
+        for (const day of Object.values(state.daily)) {
+          delete day[removedId];
+        }
+      } else {
+        const to = action === "up" ? idx - 1 : idx + 1;
+        if (to < 0 || to >= state.roster.length) return;
+        [state.roster[idx], state.roster[to]] = [state.roster[to], state.roster[idx]];
+      }
+      persistRoster();
+      renderRosterManage();
+      renderCalendar();
+      renderDailyDetail();
+    });
+
+    // 特別任務彈窗控制（雙擊日期或點擊編輯）
+    function openTaskModal(dateStr) {
+      state.editingTaskDate = dateStr;
+      $("task-modal-date").textContent = rocDateLabel(dateStr);
+      $("task-modal-input").value = state.dayNotes[dateStr] || "";
+      $("task-modal").hidden = false;
+      setTimeout(() => $("task-modal-input").focus(), 30);
+    }
+    function closeTaskModal() {
+      $("task-modal").hidden = true;
+      state.editingTaskDate = null;
+    }
+    function saveTaskModal() {
+      const dateStr = state.editingTaskDate;
+      if (!dateStr) return;
+      const val = $("task-modal-input").value.trim();
+      if (val) state.dayNotes[dateStr] = val;
+      else delete state.dayNotes[dateStr];
+      persistDayNotes();
+      closeTaskModal();
+      renderCalendar();
+      renderDailyDetail();
+    }
+
+    $("cal-days").addEventListener("dblclick", e => {
+      const cell = e.target.closest(".cal-cell[data-date]");
+      if (!cell) return;
+      openTaskModal(cell.dataset.date);
+    });
+    $("edit-special-task-btn").addEventListener("click", () => openTaskModal(state.selectedDate));
+    $("task-modal-close").addEventListener("click", closeTaskModal);
+    $("task-modal-cancel").addEventListener("click", closeTaskModal);
+    $("task-modal-save").addEventListener("click", saveTaskModal);
+    $("task-modal").addEventListener("click", e => { if (e.target === $("task-modal")) closeTaskModal(); });
+    $("task-modal-input").addEventListener("keydown", e => {
+      if (e.key === "Enter") { e.preventDefault(); saveTaskModal(); }
+      else if (e.key === "Escape") closeTaskModal();
+    });
+    $("task-modal").addEventListener("click", e => {
+      const chip = e.target.closest("button[data-chip]");
+      if (!chip) return;
+      $("task-modal-input").value = chip.dataset.chip;
+      $("task-modal-input").focus();
+    });
+
+    window.addEventListener("storage", e => {
+      if (e.key === "dispatch-roster-v2" && e.newValue) {
+        try {
+          const saved = JSON.parse(e.newValue);
+          if (saved?.roster?.length) {
+            state.roster = saved.roster.map(s => ({ ...s, defaultAttending: true, defaultNoncritical: s.id === "staff-1" }));
+            state.daily = saved.daily || {};
+            renderRosterManage();
+            renderCalendar();
+            renderDailyDetail();
+          }
+        } catch (_) {}
+      } else if (e.key === "dispatch-day-notes-v1" && e.newValue) {
+        try {
+          state.dayNotes = JSON.parse(e.newValue) || {};
+          renderCalendar();
+          renderDailyDetail();
+        } catch (_) {}
+      }
+    });
+
+    initializeRoster();
+  </script>
+  <script src="version.js"></script>
+</body>
+</html>

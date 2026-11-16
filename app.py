@@ -313,6 +313,12 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, (ROOT / "index.html").read_bytes(), "text/html; charset=utf-8")
         if path == "/coordinates.html":
             return self._send(200, (ROOT / "coordinates.html").read_bytes(), "text/html; charset=utf-8")
+        if path == "/attendance.html":
+            return self._send(200, (ROOT / "attendance.html").read_bytes(), "text/html; charset=utf-8")
+        if path == "/daily.html":
+            return self._send(200, (ROOT / "daily.html").read_bytes(), "text/html; charset=utf-8")
+        if path == "/version.js":
+            return self._send(200, (ROOT / "version.js").read_bytes(), "text/javascript; charset=utf-8")
         if path == "/supabase-config.js":
             config = ROOT / "supabase-config.js"
             if not config.is_file():

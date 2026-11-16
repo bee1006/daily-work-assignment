@@ -23,7 +23,7 @@
     .analysis-preview{display:none;margin-top:18px;padding:16px 20px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}.analysis-preview h2{margin:0 0 6px;font-size:15px}.analysis-preview p{margin:0 0 10px;color:var(--muted);font-size:11px}.analysis-table{overflow:auto;max-height:360px}.analysis-table table{min-width:680px}.analysis-table td,.analysis-table th{padding:8px 10px;font-size:11px}.analysis-bundles{padding:10px 12px;background:#f4f8f9;border-radius:9px;font-size:11px;line-height:1.7;color:#405967}.analysis-bundles strong{color:var(--navy)}
     .manual-hint{padding:10px 22px;background:#f2f8f8;border-bottom:1px solid var(--line);font-size:11px;color:#536672}.manual-assignee{display:block;margin-top:6px;max-width:190px;border:1px solid var(--line);border-radius:6px;padding:5px 7px;background:#fff;color:var(--ink);font:inherit;font-size:11px}.manual-distance-warning{display:inline-block;margin-left:5px;color:#b42318;font-size:10px;font-weight:800;white-space:normal}.staff-card{transition:border-color .15s,background .15s}.staff-card.drop-ready{border:2px dashed var(--teal);background:#f0faf8}.staff-drop-help{font-size:10px;color:#82909a;margin:0 0 8px}.brief-job[draggable="true"]{cursor:grab}.brief-job[draggable="true"]:active{cursor:grabbing}.pending-manual{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;padding:14px 22px 0}.pending-work-card{border:1px solid #e7c4a0;background:#fffaf4;border-radius:12px;padding:12px}.pending-work-card>strong{font-size:12px;color:#8b5a15}.pending-work-card .brief-job{cursor:grab}
     .cloud-panel{margin-top:15px;border-top:1px solid #edf1f3;padding-top:14px}.cloud-panel summary{font-size:12px;font-weight:700;color:#526673;cursor:pointer}.cloud-body{margin-top:10px;padding:12px;background:#f7fafb;border-radius:9px}.cloud-fields,.cloud-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.cloud-fields input{min-width:180px;max-width:250px;border:1px solid var(--line);border-radius:7px;padding:8px 9px;font:inherit;font-size:12px}.cloud-btn{border:1px solid var(--line);border-radius:7px;padding:8px 10px;background:#fff;color:var(--navy);font:700 11px inherit;cursor:pointer}.cloud-btn.primary{background:var(--teal);border-color:var(--teal);color:white}.cloud-btn:disabled{opacity:.45;cursor:not-allowed}.cloud-status{font-size:11px;color:var(--muted);margin:8px 0 0;line-height:1.5}.cloud-status.error{color:#a33c32}.history-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:11px 22px;border-bottom:1px solid var(--line);background:#fbfcfc}.history-actions select{max-width:260px;border:1px solid var(--line);border-radius:7px;padding:7px 9px;background:white;color:var(--ink);font:inherit;font-size:11px}.history-note{font-size:10px;color:var(--muted)}
-    .nav-btn{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;border-radius:6px;padding:4px 9px;font:700 11px inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px;line-height:1.2;transition:all .15s}
+    .nav-btn{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;border-radius:6px;padding:4px 9px;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;line-height:1.2;transition:all .15s}
     .nav-btn:hover{background:var(--teal);border-color:var(--teal);color:#fff}
     .cloud-dot{width:7px;height:7px;border-radius:50%;background:#9bb0b8;display:inline-block;transition:all .2s}
     .cloud-dot.connected{background:#38d39f;box-shadow:0 0 6px #38d39f}
@@ -51,14 +51,15 @@
     .history-meta{font-size:11px;color:var(--muted);margin-top:2px}
     .history-empty{padding:24px 16px;text-align:center;color:var(--muted);font-size:12px}
     .modal-notice{font-size:11px;color:var(--muted);line-height:1.5;background:#f4f8f9;padding:8px 11px;border-radius:8px}
+    .app-ver-badge{font-size:10px;font-weight:800;color:#93c5fd;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);padding:3px 7px;border-radius:12px;letter-spacing:.04em}
     @media(max-width:850px){header{padding:16px 20px}.topnote{display:none}main{padding:0 16px 40px;margin-top:22px}.setup{grid-template-columns:1fr}.intro{align-items:flex-start;flex-direction:column}.intro h1{font-size:23px}.step{align-self:flex-start}.controls{grid-template-columns:1fr}.counts{display:none}}
   </style>
 </head>
 <body>
-  <header><div class="brand"><div class="mark">台</div><div><strong>台電檢驗員</strong><span>TAIPOWER INSPECTOR</span></div></div><nav class="module-nav" aria-label="系統功能"><span class="muted">每月出勤</span><a class="current" href="index.html" aria-current="page">派工</a><a href="coordinates.html">圖號座標</a><span class="muted">路程安排</span><span class="muted">匯出雲端</span><span class="muted">報表列印</span><button class="nav-btn nav-history-btn" id="nav-history-btn" type="button" title="查詢並直接載入雲端派工紀錄"><span class="cloud-dot" id="nav-cloud-dot"></span>歷史查詢</button></nav></header>
+  <header><div class="brand"><div class="mark">台</div><div><strong>台電檢驗員</strong><span>TAIPOWER INSPECTOR</span></div></div><nav class="module-nav" aria-label="系統功能"><a href="attendance.html">每月出勤</a><a href="daily.html">每日工作</a><a class="current" href="index.html" aria-current="page">派工任務</a><a href="coordinates.html">圖號座標</a><span class="muted">路程安排</span><span class="muted">匯出雲端</span><span class="muted">報表列印</span><button class="nav-btn nav-history-btn" id="nav-history-btn" type="button" title="查詢並直接載入雲端派工紀錄"><span class="cloud-dot" id="nav-cloud-dot"></span>歷史查詢</button><span class="app-ver-badge">V2.2</span></nav></header>
   <main>
     <div id="preview-notice" class="preview-notice" hidden>這是 GitHub Pages 預覽頁，可以查看派工介面；Excel 上傳與派工分析需要 Python 後端，請在本機啟動 app.py 使用完整功能。</div>
-    <section class="intro"><div><div class="eyebrow">WORKFLOW / V2</div><h1>每日派工工作台</h1><p>上傳每日施工資料，或透過右上角【歷史查詢】讀取雲端紀錄，產生並調整派工結果。</p></div><div class="step">V2 · 個人使用</div></section>
+    <section class="intro"><div><div class="eyebrow">WORKFLOW</div><h1>每日派工工作台</h1><p>上傳每日施工資料，或透過右上角【歷史查詢】讀取雲端紀錄，產生並調整派工結果。</p></div></section>
     <section class="setup">
       <article class="card">
         <div class="card-head"><div class="num">1</div><h2>匯入施工資料</h2><small>支援 .xlsx</small></div>
@@ -71,9 +72,8 @@
             <div class="field"><label for="first">今日輪替第一位</label><select id="first"></select><p class="help">按名單由上到下循環，選定人員作為起點</p></div>
           </div>
             <div class="field distance-setting"><label for="proximity-km">鄰近併派門檻（直線公里）</label><input id="proximity-km" type="number" min="1" max="100" step="1" value="10"><p class="help">用於 A＋B 鄰近配對及 C 類候選包；C 類候選包最多 2 組，距離是直線距離</p></div>
-          <details class="roster"><summary>同仁名單管理（可新增、調整順序與每日狀態）</summary><div class="roster-panel"><div class="roster-toolbar"><span id="roster-date">請先上傳檔案並選擇派工日期</span><button class="small-btn" id="add-staff" type="button">＋ 新增同仁</button></div><div class="roster-table-wrap"><table class="roster-table"><thead><tr><th>姓名</th><th>今日出勤</th><th>非關鍵性作業</th><th>監造人員證照（固定資格）</th><th>順序／移除</th></tr></thead><tbody id="roster-rows"></tbody></table></div><p class="roster-help">今日出勤與非關鍵性作業依派工日期分別記錄；證照是固定資格設定。非關鍵性作業為 Y 時，該員今日只會分配 C 類；B 類另需監造證照。</p></div></details>
+          <details class="roster"><summary>同仁名單管理（可新增、調整順序與每日狀態）</summary><div class="roster-panel"><div class="roster-toolbar"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span id="roster-date">目前連動日期：</span><input type="date" id="roster-preview-date" style="border:1px solid var(--line);border-radius:6px;padding:4px 7px;font:inherit;font-size:11px;color:var(--ink)" title="選擇預覽日期（未上傳 Excel 時可切換查看每月出勤連動）"></div><div style="display:flex;gap:8px;align-items:center"><a class="small-btn" href="attendance.html" style="text-decoration:none">📅 前往每月出勤日曆</a><button class="small-btn" id="add-staff" type="button">＋ 新增同仁</button></div></div><div class="roster-table-wrap"><table class="roster-table"><thead><tr><th>姓名</th><th>今日出勤</th><th>非關鍵性作業</th><th>監造人員證照（固定資格）</th><th>順序／移除</th></tr></thead><tbody id="roster-rows"></tbody></table></div><p class="roster-help">今日出勤與非關鍵性作業依派工日期分別記錄，並與「每月出勤」日曆同步；證照是固定資格設定。非關鍵性作業為 Y 時，該員今日只會分配 C 類；B 類另需監造證照。</p></div></details>
           <div class="rulebox"><b>指派準則</b><ul><li>同一契約、同一工作班算一組，每組只派給一位同仁。</li><li>A/B 工作組數達到可執行關鍵作業人數時，優先配對鄰近的 A＋B。</li><li>附近 C 類可合併指派；自動派工會考量出勤、資格、負載與距離。</li><li>手動指派可覆蓋自動準則；超過距離門檻時會顯示紅字提醒。</li></ul></div>
-          <details class="cloud-panel"><summary>Supabase 雲端登入</summary><div class="cloud-body"><div class="cloud-fields"><input id="cloud-email" type="email" autocomplete="username" placeholder="電子郵件" aria-label="Supabase 電子郵件"><input id="cloud-password" type="password" autocomplete="current-password" placeholder="密碼" aria-label="Supabase 密碼"><button id="cloud-login" class="cloud-btn primary" type="button">登入</button><button id="cloud-signup" class="cloud-btn" type="button">建立帳號</button><button id="cloud-logout" class="cloud-btn" type="button" hidden>登出</button></div><p id="cloud-status" class="cloud-status" role="status">正在初始化雲端連線…</p></div></details>
           <div class="actions"><button id="assign" class="primary" disabled>確認指派</button><span id="status" class="status">請先上傳施工資料</span></div>
         </div>
       </article>
@@ -142,7 +142,10 @@
     function createCBundles(teams,limit){const categories=teams.map(team=>workCategory(team.contract)),cIndexes=teams.map((team,index)=>categories[index]==="C"?index:-1).filter(index=>index>=0),bundles=[],used=new Set();for(let p=0;p<cIndexes.length;p++){const first=cIndexes[p];if(used.has(first))continue;let partner=-1,partnerDistance=null;for(let q=p+1;q<cIndexes.length;q++){const candidate=cIndexes[q];if(used.has(candidate)||!teamHasCompletePoints(teams[first])||!teamHasCompletePoints(teams[candidate]))continue;const distance=farthestTeamPoints(teams[first],teams[candidate]);if(distance&&distance.km<=limit&&(!partnerDistance||distance.km<partnerDistance.km)){partner=candidate;partnerDistance=distance}}const indexes=partner>=0?[first,partner]:[first];indexes.forEach(index=>used.add(index));bundles.push({indexes,distance:partnerDistance})}return bundles}
     function findABPairs(teams,limit){const categories=teams.map(team=>workCategory(team.contract)),aIndexes=teams.map((team,index)=>categories[index]==="A"?index:-1).filter(index=>index>=0),bIndexes=teams.map((team,index)=>categories[index]==="B"?index:-1).filter(index=>index>=0),candidates=[];for(const ai of aIndexes)for(const bi of bIndexes){if(!teamHasCompletePoints(teams[ai])||!teamHasCompletePoints(teams[bi]))continue;const distance=farthestTeamPoints(teams[ai],teams[bi]);if(distance&&distance.km<=limit)candidates.push({aIndex:ai,bIndex:bi,distance})}candidates.sort((a,b)=>a.distance.km-b.distance.km||a.aIndex-b.aIndex||a.bIndex-b.bIndex);const pairs=[],usedA=new Set(),usedB=new Set();for(const candidate of candidates){if(usedA.has(candidate.aIndex)||usedB.has(candidate.bIndex))continue;usedA.add(candidate.aIndex);usedB.add(candidate.bIndex);pairs.push(candidate)}return pairs}
     function renderAnalysis(){if(!state.jobs.length)return;const date=$("workdate").value;if(!date)return;const dateJobs=state.jobs.filter(job=>job.date===date),teams=buildTeams(dateJobs),categories=teams.map(team=>workCategory(team.contract)),limit=Math.max(0,Number($("proximity-km").value)||0),cBundles=createCBundles(teams,limit),paired=cBundles.filter(bundle=>bundle.indexes.length>1),abCount=categories.filter(category=>category==="A"||category==="B").length,criticalCount=state.roster.filter(staff=>{const flags=flagsFor(staff,date);return flags.attending&&!flags.noncritical}).length,abPairs=findABPairs(teams,limit),pairingEnabled=criticalCount>0&&abCount>=criticalCount;$("analysis-preview").style.display="block";$("analysis-meta").textContent=`${rocDate(date)}：${dateJobs.length} 筆案件整理為 ${teams.length} 個契約／工作班；按契約順序排列。工作點以代表圖號換算的 TWD67 格網中心計算直線距離。`;const abText=`<strong>A＋B 配對條件：${abCount} 組 A/B 工作組／${criticalCount} 位可執行關鍵作業同仁，${pairingEnabled?"達門檻，啟用附近配對":"未達門檻，不啟用配對"}</strong><br>${abPairs.length?abPairs.map((pair,index)=>`配對候選 ${index+1}：${esc(teams[pair.aIndex].crew)}（A）＋${esc(teams[pair.bIndex].crew)}（B）　${pair.distance.km.toFixed(1)} km 最遠直線`).join("<br>"):"目前沒有完整座標且在距離門檻內的 A＋B 配對候選。"}`;const cText=`<strong>C 類鄰近候選包（門檻 ${limit} km；每包最多 2 組）</strong><br>${paired.length?paired.map((bundle,index)=>{const [a,b]=bundle.indexes.map(i=>teams[i]);return `候選包 ${index+1}：${esc(a.contract)}／${esc(a.crew)} ＋ ${esc(b.contract)}／${esc(b.crew)}　${bundle.distance.km.toFixed(1)} km 直線（${esc(bundle.distance.leftCode)} ↔ ${esc(bundle.distance.rightCode)}）`}).join("<br>"):"目前沒有兩組 C 類工作同時有可計算座標且在門檻內；未配對的工作仍會個別進入派工。"}`;$("analysis-bundles").innerHTML=`${abText}<br><br>${cText}`;$("analysis-table").innerHTML=teams.length?`<table><thead><tr><th>契約順序</th><th>類別</th><th>契約</th><th>工作班</th><th>案件數</th><th>代表點位</th><th>可換算點數</th></tr></thead><tbody>${teams.map((team,index)=>{const codes=team.jobs.flatMap(job=>job.gridCodes||[]),valid=codes.filter(point=>point.gridCoordinate),representative=valid.find(point=>point.representative)||valid[0];return `<tr><td>${index+1}</td><td>${categories[index]}</td><td>${esc(team.contract)}</td><td>${esc(team.crew)}</td><td>${team.jobs.length}</td><td>${representative?esc(representative.code):"無可換算點位"}</td><td>${valid.length}/${codes.length}</td></tr>`}).join("")}</tbody></table>`:"<div class='empty'>所選日期沒有施工資料</div>"}
-    function selectedDateKey(){return $("workdate").value||"__default__"}
+    function todayIso(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
+    const urlTargetDate=new URLSearchParams(location.search).get("date");
+    if($("roster-preview-date"))$("roster-preview-date").value=urlTargetDate||todayIso();
+    function selectedDateKey(){return $("workdate").value||$("roster-preview-date")?.value||todayIso()}
     function flagsFor(staff,date=selectedDateKey()){
       const dateData=state.daily[date]||(state.daily[date]={});
       return dateData[staff.id]||(dateData[staff.id]={attending:staff.defaultAttending??true,noncritical:staff.defaultNoncritical??false});
@@ -169,11 +172,6 @@
     }
     function updateCloudControls(){
       const signedIn=!!state.user;
-      $("cloud-login").hidden=signedIn;
-      $("cloud-signup").hidden=signedIn;
-      $("cloud-logout").hidden=!signedIn;
-      $("cloud-password").hidden=signedIn;
-      $("cloud-email").hidden=signedIn;
       $("cloud-save").disabled=!signedIn||!Object.keys(state.currentAssignments).length;
       $("cloud-history").disabled=!signedIn;
       $("cloud-load").disabled=!signedIn||!$("cloud-history").value;
@@ -263,19 +261,19 @@
         }
       });
     }
-    async function cloudLogin(createAccount=false,fromModal=false){
+    async function cloudLogin(createAccount=false){
       if(!state.supabase){
         cloudStatus("Supabase 尚未初始化，請確認設定檔與網路。",true);
         return;
       }
-      const emailField=fromModal?$("modal-cloud-email"):$("cloud-email");
-      const passwordField=fromModal?$("modal-cloud-password"):$("cloud-password");
+      const emailField=$("modal-cloud-email");
+      const passwordField=$("modal-cloud-password");
       const email=emailField.value.trim(),password=passwordField.value;
       if(!email||!password){
         cloudStatus("請輸入電子郵件和密碼。",true);
         return;
       }
-      const btnId=fromModal?(createAccount?"modal-cloud-signup":"modal-cloud-login"):(createAccount?"cloud-signup":"cloud-login");
+      const btnId=createAccount?"modal-cloud-signup":"modal-cloud-login";
       const button=$(btnId);
       if(button)button.disabled=true;
       cloudStatus(createAccount?"正在建立帳號…":"正在登入…");
@@ -290,7 +288,6 @@
         return;
       }
       state.user=result.data.user;
-      $("cloud-password").value="";
       if($("modal-cloud-password"))$("modal-cloud-password").value="";
       cloudStatus(createAccount?"帳號建立並登入成功。":"登入成功。");
       await refreshCloudHistory();
@@ -308,6 +305,15 @@
       const button=$("cloud-save");
       button.disabled=true;
       cloudStatus("正在儲存今日派工到 Supabase…");
+      let weather="晴",acceptance=[],workNotes={};
+      try{
+        const wm=JSON.parse(localStorage.getItem("dispatch-weather-v1")||"{}")||{};
+        if(wm[date])weather=wm[date];
+        const am=JSON.parse(localStorage.getItem("dispatch-acceptance-v1")||"{}")||{};
+        if(Array.isArray(am[date]))acceptance=am[date];
+        const wn=JSON.parse(localStorage.getItem("dispatch-work-notes-v1")||"{}")||{};
+        if(wn[date])workNotes=wn[date];
+      }catch(_){}
       const payload={
         version:1,
         filename:state.filename,
@@ -317,7 +323,10 @@
         manualAssignments:{[date]:state.manualAssignments[date]||{}},
         assignments:state.currentAssignments,
         coordinates:state.coordinates,
-        proximityKm:Number($("proximity-km").value)||10
+        proximityKm:Number($("proximity-km").value)||10,
+        weather,
+        acceptance,
+        workNotes
       };
       const{error}=await state.supabase.from("dispatch_history").upsert({
         user_id:state.user.id,
@@ -346,14 +355,34 @@
       }
       const payload=data.payload||{};
       state.jobs=payload.jobs||[];
-      state.roster=payload.roster||[];
-      state.daily=payload.daily||{};
-      state.manualAssignments=payload.manualAssignments||{};
+      let existingDaily={},existingRoster=state.roster||[],existingManual={};
+      try{
+        const savedRoster=JSON.parse(localStorage.getItem("dispatch-roster-v2")||"null");
+        if(savedRoster?.daily)existingDaily=savedRoster.daily;
+        if(savedRoster?.roster?.length)existingRoster=savedRoster.roster;
+      }catch(_){}
+      try{
+        existingManual=JSON.parse(localStorage.getItem("dispatch-manual-v1")||"{}")||{};
+      }catch(_){}
+      const cloudRoster=payload.roster||[];
+      if(!existingRoster.length){
+        state.roster=cloudRoster;
+      }else{
+        const mergedRoster=[...existingRoster];
+        const existingIds=new Set(existingRoster.map(s=>s.id));
+        for(const s of cloudRoster){if(!existingIds.has(s.id))mergedRoster.push(s)}
+        state.roster=mergedRoster;
+      }
+      state.daily={...existingDaily,...(payload.daily||{})};
+      state.manualAssignments={...existingManual,...(payload.manualAssignments||{})};
       state.cloudAssignments={[date]:payload.assignments||{}};
       state.filename=payload.filename||"雲端歷史紀錄";
       state.coordinates=payload.coordinates||{matched:0,decoded:0,total:0,available:false};
       localStorage.setItem("dispatch-roster-v2",JSON.stringify({roster:state.roster,daily:state.daily}));
       localStorage.setItem("dispatch-manual-v1",JSON.stringify(state.manualAssignments));
+      if(payload.weather){try{const wm=JSON.parse(localStorage.getItem("dispatch-weather-v1")||"{}")||{};wm[date]=payload.weather;localStorage.setItem("dispatch-weather-v1",JSON.stringify(wm))}catch(_){}}
+      if(Array.isArray(payload.acceptance)){try{const am=JSON.parse(localStorage.getItem("dispatch-acceptance-v1")||"{}")||{};am[date]=payload.acceptance;localStorage.setItem("dispatch-acceptance-v1",JSON.stringify(am))}catch(_){}}
+      if(payload.workNotes){try{const wn=JSON.parse(localStorage.getItem("dispatch-work-notes-v1")||"{}")||{};wn[date]=payload.workNotes;localStorage.setItem("dispatch-work-notes-v1",JSON.stringify(wn))}catch(_){}}
       $("filename").textContent=state.filename;
       $("workdate").innerHTML=`<option value="${esc(date)}">${esc(rocDate(date))}</option>`;
       $("workdate").disabled=false;
@@ -367,14 +396,17 @@
       $("assign").disabled=false;
       $("status").textContent=`已從雲端載入 ${rocDate(date)} 派工紀錄（共 ${state.jobs.length} 筆案件）`;
       $("status").classList.remove("error");
-      cloudStatus(`${rocDate(date)} 雲端紀錄已載入。`);
+      cloudStatus(`${rocDate(date)} 雲端紀錄已載入，正在開啟每日工作總表…`);
       closeHistoryModal();
-      $("results").scrollIntoView({behavior:"smooth",block:"start"});
+      location.href=`daily.html?date=${encodeURIComponent(date)}`;
     }
     function refreshFirstSelect(){const old=$("first").value;$("first").innerHTML=state.roster.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join("");if(state.roster.some(s=>s.id===old))$("first").value=old;}
     function renderRosterTable(){
+      const workDate=$("workdate").value;
       const date=selectedDateKey();
-      $("roster-date").textContent=date==="__default__"?"尚未選日期：顯示名單初始值":`目前編輯 ${rocDate(date)} 的每日狀態`;
+      const previewPicker=$("roster-preview-date");
+      if(previewPicker)previewPicker.hidden=!!workDate;
+      $("roster-date").textContent=workDate?`目前編輯 ${rocDate(workDate)} 的每日狀態（與每月出勤連動）`:`連動預覽 ${rocDate(date)}（未上傳 Excel）：`;
       $("roster-rows").innerHTML=state.roster.map(staff=>{const flags=flagsFor(staff,date);const yn=(value,field)=>`<select data-field="${field}" data-id="${esc(staff.id)}"><option value="true"${value?" selected":""}>Y</option><option value="false"${!value?" selected":""}>N</option></select>`;return `<tr><td><input data-field="name" data-id="${esc(staff.id)}" value="${esc(staff.name)}" aria-label="同仁姓名"></td><td>${yn(flags.attending,"attending")}</td><td>${yn(flags.noncritical,"noncritical")}</td><td><select data-field="supervisor" data-id="${esc(staff.id)}" aria-label="監造證照" title="監造證照資格"><option value="true"${staff.supervisor?" selected":""}>有</option><option value="false"${!staff.supervisor?" selected":""}>無</option></select></td><td class="roster-actions"><button type="button" data-action="up" data-id="${esc(staff.id)}" aria-label="上移">↑</button><button type="button" data-action="down" data-id="${esc(staff.id)}" aria-label="下移">↓</button><button type="button" data-action="delete" data-id="${esc(staff.id)}">移除</button></td></tr>`}).join("");
       refreshFirstSelect();
     }
@@ -549,7 +581,43 @@
       $("assignment-audit").innerHTML=`<strong>派工檢核</strong><br>${auditLines.join("<br>")}`;
       $("datebadge").textContent=rocDate(selected);$("crewcount").textContent=`${teams.length} 個契約／工作班`;$ ("jobcount").textContent=`${jobs.length} 筆工作`;$ ("coordcount").textContent=`可換算座標 ${state.coordinates.decoded}/${state.coordinates.total}`;
       $("staff-summary").innerHTML=summary||"<div class='empty'>所選日期沒有施工資料</div>";
-      $("tablewrap").innerHTML=rows?`<table><thead><tr><th>指派同仁</th><th>類別</th><th>契約／工作班</th><th>案件 / 時段</th><th>工作內容</th><th>施工地點／圖號座標</th></tr></thead><tbody>${rows}</tbody></table>`:`<div class="empty">所選日期沒有施工資料</div>`;$ ("results").style.display="block";updateCloudControls();if(scroll)$ ("results").scrollIntoView({behavior:"smooth",block:"start"});
+      $("tablewrap").innerHTML=rows?`<table><thead><tr><th>指派同仁</th><th>類別</th><th>契約／工作班</th><th>案件 / 時段</th><th>工作內容</th><th>施工地點／圖號座標</th></tr></thead><tbody>${rows}</tbody></table>`:`<div class="empty">所選日期沒有施工資料</div>`;$("results").style.display="block";updateCloudControls();
+      try{
+        const allDailyWork=JSON.parse(localStorage.getItem("dispatch-daily-work-v1")||"{}")||{};
+        allDailyWork[selected]={
+          date:selected,
+          filename:state.filename||"",
+          firstStaff:$("first").value||"",
+          updatedAt:new Date().toISOString(),
+          items:assigned.map(item=>({
+            order:item.order,
+            category:item.category,
+            contract:item.team.contract,
+            crew:item.team.crew,
+            staffId:item.staff?.id||null,
+            staffName:item.staff?.name||null,
+            manual:!!item.manual,
+            times:[...new Set(item.team.jobs.map(j=>j.time).filter(Boolean))],
+            descriptions:[...new Set(item.team.jobs.map(j=>j.workSummary||j.description.split(/\r?\n/)[0]).filter(Boolean))],
+            locations:[...new Set(item.team.jobs.map(j=>j.location).filter(Boolean))],
+            jobCount:item.team.jobs.length
+          }))
+        };
+        localStorage.setItem("dispatch-daily-work-v1",JSON.stringify(allDailyWork));
+        localStorage.setItem("dispatch-active-date-v1",selected);
+        const allCache=JSON.parse(localStorage.getItem("dispatch-session-cache-v1")||"{}")||{};
+        allCache[selected]={
+          date:selected,
+          filename:state.filename||"",
+          firstStaff:$("first").value||"",
+          proximityKm:Number($("proximity-km").value)||10,
+          coordinates:state.coordinates,
+          jobs,
+          assignments:state.currentAssignments
+        };
+        localStorage.setItem("dispatch-session-cache-v1",JSON.stringify(allCache));
+      }catch(e){console.warn("無法儲存每日工作快照",e)}
+      if(scroll)$("results").scrollIntoView({behavior:"smooth",block:"start"});
     }
     async function initializeRoster(){if(state.staticPreview){const names=["魏沐翔","張德忠","吳貴立","羅俊麟","黃偉均","吳東穎","楊捷先","陳宗偉","余中仁"];state.roster=names.map((name,i)=>({id:`staff-${i+1}`,name,attending:true,noncritical:i===0,supervisor:i!==0,defaultAttending:true,defaultNoncritical:i===0}));state.daily={};$("preview-notice").hidden=false;$("status").textContent="目前為介面預覽；Excel分析需要 Python 後端。";renderRosterTable();return;}try{const saved=JSON.parse(localStorage.getItem("dispatch-roster-v2")||"null");if(saved?.roster?.length){state.roster=saved.roster.map(staff=>({...staff,defaultAttending:true,defaultNoncritical:staff.id==="staff-1"}));state.daily=saved.daily||{}}else{const response=await fetch("/api/roster");const initial=await response.json();state.roster=initial.map((s,i)=>({...s,id:`staff-${i+1}`,defaultAttending:true,defaultNoncritical:i===0}));state.daily={}}}catch(e){state.roster=[];state.daily={}}renderRosterTable()}
     $("roster-rows").addEventListener("change",e=>{const control=e.target;const staff=state.roster.find(s=>s.id===control.dataset.id);if(!staff)return;const field=control.dataset.field;if(field==="name"){const value=control.value.trim();if(value)staff.name=value;else control.value=staff.name}else if(field==="supervisor")staff.supervisor=control.value==="true";else if(field==="attending"||field==="noncritical")flagsFor(staff)[field]=control.value==="true";updateStaffData()});
@@ -565,12 +633,10 @@
     $("staff-summary").addEventListener("dragleave",e=>{const card=e.target.closest(".staff-card[data-drop-staff]");if(card&&!card.contains(e.relatedTarget))card.classList.remove("drop-ready")});
     $("staff-summary").addEventListener("drop",e=>{const card=e.target.closest(".staff-card[data-drop-staff]");if(!card)return;e.preventDefault();card.classList.remove("drop-ready");const teamKey=e.dataTransfer.getData("text/plain"),staffId=card.dataset.dropStaff,date=$("workdate").value;if(!teamKey||!staffId||!date)return;const bucket=state.manualAssignments[date]||(state.manualAssignments[date]={});bucket[teamKey]=staffId;persistManualAssignments();renderAssignments(false)});
     $("workdate").addEventListener("change",()=>{renderRosterTable();renderAnalysis();if($("results").style.display==="block")renderAssignments(false)});
+    if($("roster-preview-date"))$("roster-preview-date").addEventListener("change",()=>renderRosterTable());
     $("first").addEventListener("change",()=>{if($("results").style.display==="block")renderAssignments(false)});
     $("proximity-km").addEventListener("change",()=>{renderAnalysis();if($("results").style.display==="block")renderAssignments(false)});
     ["dragenter","dragover"].forEach(ev=>$ ("drop").addEventListener(ev,e=>{e.preventDefault();$("drop").classList.add("drag")}));["dragleave","drop"].forEach(ev=>$ ("drop").addEventListener(ev,e=>{e.preventDefault();$("drop").classList.remove("drag")}));$("drop").addEventListener("drop",e=>upload(e.dataTransfer.files[0]).then(()=>renderRosterTable()));
-    $("cloud-login").addEventListener("click",()=>cloudLogin(false,false));
-    $("cloud-signup").addEventListener("click",()=>cloudLogin(true,false));
-    $("cloud-logout").addEventListener("click",async()=>{const{error}=await state.supabase.auth.signOut();if(error)cloudStatus(`登出失敗：${error.message}`,true)});
     $("cloud-save").addEventListener("click",saveCloudRecord);
     $("cloud-history").addEventListener("change",updateCloudControls);
     $("cloud-load").addEventListener("click",()=>loadCloudRecord());
@@ -582,15 +648,54 @@
     $("history-modal-close").addEventListener("click",closeHistoryModal);
     $("history-modal").addEventListener("click",e=>{if(e.target===$("history-modal"))closeHistoryModal()});
     window.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("history-modal").hidden)closeHistoryModal()});
-    $("modal-cloud-login").addEventListener("click",()=>cloudLogin(false,true));
-    $("modal-cloud-signup").addEventListener("click",()=>cloudLogin(true,true));
+    $("modal-cloud-login").addEventListener("click",()=>cloudLogin(false));
+    $("modal-cloud-signup").addEventListener("click",()=>cloudLogin(true));
     $("modal-cloud-logout").addEventListener("click",async()=>{const{error}=await state.supabase.auth.signOut();if(error)cloudStatus(`登出失敗：${error.message}`,true)});
     $("modal-cloud-refresh").addEventListener("click",()=>refreshCloudHistory());
     $("modal-history-list").addEventListener("click",e=>{const btn=e.target.closest("button[data-load-date]");if(btn)loadCloudRecord(btn.dataset.loadDate)});
 
-    initializeCloud();
-    initializeRoster();
+    window.addEventListener("storage",e=>{
+      if(e.key==="dispatch-roster-v2"&&e.newValue){
+        try{const saved=JSON.parse(e.newValue);if(saved?.roster?.length){state.roster=saved.roster.map(staff=>({...staff,defaultAttending:true,defaultNoncritical:staff.id==="staff-1"}));state.daily=saved.daily||{};renderRosterTable();renderAnalysis();if($("results").style.display==="block")renderAssignments(false)}}catch(_){}
+      }
+    });
+
+    async function restoreSessionIfRequested(){
+      const targetDate=urlTargetDate||localStorage.getItem("dispatch-active-date-v1");
+      if(!targetDate)return;
+      try{
+        const allCache=JSON.parse(localStorage.getItem("dispatch-session-cache-v1")||"{}")||{};
+        let cached=allCache[targetDate];
+        if((!cached||!cached.jobs?.length)&&state.supabase&&state.user){
+          const{data}=await state.supabase.from("dispatch_history").select("work_date,first_staff,payload").eq("work_date",targetDate).maybeSingle();
+          if(data?.payload?.jobs?.length){
+            const p=data.payload;
+            cached={date:targetDate,filename:p.filename||"雲端歷史紀錄",firstStaff:data.first_staff,proximityKm:p.proximityKm||10,coordinates:p.coordinates||{matched:0,decoded:0,total:0,available:false},jobs:p.jobs,assignments:p.assignments||{}};
+          }
+        }
+        if(!cached||!cached.jobs?.length)return;
+        state.jobs=cached.jobs;
+        state.filename=cached.filename||"已載入工作紀錄";
+        state.coordinates=cached.coordinates||{matched:0,decoded:0,total:0,available:false};
+        state.cloudAssignments={[targetDate]:cached.assignments||{}};
+        $("filename").textContent=state.filename;
+        $("workdate").innerHTML=`<option value="${esc(targetDate)}">${esc(rocDate(targetDate))}</option>`;
+        $("workdate").value=targetDate;
+        $("workdate").disabled=false;
+        $("assign").disabled=false;
+        if(cached.proximityKm)$("proximity-km").value=cached.proximityKm;
+        if(cached.firstStaff&&state.roster.some(s=>s.id===cached.firstStaff))$("first").value=cached.firstStaff;
+        renderRosterTable();
+        renderAnalysis();
+        renderAssignments(false);
+        $("status").textContent=`已自動還原 ${rocDate(targetDate)} 派工資料（共 ${state.jobs.length} 筆案件），可直接調整。`;
+        if(urlTargetDate)$("results").scrollIntoView({behavior:"smooth",block:"start"});
+      }catch(e){console.warn("無法還原快取",e)}
+    }
+
+    Promise.all([initializeCloud(),initializeRoster()]).then(()=>restoreSessionIfRequested());
     if(location.hash==="#history")openHistoryModal();
   </script>
+  <script src="version.js"></script>
 </body>
 </html>

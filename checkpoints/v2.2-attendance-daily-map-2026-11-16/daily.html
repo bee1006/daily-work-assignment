@@ -1,0 +1,676 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>台電檢驗員｜每日工作總表</title>
+  <style>
+    :root{
+      --ink:#172a3a;--muted:#6d7b86;--line:#cfd9df;--paper:#fff;--bg:#f3f7f8;
+      --teal:#087f78;--teal2:#dff3ef;--navy:#17364c;--shadow:0 12px 32px #1832450c;
+      --excel-blue:#0b57d0;--excel-green:#15803d;--excel-red:#dc2626;--excel-yellow:#fef08a;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;font-size:14px}
+    header{background:var(--navy);color:#fff;padding:16px max(24px,calc((100% - 1120px)/2));display:flex;align-items:center;justify-content:space-between;gap:18px}
+    .brand{display:flex;gap:12px;align-items:center;flex-shrink:0}
+    .mark{height:40px;width:40px;border-radius:12px;background:#59c5b2;display:grid;place-items:center;color:#123344;font-weight:900;font-size:20px}
+    .brand strong{display:block;font-size:18px;letter-spacing:.04em}
+    .brand span{font-size:12px;color:#b8cbd4}
+    .module-nav{display:flex;align-items:center;justify-content:flex-end;gap:5px 12px;flex-wrap:wrap;max-width:660px}
+    .module-nav a,.module-nav span{font-size:11px;line-height:1.2;text-decoration:none;white-space:nowrap}
+    .module-nav a{color:#dce9ed}
+    .module-nav a:hover{color:#fff}
+    .module-nav .current{font-weight:800;color:#6fe0c9}
+    .module-nav .muted{color:#91a9b2}
+
+    main{max-width:1380px;margin:26px auto;padding:0 20px 60px}
+    .intro{display:flex;justify-content:space-between;align-items:end;margin-bottom:18px;gap:16px;flex-wrap:wrap}
+    .eyebrow{font-size:11px;letter-spacing:.16em;color:var(--teal);font-weight:800}
+    .intro h1{font-size:26px;letter-spacing:.02em;margin:6px 0 4px}
+    .intro p{margin:0;color:var(--muted);font-size:13px}
+    .step{padding:8px 12px;background:#e8f3f2;color:#216b67;border-radius:20px;font-size:12px;font-weight:700;white-space:nowrap}
+
+    /* 頂部控制與表頭資訊條 */
+    .toolbar-card{background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px 20px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+    .meta-group{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+    .meta-field{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:var(--navy)}
+    .meta-field select,.meta-field input[type="date"]{border:1px solid var(--line);border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;background:#fff;color:var(--ink)}
+    .btn{border:1px solid var(--line);background:#fff;color:var(--navy);border-radius:8px;padding:7px 13px;font:700 12px inherit;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:5px;transition:.15s}
+    .btn:hover{border-color:var(--teal);color:var(--teal);background:#f4fbfa}
+    .btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+    .btn.primary:hover{background:#066b65;color:#fff}
+    .actions-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+    /* 雙欄總表佈局 */
+    .sheets-grid{display:grid;grid-template-columns:1.85fr 1fr;gap:18px;align-items:start}
+    .sheet-card{background:var(--paper);border:1.5px solid #94a3b8;border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+    .sheet-title-bar{background:#f1f5f9;border-bottom:2px solid #334155;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .sheet-title-bar h2{margin:0;font-size:17px;font-weight:900;color:#0f172a;letter-spacing:.04em}
+    .sheet-meta{font-size:13px;font-weight:700;color:#334155}
+
+    .table-scroll{overflow-x:auto}
+    table.excel-table{width:100%;border-collapse:collapse;font-size:13px}
+    table.excel-table th,table.excel-table td{border:1px solid #cbd5e1;padding:7px 9px;text-align:center;vertical-align:middle}
+    table.excel-table th{background:#f8fafc;color:#0f172a;font-weight:800;font-size:12px;border-bottom:2px solid #334155;white-space:nowrap}
+    table.excel-table td.text-left{text-align:left}
+    table.excel-table tr:hover td{background:#f8fbfc}
+
+    .zone-cell{font-weight:800;color:#0f172a;white-space:nowrap}
+    .zone-b{color:var(--excel-green)}
+    .inspector-cell{font-weight:800;color:var(--excel-blue);white-space:nowrap}
+    .inspector-pending{font-weight:800;color:var(--excel-red);font-size:12px}
+    .inspector-select{
+      border:1px solid transparent;background:transparent;font:inherit;font-weight:800;
+      color:var(--excel-blue);padding:3px 4px;border-radius:6px;cursor:pointer;text-align:center;
+      max-width:110px;
+    }
+    .inspector-select:hover,.inspector-select:focus{border-color:var(--teal);background:#f0faf8;outline:none}
+    .inspector-select.is-pending{color:var(--excel-red)}
+    .cloud-save-status{font-size:11px;color:var(--muted);font-weight:600}
+    .cloud-save-status.error{color:var(--excel-red)}
+    .cloud-save-status.ok{color:var(--teal)}
+    .work-note-input{
+      width:100%;min-width:110px;border:1px solid transparent;background:transparent;
+      font:inherit;font-size:12px;color:var(--ink);padding:4px 6px;border-radius:5px;
+    }
+    .work-note-input:hover,.work-note-input:focus{border-color:var(--teal);background:#fff;outline:none}
+    @media print{.work-note-input::placeholder{color:transparent}}
+    .method-cell{color:var(--excel-red);font-weight:700;white-space:nowrap}
+    .time-cell{white-space:nowrap;font-weight:600;color:#1e293b}
+    .time-night{background:#fef08a !important;font-weight:900;color:#dc2626 !important}
+    .leave-cell{color:#64748b;font-size:12px;font-weight:700}
+    .note-red{color:var(--excel-red);font-weight:700}
+    .empty-row td{color:#94a3b8;background:#fcfdfe}
+
+    /* 驗收紀錄快速新增列 */
+    .accept-hint{padding:9px 14px;background:#f5f3ff;border-bottom:1px solid #ddd6fe;font-size:12px;color:#5b21b6;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .accept-chip{background:#fff;border:1px solid #c4b5fd;color:#6d28d9;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;cursor:pointer}
+    .accept-chip:hover{background:#ede9fe}
+    .accept-form{padding:10px 12px;background:#f8fafc;border-top:1px solid #cbd5e1;display:grid;grid-template-columns:1.2fr .8fr 1fr .9fr auto;gap:6px;align-items:center}
+    .accept-form input,.accept-form select{border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit;font-size:12px;width:100%;min-width:0}
+    .del-x{border:0;background:none;color:#94a3b8;cursor:pointer;font-size:14px;font-weight:800;padding:2px 5px}
+    .del-x:hover{color:var(--excel-red)}
+
+    .empty-banner{padding:28px;text-align:center;color:var(--muted);font-size:13px;background:#fff;border-radius:12px;border:1px dashed var(--line);margin-bottom:16px}
+    .foot{color:#84919a;text-align:center;font-size:11px;margin-top:20px}
+
+    @media(max-width:1080px){.sheets-grid{grid-template-columns:1fr}}
+    @media(max-width:700px){
+      .accept-form{grid-template-columns:1fr 1fr}
+      .accept-form button{grid-column:1 / -1}
+    }
+    @media(max-width:560px){
+      header{align-items:flex-start;flex-direction:column;padding:16px 20px}
+      .module-nav{justify-content:flex-start;gap:8px 13px;max-width:100%}
+      main{padding:0 12px 40px;margin-top:20px}
+    }
+    @media print{
+      header,.intro,.toolbar-card,.accept-hint,.accept-form,.del-col,.foot{display:none!important}
+      body{background:#fff}
+      main{margin:0;padding:0;max-width:100%}
+      .sheets-grid{grid-template-columns:1.8fr 1fr;gap:10px}
+      .sheet-card{box-shadow:none;border-radius:0}
+    }
+    .app-ver-badge{font-size:10px;font-weight:800;color:#93c5fd;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);padding:3px 7px;border-radius:12px;letter-spacing:.04em}
+    .module-nav a.nav-btn,.nav-btn{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;border-radius:6px;padding:4px 9px;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;line-height:1.2;transition:all .15s;text-decoration:none}
+    .module-nav a.nav-btn:hover,.nav-btn:hover{background:var(--teal);border-color:var(--teal);color:#fff}
+    .cloud-dot{width:7px;height:7px;border-radius:50%;background:#9bb0b8;display:inline-block;transition:all .2s}
+    .cloud-dot.connected{background:#38d39f;box-shadow:0 0 6px #38d39f}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="mark">台</div>
+      <div><strong>台電檢驗員</strong><span>TAIPOWER INSPECTOR</span></div>
+    </div>
+    <nav class="module-nav" aria-label="系統功能">
+      <a href="attendance.html">每月出勤</a>
+      <a class="current" href="daily.html" aria-current="page">每日工作</a>
+      <a href="index.html">派工任務</a>
+      <a href="coordinates.html">圖號座標</a>
+      <span class="muted">路程安排</span>
+      <span class="muted">匯出雲端</span>
+      <span class="muted">報表列印</span>
+      <a class="nav-btn nav-history-btn" href="index.html#history" title="查詢並直接載入雲端派工紀錄"><span class="cloud-dot"></span>歷史查詢</a>
+      <span class="app-ver-badge">V2.2</span>
+    </nav>
+  </header>
+
+  <main>
+    <section class="intro">
+      <div>
+        <div class="eyebrow">DAILY WORK SHEET</div>
+        <h1>每日工作與驗收總表</h1>
+        <p>自動彙整「派工任務」分配結果、「每月出勤」休假名單與「檢驗員驗收紀錄」，呈現完整出勤工作總表。</p>
+      </div>
+    </section>
+
+    <div class="toolbar-card">
+      <div class="meta-group">
+        <label class="meta-field">
+          日期：
+          <input type="date" id="work-date-picker">
+        </label>
+        <span class="meta-field" id="weekday-label">—</span>
+        <label class="meta-field">
+          天氣：
+          <select id="weather-select">
+            <option value="晴">晴</option>
+            <option value="多雲">多雲</option>
+            <option value="陰">陰</option>
+            <option value="雨">雨</option>
+          </select>
+        </label>
+        <label class="meta-field" style="font-weight:600;color:var(--muted);cursor:pointer">
+          <input type="checkbox" id="show-all-zones" checked>
+          顯示固定 19 工區標準表
+        </label>
+      </div>
+      <div class="actions-group">
+        <span class="cloud-save-status" id="daily-cloud-status"></span>
+        <button class="btn primary" id="cloud-save-daily" type="button">☁ 儲存變更到雲端</button>
+        <a class="btn" id="goto-edit-dispatch" href="index.html">✎ 回派工任務調整</a>
+        <a class="btn" href="index.html#history">☁ 歷史查詢</a>
+        <button class="btn" id="print-btn" type="button">🖨 列印總表</button>
+      </div>
+    </div>
+
+    <div class="empty-banner" id="no-dispatch-banner" hidden>
+      此日期尚未產生派工資料。請先前往 <a href="index.html" style="color:var(--teal);font-weight:800">派工任務</a> 上傳 Excel 並確認指派，或點擊右上角 <a href="index.html#history" style="color:var(--teal);font-weight:800">歷史查詢</a> 讀取雲端已安排好的工作。
+    </div>
+
+    <div class="sheets-grid">
+      <!-- 左側：檢驗員出勤紀錄 -->
+      <section class="sheet-card">
+        <div class="sheet-title-bar">
+          <h2>檢驗員出勤紀錄</h2>
+          <span class="sheet-meta" id="left-sheet-meta"></span>
+        </div>
+        <div class="table-scroll">
+          <table class="excel-table">
+            <thead>
+              <tr>
+                <th>工區</th>
+                <th>檢驗員</th>
+                <th>工作內容</th>
+                <th>時 間</th>
+                <th>備 註</th>
+                <th>休假人員</th>
+              </tr>
+            </thead>
+            <tbody id="daily-work-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 右側：檢驗員驗收紀錄 -->
+      <section class="sheet-card">
+        <div class="sheet-title-bar">
+          <h2>檢驗員驗收紀錄</h2>
+          <span class="sheet-meta" id="accept-count-meta">0 筆</span>
+        </div>
+        <div class="accept-hint" id="accept-hint" hidden></div>
+        <div class="table-scroll">
+          <table class="excel-table">
+            <thead>
+              <tr>
+                <th>工區</th>
+                <th>批號</th>
+                <th>檢驗員</th>
+                <th>備註</th>
+                <th class="del-col" style="width:34px"></th>
+              </tr>
+            </thead>
+            <tbody id="acceptance-tbody"></tbody>
+          </table>
+        </div>
+        <form class="accept-form" id="accept-form">
+          <input type="text" id="acc-zone" placeholder="工區(如 115丙加固)" required>
+          <input type="text" id="acc-batch" placeholder="批號(如 D013)">
+          <select id="acc-staff"></select>
+          <input type="text" id="acc-note" placeholder="備註(如 初驗)">
+          <button type="submit" class="btn primary">＋ 新增</button>
+        </form>
+      </section>
+    </div>
+
+    <div class="foot">此總表自動讀取「派工任務」與「每月出勤」的即時資料；天氣與驗收紀錄亦會自動保存於本機。</div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script>
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+    const STANDARD_ZONES = [
+      { key: "蘆竹區配電線路設備維護暨事故搶修工作", label: "市巡(蘆竹)", bClass: false },
+      { key: "龜山區配電線路設備維護暨事故搶修工作", label: "市巡(龜山)", bClass: false },
+      { key: "桃園區配電線路設備維護暨事故搶修工作", label: "市巡(桃園)", bClass: false },
+      { key: "八德區配電線路設備維護暨事故搶修工作", label: "市巡(八德)", bClass: false },
+      { key: "乙工區配電線路設備維護暨事故搶修工作", label: "東巡(乙工區)", bClass: false },
+      { key: "大園區配電線路設備維護暨事故搶修工作", label: "西巡(大園)", bClass: false },
+      { key: "中壢區配電線路設備維護暨事故搶修工作", label: "西巡(中壢)", bClass: false },
+      { key: "觀音區配電線路設備維護暨事故搶修工作", label: "西巡(觀音)", bClass: false },
+      { key: "丁工區配電線路設備維護暨事故搶修工作", label: "南巡(丁工區)", bClass: false },
+      { key: "變壓器現場停電檢測工作", label: "變壓器檢測", bClass: false },
+      { key: "甲工區人手孔加固維護工作", label: "甲(加固)", bClass: true },
+      { key: "乙工區人手孔加固維護工作", label: "乙(加固)", bClass: true },
+      { key: "丙工區人手孔加固維護工作", label: "丙(加固)", bClass: true },
+      { key: "自動化開關設備檢點維護工作", label: "自動化開關設備檢點", bClass: false },
+      { key: "甲工區人手孔及配電場所設備檢點維護工作", label: "人手孔檢點(甲)", bClass: false },
+      { key: "乙工區人手孔及配電場所設備檢點維護工作", label: "人手孔檢點(乙)", bClass: false },
+      { key: "設備油漆及美化工作", label: "油漆美化工程", bClass: false },
+      { key: "人手孔及配電場所防水維護作業", label: "防水維護作業", bClass: false },
+      { key: "電桿牌裝設暨桿上設備檢點維護工作", label: "桿上設備點檢", bClass: false }
+    ];
+
+    function todayIso() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }
+
+    function formatRocAndWeekday(dateStr) {
+      const [y, m, d] = dateStr.split("-").map(Number);
+      const dt = new Date(y, m - 1, d);
+      const weekdays = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+      return { roc: `民國 ${y - 1911} 年 ${m} 月 ${d} 日`, weekday: weekdays[dt.getDay()] };
+    }
+
+    function loadJson(key, fallback) {
+      try { return JSON.parse(localStorage.getItem(key) || "null") || fallback; } catch (_) { return fallback; }
+    }
+
+    function contractShortLabel(contract) {
+      const found = STANDARD_ZONES.find(z => contract.includes(z.key));
+      return found ? { label: found.label, bClass: found.bClass } : { label: contract, bClass: false };
+    }
+
+    function isNightTime(timeStr) {
+      if (!timeStr) return false;
+      return /\b0{1,2}(?::\d{2})?\s*[-–~]\s*0?[1-7](?::\d{2})?\b/.test(timeStr)
+        || /\b(2[1-4])(?::\d{2})?\s*[-–~]\s*(0?[1-8]|2[2-4])(?::\d{2})?\b/.test(timeStr)
+        || /夜|凌晨|深夜/.test(timeStr);
+    }
+
+    const params = new URLSearchParams(location.search);
+    const activeDateFromStorage = localStorage.getItem("dispatch-active-date-v1");
+    let currentDate = params.get("date") || activeDateFromStorage || todayIso();
+
+    function renderPage() {
+      $("work-date-picker").value = currentDate;
+      const { roc, weekday } = formatRocAndWeekday(currentDate);
+      $("weekday-label").textContent = weekday;
+
+      const weatherMap = loadJson("dispatch-weather-v1", {});
+      const weather = weatherMap[currentDate] || "晴";
+      $("weather-select").value = weather;
+      $("left-sheet-meta").textContent = `${roc} · ${weekday} · 天氣(${weather})`;
+      $("goto-edit-dispatch").href = `index.html?date=${encodeURIComponent(currentDate)}`;
+
+      // 讀取派工快照與人員出勤
+      const allDailyWork = loadJson("dispatch-daily-work-v1", {});
+      const dayWork = allDailyWork[currentDate];
+      const rosterData = loadJson("dispatch-roster-v2", { roster: [], daily: {} });
+      const roster = rosterData.roster || [];
+      const dayAttendance = (rosterData.daily || {})[currentDate] || {};
+
+      // 算出當日休假人員與驗收人員
+      const leaveNames = [];
+      const acceptInspectors = [];
+      for (const s of roster) {
+        const rec = dayAttendance[s.id];
+        if (rec) {
+          if (!rec.attending) leaveNames.push(s.name);
+          else if (rec.statusType === "acceptance" || rec.statusType === "overtime_acceptance" || (rec.noncritical && s.id !== "staff-1")) {
+            acceptInspectors.push(s.name);
+          }
+        }
+      }
+
+      // 更新驗收檢驗員下拉選單
+      const staffOpts = roster.length
+        ? roster.map(s => `<option value="${esc(s.name)}">${esc(s.name)}</option>`).join("")
+        : `<option value="">請先建立名單</option>`;
+      $("acc-staff").innerHTML = staffOpts;
+
+      if (acceptInspectors.length) {
+        $("accept-hint").hidden = false;
+        $("accept-hint").innerHTML = `💡 本日每月出勤排定驗收人員：${acceptInspectors.map(n => `<button type="button" class="accept-chip" data-pick-inspector="${esc(n)}">${esc(n)}</button>`).join("")}`;
+      } else {
+        $("accept-hint").hidden = true;
+      }
+
+      // 左側表格渲染
+      const items = dayWork?.items || [];
+      $("no-dispatch-banner").hidden = items.length > 0;
+      const showAll = $("show-all-zones").checked;
+
+      const workNotesAll = loadJson("dispatch-work-notes-v1", {});
+      const workNotes = workNotesAll[currentDate] || {};
+
+      let rows = [];
+      if (showAll) {
+        const usedIndexes = new Set();
+        for (const zone of STANDARD_ZONES) {
+          const matched = [];
+          items.forEach((item, idx) => {
+            if (!usedIndexes.has(idx) && item.contract.includes(zone.key)) {
+              usedIndexes.add(idx);
+              matched.push({ ...item, origIdx: idx });
+            }
+          });
+          if (matched.length) {
+            matched.forEach(item => rows.push({
+              origIdx: item.origIdx,
+              noteKey: `${item.contract}|||${item.crew}`,
+              label: zone.label,
+              bClass: zone.bClass,
+              staffId: item.staffId || "",
+              staffName: item.staffName || "",
+              method: item.crew,
+              time: item.times.join("、"),
+              desc: item.descriptions.join("／"),
+              empty: false
+            }));
+          } else {
+            rows.push({ origIdx: -1, noteKey: `zone:${zone.label}`, label: zone.label, bClass: zone.bClass, staffId: "", staffName: "", method: "", time: "", desc: "", empty: true });
+          }
+        }
+        // 未在 19 項內的額外契約
+        items.forEach((item, idx) => {
+          if (usedIndexes.has(idx)) return;
+          rows.push({
+            origIdx: idx,
+            noteKey: `${item.contract}|||${item.crew}`,
+            label: item.contract,
+            bClass: false,
+            staffId: item.staffId || "",
+            staffName: item.staffName || "",
+            method: item.crew,
+            time: item.times.join("、"),
+            desc: item.descriptions.join("／"),
+            empty: false
+          });
+        });
+      } else {
+        rows = items.map((item, idx) => {
+          const info = contractShortLabel(item.contract);
+          return {
+            origIdx: idx,
+            noteKey: `${item.contract}|||${item.crew}`,
+            label: info.label,
+            bClass: info.bClass,
+            staffId: item.staffId || "",
+            staffName: item.staffName || "",
+            method: item.crew,
+            time: item.times.join("、"),
+            desc: item.descriptions.join("／"),
+            empty: false
+          };
+        });
+      }
+
+      const tbody = $("daily-work-tbody");
+      if (!rows.length) {
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="6" style="padding:24px">本日尚無派工資料</td></tr>`;
+      } else {
+        tbody.innerHTML = rows.map((r, i) => {
+          const leaveHtml = i === 0 && leaveNames.length
+            ? `<td class="leave-cell" rowspan="${rows.length}" style="vertical-align:top;padding-top:12px;background:#fff8f8;color:#b42318">${leaveNames.map(n => `<div>${esc(n)}</div>`).join("")}</td>`
+            : (i === 0 ? `<td class="leave-cell" rowspan="${rows.length}">—</td>` : "");
+          let inspectorHtml = `<td></td>`;
+          if (!r.empty) {
+            const opts = [
+              `<option value="">-- 待指派 --</option>`,
+              ...roster.map(s => `<option value="${esc(s.id)}"${s.id === r.staffId ? " selected" : ""}>${esc(s.name)}</option>`)
+            ].join("");
+            inspectorHtml = `<td><select class="inspector-select${r.staffId ? "" : " is-pending"}" data-work-idx="${r.origIdx}" aria-label="變更 ${esc(r.label)} 檢驗員">${opts}</select></td>`;
+          }
+          const workText = r.desc || r.method;
+          const noteVal = workNotes[r.noteKey] || "";
+          return `
+            <tr class="${r.empty ? "empty-row" : ""}">
+              <td class="zone-cell${r.bClass ? " zone-b" : ""}">${esc(r.label)}</td>
+              ${inspectorHtml}
+              <td class="text-left">${esc(workText)}</td>
+              <td class="time-cell${isNightTime(r.time) ? " time-night" : ""}">${esc(r.time)}</td>
+              <td><input type="text" class="work-note-input" data-note-key="${esc(r.noteKey)}" value="${esc(noteVal)}" aria-label="備註"></td>
+              ${leaveHtml}
+            </tr>
+          `;
+        }).join("");
+      }
+
+      renderAcceptanceTable();
+    }
+
+    function renderAcceptanceTable() {
+      const allAcc = loadJson("dispatch-acceptance-v1", {});
+      const list = allAcc[currentDate] || [];
+      $("accept-count-meta").textContent = `${list.length} 筆`;
+      const tbody = $("acceptance-tbody");
+      if (!list.length) {
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="5" style="padding:18px">本日尚無驗收紀錄（可於下方新增）</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = list.map((rec, idx) => `
+        <tr>
+          <td class="text-left" style="font-weight:700">${esc(rec.zone)}</td>
+          <td>${esc(rec.batch)}</td>
+          <td class="inspector-cell">${esc(rec.staff)}</td>
+          <td class="note-red">${esc(rec.note)}</td>
+          <td class="del-col"><button type="button" class="del-x" data-acc-del="${idx}" title="移除">×</button></td>
+        </tr>
+      `).join("");
+    }
+
+    // 事件監聽
+    $("work-date-picker").addEventListener("change", e => {
+      if (!e.target.value) return;
+      currentDate = e.target.value;
+      localStorage.setItem("dispatch-active-date-v1", currentDate);
+      renderPage();
+    });
+
+    $("weather-select").addEventListener("change", e => {
+      const weatherMap = loadJson("dispatch-weather-v1", {});
+      weatherMap[currentDate] = e.target.value;
+      localStorage.setItem("dispatch-weather-v1", JSON.stringify(weatherMap));
+      renderPage();
+    });
+
+    $("show-all-zones").addEventListener("change", renderPage);
+    $("print-btn").addEventListener("click", () => window.print());
+
+    $("accept-hint").addEventListener("click", e => {
+      const chip = e.target.closest("button[data-pick-inspector]");
+      if (chip) {
+        $("acc-staff").value = chip.dataset.pickInspector;
+        $("acc-zone").focus();
+      }
+    });
+
+    $("accept-form").addEventListener("submit", e => {
+      e.preventDefault();
+      const zone = $("acc-zone").value.trim();
+      if (!zone) return;
+      const allAcc = loadJson("dispatch-acceptance-v1", {});
+      const list = allAcc[currentDate] || (allAcc[currentDate] = []);
+      list.push({
+        zone,
+        batch: $("acc-batch").value.trim(),
+        staff: $("acc-staff").value,
+        note: $("acc-note").value.trim()
+      });
+      localStorage.setItem("dispatch-acceptance-v1", JSON.stringify(allAcc));
+      $("acc-zone").value = "";
+      $("acc-batch").value = "";
+      $("acc-note").value = "";
+      renderAcceptanceTable();
+    });
+
+    $("acceptance-tbody").addEventListener("click", e => {
+      const del = e.target.closest("button[data-acc-del]");
+      if (!del) return;
+      const idx = Number(del.dataset.accDel);
+      const allAcc = loadJson("dispatch-acceptance-v1", {});
+      const list = allAcc[currentDate] || [];
+      list.splice(idx, 1);
+      allAcc[currentDate] = list;
+      localStorage.setItem("dispatch-acceptance-v1", JSON.stringify(allAcc));
+      renderAcceptanceTable();
+    });
+
+    // 直接在每日工作表變更檢驗員
+    $("daily-work-tbody").addEventListener("change", e => {
+      const sel = e.target.closest("select[data-work-idx]");
+      if (!sel) return;
+      const idx = Number(sel.dataset.workIdx);
+      const newStaffId = sel.value || null;
+
+      const allDailyWork = loadJson("dispatch-daily-work-v1", {});
+      const dayWork = allDailyWork[currentDate];
+      if (!dayWork || !dayWork.items?.[idx]) return;
+
+      const rosterData = loadJson("dispatch-roster-v2", { roster: [], daily: {} });
+      const staff = (rosterData.roster || []).find(s => s.id === newStaffId);
+
+      const item = dayWork.items[idx];
+      item.staffId = staff ? staff.id : null;
+      item.staffName = staff ? staff.name : null;
+      item.manual = true;
+      dayWork.updatedAt = new Date().toISOString();
+      localStorage.setItem("dispatch-daily-work-v1", JSON.stringify(allDailyWork));
+
+      // 同步寫入手動指派紀錄 (dispatch-manual-v1)
+      const teamKey = `${item.contract}|||${item.crew}`;
+      const manualAll = loadJson("dispatch-manual-v1", {});
+      const dayManual = manualAll[currentDate] || (manualAll[currentDate] = {});
+      if (newStaffId) dayManual[teamKey] = newStaffId;
+      else delete dayManual[teamKey];
+      localStorage.setItem("dispatch-manual-v1", JSON.stringify(manualAll));
+
+      // 同步更新 session cache
+      const allCache = loadJson("dispatch-session-cache-v1", {});
+      if (allCache[currentDate]?.assignments) {
+        allCache[currentDate].assignments[teamKey] = { staffId: item.staffId, manual: true };
+        localStorage.setItem("dispatch-session-cache-v1", JSON.stringify(allCache));
+      }
+
+      sel.classList.toggle("is-pending", !newStaffId);
+      setDailyCloudStatus("已變更（尚未同步雲端）", "");
+    });
+
+    // 即時儲存各列備註
+    $("daily-work-tbody").addEventListener("input", e => {
+      const inp = e.target.closest("input[data-note-key]");
+      if (!inp) return;
+      const allNotes = loadJson("dispatch-work-notes-v1", {});
+      const dayNotes = allNotes[currentDate] || (allNotes[currentDate] = {});
+      const val = inp.value;
+      if (val) dayNotes[inp.dataset.noteKey] = val;
+      else delete dayNotes[inp.dataset.noteKey];
+      localStorage.setItem("dispatch-work-notes-v1", JSON.stringify(allNotes));
+      setDailyCloudStatus("備註已更新（尚未同步雲端）", "");
+    });
+
+    // Supabase 直接儲存變更功能
+    let supabaseClient = null;
+    let supabaseUser = null;
+
+    function setDailyCloudStatus(msg, cls = "") {
+      const el = $("daily-cloud-status");
+      if (!el) return;
+      el.textContent = msg;
+      el.className = "cloud-save-status" + (cls ? " " + cls : "");
+    }
+
+    async function initDailyCloud() {
+      const cfg = window.APP_SUPABASE_CONFIG;
+      if (!cfg?.url || !cfg?.publishableKey || !window.supabase?.createClient) return;
+      supabaseClient = window.supabase.createClient(cfg.url, cfg.publishableKey);
+      const { data } = await supabaseClient.auth.getSession();
+      supabaseUser = data?.session?.user || null;
+      supabaseClient.auth.onAuthStateChange((_ev, session) => {
+        supabaseUser = session?.user || null;
+      });
+    }
+
+    $("cloud-save-daily").addEventListener("click", async () => {
+      if (!supabaseClient || !supabaseUser) {
+        setDailyCloudStatus("請先至「歷史查詢」登入 Supabase", "error");
+        return;
+      }
+      const allCache = loadJson("dispatch-session-cache-v1", {});
+      const cached = allCache[currentDate];
+      const allDailyWork = loadJson("dispatch-daily-work-v1", {});
+      const dayWork = allDailyWork[currentDate];
+      if (!cached?.jobs?.length && !dayWork?.items?.length) {
+        setDailyCloudStatus("當日無派工資料可儲存", "error");
+        return;
+      }
+
+      const btn = $("cloud-save-daily");
+      btn.disabled = true;
+      setDailyCloudStatus("正在儲存至雲端…", "");
+
+      const rosterData = loadJson("dispatch-roster-v2", { roster: [], daily: {} });
+      const manualAll = loadJson("dispatch-manual-v1", {});
+      const weatherMap = loadJson("dispatch-weather-v1", {});
+      const accMap = loadJson("dispatch-acceptance-v1", {});
+      const workNotesMap = loadJson("dispatch-work-notes-v1", {});
+
+      const assignments = {};
+      if (dayWork?.items) {
+        for (const it of dayWork.items) {
+          assignments[`${it.contract}|||${it.crew}`] = { staffId: it.staffId || null, manual: !!it.manual };
+        }
+      }
+
+      const payload = {
+        version: 1,
+        filename: cached?.filename || dayWork?.filename || "每日工作調整",
+        jobs: cached?.jobs || [],
+        roster: rosterData.roster || [],
+        daily: { [currentDate]: (rosterData.daily || {})[currentDate] || {} },
+        manualAssignments: { [currentDate]: manualAll[currentDate] || {} },
+        assignments: Object.keys(assignments).length ? assignments : (cached?.assignments || {}),
+        coordinates: cached?.coordinates || { matched: 0, decoded: 0, total: 0, available: false },
+        proximityKm: cached?.proximityKm || 10,
+        weather: weatherMap[currentDate] || "晴",
+        acceptance: accMap[currentDate] || [],
+        workNotes: workNotesMap[currentDate] || {}
+      };
+
+      const firstStaff = cached?.firstStaff || dayWork?.firstStaff || (rosterData.roster?.[0]?.id || "staff-1");
+      const { error } = await supabaseClient.from("dispatch_history").upsert({
+        user_id: supabaseUser.id,
+        work_date: currentDate,
+        first_staff: firstStaff,
+        payload,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id,work_date" });
+
+      btn.disabled = false;
+      if (error) {
+        setDailyCloudStatus(`儲存失敗：${error.message}`, "error");
+        return;
+      }
+      setDailyCloudStatus("✓ 已儲存至雲端", "ok");
+    });
+
+    window.addEventListener("storage", e => {
+      if (["dispatch-daily-work-v1", "dispatch-roster-v2", "dispatch-acceptance-v1"].includes(e.key)) {
+        renderPage();
+      }
+    });
+
+    initDailyCloud();
+    renderPage();
+  </script>
+  <script src="version.js"></script>
+</body>
+</html>
