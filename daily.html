@@ -133,8 +133,8 @@
       <span class="muted">路程安排</span>
       <span class="muted">匯出雲端</span>
       <span class="muted">報表列印</span>
-      <a class="nav-btn nav-history-btn" href="index.html#history" title="查詢並直接載入雲端派工紀錄"><span class="cloud-dot"></span>歷史查詢</a>
-      <span class="app-ver-badge">V2.2</span>
+      <button class="nav-btn nav-history-btn" id="nav-history-btn" type="button" title="查詢並直接載入雲端派工紀錄"><span class="cloud-dot" id="nav-cloud-dot"></span><span class="nav-history-label">歷史查詢</span></button>
+      <span class="app-ver-badge">V2.3</span>
     </nav>
   </header>
 
@@ -172,13 +172,15 @@
         <span class="cloud-save-status" id="daily-cloud-status"></span>
         <button class="btn primary" id="cloud-save-daily" type="button">☁ 儲存變更到雲端</button>
         <a class="btn" id="goto-edit-dispatch" href="index.html">✎ 回派工任務調整</a>
-        <a class="btn" href="index.html#history">☁ 歷史查詢</a>
+        <button class="btn" id="toolbar-history-btn" type="button">☁ 歷史查詢</button>
         <button class="btn" id="print-btn" type="button">🖨 列印總表</button>
       </div>
     </div>
 
+    <div class="rbac-banner" id="daily-rbac-banner" hidden></div>
+
     <div class="empty-banner" id="no-dispatch-banner" hidden>
-      此日期尚未產生派工資料。請先前往 <a href="index.html" style="color:var(--teal);font-weight:800">派工任務</a> 上傳 Excel 並確認指派，或點擊右上角 <a href="index.html#history" style="color:var(--teal);font-weight:800">歷史查詢</a> 讀取雲端已安排好的工作。
+      此日期尚未產生派工資料。請先前往 <a href="index.html" style="color:var(--teal);font-weight:800">派工任務</a> 上傳 Excel 並確認指派，或點擊 <button type="button" id="banner-history-btn" style="border:0;background:none;padding:0;color:var(--teal);font:inherit;font-weight:800;cursor:pointer;text-decoration:underline">歷史查詢</button> 讀取雲端已安排好的工作。
     </div>
 
     <div class="sheets-grid">
@@ -241,6 +243,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
+  <script src="version.js"></script>
   <script>
     const $ = id => document.getElementById(id);
     const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -309,6 +312,18 @@
       $("weather-select").value = weather;
       $("left-sheet-meta").textContent = `${roc} · ${weekday} · 天氣(${weather})`;
       $("goto-edit-dispatch").href = `index.html?date=${encodeURIComponent(currentDate)}`;
+
+      const restricted = window.AppCloud?.isRestrictedInspector();
+      const rbacBanner = $("daily-rbac-banner");
+      if (rbacBanner) {
+        if (restricted) {
+          rbacBanner.hidden = false;
+          rbacBanner.innerHTML = `<span>👤 <strong>檢驗員模式：</strong>左表檢驗員指派為唯讀；您可填寫左表「備註」及管理右表「檢驗員驗收紀錄」，完成後點選「☁ 儲存變更到雲端」同步。</span>`;
+        } else {
+          rbacBanner.hidden = true;
+        }
+      }
+      $("goto-edit-dispatch").textContent = restricted ? "查看派工任務卡片" : "✎ 回派工任務調整";
 
       // 讀取派工快照與人員出勤
       const allDailyWork = loadJson("dispatch-daily-work-v1", {});
@@ -423,11 +438,17 @@
             : (i === 0 ? `<td class="leave-cell" rowspan="${rows.length}">—</td>` : "");
           let inspectorHtml = `<td></td>`;
           if (!r.empty) {
-            const opts = [
-              `<option value="">-- 待指派 --</option>`,
-              ...roster.map(s => `<option value="${esc(s.id)}"${s.id === r.staffId ? " selected" : ""}>${esc(s.name)}</option>`)
-            ].join("");
-            inspectorHtml = `<td><select class="inspector-select${r.staffId ? "" : " is-pending"}" data-work-idx="${r.origIdx}" aria-label="變更 ${esc(r.label)} 檢驗員">${opts}</select></td>`;
+            if (restricted) {
+              inspectorHtml = r.staffName
+                ? `<td class="inspector-cell">${esc(r.staffName)}</td>`
+                : `<td class="inspector-pending">待指派</td>`;
+            } else {
+              const opts = [
+                `<option value="">-- 待指派 --</option>`,
+                ...roster.map(s => `<option value="${esc(s.id)}"${s.id === r.staffId ? " selected" : ""}>${esc(s.name)}</option>`)
+              ].join("");
+              inspectorHtml = `<td><select class="inspector-select${r.staffId ? "" : " is-pending"}" data-work-idx="${r.origIdx}" aria-label="變更 ${esc(r.label)} 檢驗員">${opts}</select></td>`;
+            }
           }
           const workText = r.desc || r.method;
           const noteVal = workNotes[r.noteKey] || "";
@@ -467,12 +488,21 @@
       `).join("");
     }
 
+    async function syncDateFromCloudIfNeeded(dateStr) {
+      if (!window.AppCloud?.isLoggedIn()) return;
+      const allDailyWork = loadJson("dispatch-daily-work-v1", {});
+      if (allDailyWork[dateStr]?.items?.length) return;
+      const loaded = await window.AppCloud.loadCloudDispatch(dateStr, { redirect: false });
+      if (loaded) renderPage();
+    }
+
     // 事件監聽
-    $("work-date-picker").addEventListener("change", e => {
+    $("work-date-picker").addEventListener("change", async e => {
       if (!e.target.value) return;
       currentDate = e.target.value;
       localStorage.setItem("dispatch-active-date-v1", currentDate);
       renderPage();
+      await syncDateFromCloudIfNeeded(currentDate);
     });
 
     $("weather-select").addEventListener("change", e => {
@@ -493,39 +523,84 @@
       }
     });
 
-    $("accept-form").addEventListener("submit", e => {
+    $("accept-form").addEventListener("submit", async e => {
       e.preventDefault();
       const zone = $("acc-zone").value.trim();
       if (!zone) return;
-      const allAcc = loadJson("dispatch-acceptance-v1", {});
-      const list = allAcc[currentDate] || (allAcc[currentDate] = []);
-      list.push({
+      const dateAtSubmit = currentDate;
+      const newRec = {
         zone,
         batch: $("acc-batch").value.trim(),
         staff: $("acc-staff").value,
         note: $("acc-note").value.trim()
-      });
+      };
+      const allAcc = loadJson("dispatch-acceptance-v1", {});
+      const list = allAcc[dateAtSubmit] || (allAcc[dateAtSubmit] = []);
+      const recIdx = list.length;
+      list.push(newRec);
       localStorage.setItem("dispatch-acceptance-v1", JSON.stringify(allAcc));
       $("acc-zone").value = "";
       $("acc-batch").value = "";
       $("acc-note").value = "";
       renderAcceptanceTable();
+
+      if (window.AppCloud?.isLoggedIn()) {
+        setDailyCloudStatus("正在同步驗收紀錄至雲端…", "");
+        const { data, error } = await window.AppCloud.addAcceptanceRow(dateAtSubmit, newRec);
+        if (error) {
+          setDailyCloudStatus(`驗收紀錄雲端同步失敗：${error.message}`, "error");
+          return;
+        }
+        if (data?.id) {
+          const latestAcc = loadJson("dispatch-acceptance-v1", {});
+          const latestList = latestAcc[dateAtSubmit] || [];
+          if (latestList[recIdx]) latestList[recIdx].id = data.id;
+          else newRec.id = data.id;
+          localStorage.setItem("dispatch-acceptance-v1", JSON.stringify(latestAcc));
+        }
+        setDailyCloudStatus("✓ 驗收紀錄已同步至雲端", "ok");
+      }
     });
 
-    $("acceptance-tbody").addEventListener("click", e => {
+    $("acceptance-tbody").addEventListener("click", async e => {
       const del = e.target.closest("button[data-acc-del]");
       if (!del) return;
       const idx = Number(del.dataset.accDel);
+      const dateAtDelete = currentDate;
       const allAcc = loadJson("dispatch-acceptance-v1", {});
-      const list = allAcc[currentDate] || [];
-      list.splice(idx, 1);
-      allAcc[currentDate] = list;
+      const list = allAcc[dateAtDelete] || [];
+      const [removed] = list.splice(idx, 1);
+      allAcc[dateAtDelete] = list;
       localStorage.setItem("dispatch-acceptance-v1", JSON.stringify(allAcc));
       renderAcceptanceTable();
+
+      if (removed?.id && window.AppCloud?.isLoggedIn()) {
+        setDailyCloudStatus("正在從雲端移除驗收紀錄…", "");
+        const { error } = await window.AppCloud.deleteAcceptanceRow(removed.id);
+        if (error) {
+          setDailyCloudStatus(`移除雲端驗收紀錄失敗：${error.message}`, "error");
+          return;
+        }
+        setDailyCloudStatus("✓ 已從雲端移除驗收紀錄", "ok");
+      }
     });
 
-    // 直接在每日工作表變更檢驗員
-    $("daily-work-tbody").addEventListener("change", e => {
+    // 左表各列備註即時同步至 daily_work_notes；檢驗員指派變更僅限管理員
+    $("daily-work-tbody").addEventListener("change", async e => {
+      if (e.target.matches("input[data-note-key]")) {
+        const inp = e.target;
+        if (window.AppCloud?.isLoggedIn()) {
+          setDailyCloudStatus("正在同步備註至雲端…", "");
+          const { error } = await window.AppCloud.saveWorkNoteRow(currentDate, inp.dataset.noteKey, inp.value);
+          if (error) {
+            setDailyCloudStatus(`備註雲端同步失敗：${error.message}`, "error");
+          } else {
+            setDailyCloudStatus("✓ 備註已同步至雲端", "ok");
+          }
+        }
+        return;
+      }
+      if (window.AppCloud?.isRestrictedInspector()) return;
       const sel = e.target.closest("select[data-work-idx]");
       if (!sel) return;
       const idx = Number(sel.dataset.workIdx);
@@ -577,10 +652,6 @@
       setDailyCloudStatus("備註已更新（尚未同步雲端）", "");
     });
 
-    // Supabase 直接儲存變更功能
-    let supabaseClient = null;
-    let supabaseUser = null;
-
     function setDailyCloudStatus(msg, cls = "") {
       const el = $("daily-cloud-status");
       if (!el) return;
@@ -588,20 +659,15 @@
       el.className = "cloud-save-status" + (cls ? " " + cls : "");
     }
 
-    async function initDailyCloud() {
-      const cfg = window.APP_SUPABASE_CONFIG;
-      if (!cfg?.url || !cfg?.publishableKey || !window.supabase?.createClient) return;
-      supabaseClient = window.supabase.createClient(cfg.url, cfg.publishableKey);
-      const { data } = await supabaseClient.auth.getSession();
-      supabaseUser = data?.session?.user || null;
-      supabaseClient.auth.onAuthStateChange((_ev, session) => {
-        supabaseUser = session?.user || null;
-      });
-    }
+    const toolbarHistoryBtn = $("toolbar-history-btn");
+    if (toolbarHistoryBtn) toolbarHistoryBtn.addEventListener("click", () => window.AppCloud?.openModal());
+    const bannerHistoryBtn = $("banner-history-btn");
+    if (bannerHistoryBtn) bannerHistoryBtn.addEventListener("click", () => window.AppCloud?.openModal());
 
     $("cloud-save-daily").addEventListener("click", async () => {
-      if (!supabaseClient || !supabaseUser) {
-        setDailyCloudStatus("請先至「歷史查詢」登入 Supabase", "error");
+      if (!window.AppCloud?.isLoggedIn()) {
+        setDailyCloudStatus("請先至「歷史查詢」登入雲端帳號", "error");
+        window.AppCloud?.openModal();
         return;
       }
       const allCache = loadJson("dispatch-session-cache-v1", {});
@@ -646,13 +712,7 @@
       };
 
       const firstStaff = cached?.firstStaff || dayWork?.firstStaff || (rosterData.roster?.[0]?.id || "staff-1");
-      const { error } = await supabaseClient.from("dispatch_history").upsert({
-        user_id: supabaseUser.id,
-        work_date: currentDate,
-        first_staff: firstStaff,
-        payload,
-        updated_at: new Date().toISOString()
-      }, { onConflict: "user_id,work_date" });
+      const { error } = await window.AppCloud.saveTeamDispatchHistory(currentDate, firstStaff, payload);
 
       btn.disabled = false;
       if (error) {
@@ -663,14 +723,20 @@
     });
 
     window.addEventListener("storage", e => {
-      if (["dispatch-daily-work-v1", "dispatch-roster-v2", "dispatch-acceptance-v1"].includes(e.key)) {
+      if (["dispatch-daily-work-v1", "dispatch-roster-v2", "dispatch-acceptance-v1", "dispatch-work-notes-v1"].includes(e.key)) {
         renderPage();
       }
     });
 
-    initDailyCloud();
+    if (window.AppCloud) {
+      window.AppCloud.onChange(() => renderPage());
+    }
+
     renderPage();
+    window.AppCloud?.initReady?.then(() => {
+      renderPage();
+      syncDateFromCloudIfNeeded(currentDate);
+    });
   </script>
-  <script src="version.js"></script>
 </body>
 </html>

@@ -106,8 +106,8 @@
       <span class="muted">路程安排</span>
       <span class="muted">匯出雲端</span>
       <span class="muted">報表列印</span>
-      <a class="nav-btn nav-history-btn" href="index.html#history" title="查詢並直接載入雲端派工紀錄"><span class="cloud-dot"></span>歷史查詢</a>
-      <span class="app-ver-badge">V2.2</span>
+      <button class="nav-btn nav-history-btn" id="nav-history-btn" type="button" title="查詢並直接載入雲端派工紀錄"><span class="cloud-dot" id="nav-cloud-dot"></span><span class="nav-history-label">歷史查詢</span></button>
+      <span class="app-ver-badge">V2.3</span>
     </nav>
   </header>
 
@@ -447,6 +447,8 @@
 
     initMap(24.9936, 121.3010, 13);
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
   <script src="version.js"></script>
 </body>
 </html>

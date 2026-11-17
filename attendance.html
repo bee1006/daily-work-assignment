@@ -147,7 +147,9 @@
       border:1px solid var(--line);background:#f8fafb;color:#49616b;border-radius:8px;
       padding:8px 6px;font:700 12px inherit;cursor:pointer;transition:.15s;text-align:center;
     }
-    .seg-btn:hover{background:#eef3f5}
+    .seg-btn:hover:not(:disabled){background:#eef3f5}
+    .seg-btn:disabled{opacity:.55;cursor:not-allowed}
+    .staff-item.is-locked{opacity:.82}
     .seg-btn.active-normal{background:var(--teal);border-color:var(--teal);color:#fff}
     .seg-btn.active-leave{background:#dc2626;border-color:#dc2626;color:#fff}
     .seg-btn.active-overtime{background:#ea580c;border-color:#ea580c;color:#fff}
@@ -214,8 +216,8 @@
       <span class="muted">路程安排</span>
       <span class="muted">匯出雲端</span>
       <span class="muted">報表列印</span>
-      <a class="nav-btn nav-history-btn" href="index.html#history" title="查詢並直接載入雲端派工紀錄"><span class="cloud-dot"></span>歷史查詢</a>
-      <span class="app-ver-badge">V2.2</span>
+      <button class="nav-btn nav-history-btn" id="nav-history-btn" type="button" title="查詢並直接載入雲端派工紀錄"><span class="cloud-dot" id="nav-cloud-dot"></span><span class="nav-history-label">歷史查詢</span></button>
+      <span class="app-ver-badge">V2.3</span>
     </nav>
   </header>
 
@@ -227,6 +229,8 @@
         <p>點選日曆日期即可查看與設定當日休假、假日加班或驗收（非關鍵性作業）人員；設定將即時同步至「派工任務」工作台。</p>
       </div>
     </section>
+
+    <div class="rbac-banner" id="att-rbac-banner" hidden></div>
 
     <section class="card">
       <div class="card-head">
@@ -289,7 +293,7 @@
       <div class="staff-grid" id="staff-grid"></div>
     </section>
 
-    <section class="card">
+    <section class="card" id="roster-manage-card">
       <details class="roster-details" id="roster-details">
         <summary>
           <span class="num">3</span>
@@ -345,6 +349,9 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="version.js"></script>
   <script>
     const $ = id => document.getElementById(id);
     const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -533,7 +540,30 @@
       }
     }
 
+    function buildDefaultsMap(dateStr) {
+      const defaults = {};
+      for (const s of state.roster) {
+        const weekend = isWeekend(dateStr);
+        defaults[s.id] = weekend
+          ? { attending: false, noncritical: s.defaultNoncritical ?? false, statusType: "leave", note: "" }
+          : { attending: s.defaultAttending ?? true, noncritical: s.defaultNoncritical ?? false, statusType: "normal", note: "" };
+      }
+      return defaults;
+    }
+
+    function syncDailyChangeToCloud(dateStr, partialMap) {
+      if (window.AppCloud?.isLoggedIn()) {
+        window.AppCloud.pushDailyAttendance(dateStr, partialMap, buildDefaultsMap(dateStr));
+      }
+    }
+
+    function canEditStaffRecord(staffId) {
+      if (!window.AppCloud?.isRestrictedInspector()) return true;
+      return staffId === window.AppCloud.getMyStaffId();
+    }
+
     function setStaffStatus(staffId, dateStr, mode) {
+      if (!canEditStaffRecord(staffId)) return;
       ensureDayInitialized(dateStr);
       const staff = state.roster.find(s => s.id === staffId);
       if (!staff) return;
@@ -572,6 +602,7 @@
       persistRoster();
       renderCalendar();
       renderDailyDetail();
+      syncDailyChangeToCloud(dateStr, { [staffId]: state.daily[dateStr][staffId] });
     }
 
     function renderCalendar() {
@@ -709,18 +740,23 @@
         else if (isAccept) { badgeClass = "sb-accept"; badgeText = "驗收（非關鍵）"; }
         else if (isOvertime) { badgeClass = "sb-overtime"; badgeText = "假日加班"; }
 
-        const cardExtraClass = isLeave ? " is-leave" : isAccept ? " is-accept" : isOvertime ? " is-overtime" : "";
+        const restricted = window.AppCloud?.isRestrictedInspector();
+        const myStaffId = window.AppCloud?.getMyStaffId();
+        const canEdit = !restricted || (staff.id === myStaffId);
+        const cardExtraClass = (isLeave ? " is-leave" : isAccept ? " is-accept" : isOvertime ? " is-overtime" : "") + (canEdit ? "" : " is-locked");
+        const disAttr = canEdit ? "" : " disabled";
+        const selfBadge = (restricted && staff.id === myStaffId) ? `<span class="qual-tag" style="background:#dbeafe;color:#1e40af">本人可編輯</span>` : (!canEdit ? `<span style="font-size:10px;color:var(--muted)">（唯讀）</span>` : "");
 
         const buttonsHtml = weekend
           ? `
-            <button type="button" class="seg-btn${isLeave ? " active-leave" : ""}" data-staff="${esc(staff.id)}" data-mode="leave">例假休息</button>
-            <button type="button" class="seg-btn${!isLeave && !isAccept ? " active-overtime" : ""}" data-staff="${esc(staff.id)}" data-mode="overtime">假日加班</button>
-            <button type="button" class="seg-btn${!isLeave && isAccept ? " active-accept" : ""}" data-staff="${esc(staff.id)}" data-mode="acceptance">加班＋驗收</button>
+            <button type="button" class="seg-btn${isLeave ? " active-leave" : ""}" data-staff="${esc(staff.id)}" data-mode="leave"${disAttr}>例假休息</button>
+            <button type="button" class="seg-btn${!isLeave && !isAccept ? " active-overtime" : ""}" data-staff="${esc(staff.id)}" data-mode="overtime"${disAttr}>假日加班</button>
+            <button type="button" class="seg-btn${!isLeave && isAccept ? " active-accept" : ""}" data-staff="${esc(staff.id)}" data-mode="acceptance"${disAttr}>加班＋驗收</button>
           `
           : `
-            <button type="button" class="seg-btn${!isLeave && !isAccept ? " active-normal" : ""}" data-staff="${esc(staff.id)}" data-mode="normal">正常出勤</button>
-            <button type="button" class="seg-btn${isLeave ? " active-leave" : ""}" data-staff="${esc(staff.id)}" data-mode="leave">休假</button>
-            <button type="button" class="seg-btn${!isLeave && isAccept ? " active-accept" : ""}" data-staff="${esc(staff.id)}" data-mode="acceptance">驗收(非關鍵)</button>
+            <button type="button" class="seg-btn${!isLeave && !isAccept ? " active-normal" : ""}" data-staff="${esc(staff.id)}" data-mode="normal"${disAttr}>正常出勤</button>
+            <button type="button" class="seg-btn${isLeave ? " active-leave" : ""}" data-staff="${esc(staff.id)}" data-mode="leave"${disAttr}>休假</button>
+            <button type="button" class="seg-btn${!isLeave && isAccept ? " active-accept" : ""}" data-staff="${esc(staff.id)}" data-mode="acceptance"${disAttr}>驗收(非關鍵)</button>
           `;
 
         return `
@@ -729,16 +765,17 @@
               <div class="staff-name">
                 ${esc(staff.name)}
                 <span class="qual-tag${staff.supervisor ? " sup" : ""}">${staff.supervisor ? "有監造照" : "無監造照"}</span>
+                ${selfBadge}
               </div>
               <span class="status-badge ${badgeClass}">${badgeText}</span>
             </div>
             <div class="seg-group">${buttonsHtml}</div>
             <div class="staff-extra">
               <label title="勾選後當天僅能分配 C 類工作，不可執行 A/B 類關鍵作業">
-                <input type="checkbox" data-nc-staff="${esc(staff.id)}" ${rec.noncritical ? "checked" : ""} ${isLeave ? "disabled" : ""}>
+                <input type="checkbox" data-nc-staff="${esc(staff.id)}" ${rec.noncritical ? "checked" : ""} ${(isLeave || !canEdit) ? "disabled" : ""}>
                 非關鍵性作業 (Y)
               </label>
-              <input class="note-input" type="text" data-note-staff="${esc(staff.id)}" value="${esc(rec.note)}" placeholder="備註（如：特休、XX驗收）">
+              <input class="note-input" type="text" data-note-staff="${esc(staff.id)}" value="${esc(rec.note)}" placeholder="備註（如：特休、XX驗收）"${disAttr}>
             </div>
           </article>
         `;
@@ -748,6 +785,40 @@
       $("stat-leave").textContent = `休假 ${leaveCount} 人`;
       $("stat-accept").textContent = `非關鍵作業 ${noncriticalCount} 人`;
       $("staff-grid").innerHTML = cardsHtml;
+
+      const restricted = window.AppCloud?.isRestrictedInspector();
+      $("all-normal-btn").hidden = !!restricted;
+      $("all-leave-btn").hidden = !!restricted;
+      $("edit-special-task-btn").hidden = !!restricted;
+      const rosterCard = $("roster-manage-card");
+      if (rosterCard) rosterCard.hidden = !!restricted;
+      updateAttendanceRbacBanner();
+    }
+
+    function updateAttendanceRbacBanner() {
+      const banner = $("att-rbac-banner");
+      if (!banner) return;
+      const restricted = window.AppCloud?.isRestrictedInspector();
+      if (!restricted) {
+        banner.hidden = true;
+        return;
+      }
+      banner.hidden = false;
+      const myId = window.AppCloud.getMyStaffId();
+      const myName = window.AppCloud.getMyStaffName();
+      if (!myId) {
+        const opts = `<option value="">-- 請選擇您的姓名 --</option>` +
+          state.roster.map(s => `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join("");
+        banner.innerHTML = `
+          <span>👤 <strong>檢驗員首次使用：</strong>請先綁定您的姓名，即可點選修改本人的休假／加班／驗收狀態：</span>
+          <select id="att-quick-bind" style="border:1px solid #93c5fd;border-radius:7px;padding:5px 9px;font:inherit;font-size:12px;background:#fff">${opts}</select>
+        `;
+      } else {
+        banner.innerHTML = `
+          <span>👤 <strong>檢驗員模式（${esc(myName || myId)}）：</strong>您可點選修改<strong>本人</strong>的休假／加班／驗收狀態與備註；其他同仁、特別任務與人員名單為唯讀。</span>
+          <button type="button" class="btn" id="att-open-auth-btn" style="padding:4px 10px;font-size:11px">切換綁定／帳號</button>
+        `;
+      }
     }
 
     async function initializeRoster() {
@@ -851,6 +922,7 @@
       const ncCheck = e.target.closest("input[data-nc-staff]");
       if (ncCheck) {
         const staffId = ncCheck.dataset.ncStaff;
+        if (!canEditStaffRecord(staffId)) return;
         ensureDayInitialized(state.selectedDate);
         const rec = state.daily[state.selectedDate][staffId];
         rec.noncritical = ncCheck.checked;
@@ -866,19 +938,29 @@
         persistRoster();
         renderCalendar();
         renderDailyDetail();
+        syncDailyChangeToCloud(state.selectedDate, { [staffId]: rec });
       }
     });
 
+    let noteCloudTimer = null;
     $("staff-grid").addEventListener("input", e => {
       const noteInput = e.target.closest("input[data-note-staff]");
       if (noteInput) {
+        const staffId = noteInput.dataset.noteStaff;
+        if (!canEditStaffRecord(staffId)) return;
         ensureDayInitialized(state.selectedDate);
-        state.daily[state.selectedDate][noteInput.dataset.noteStaff].note = noteInput.value;
+        state.daily[state.selectedDate][staffId].note = noteInput.value;
         persistRoster();
+        const targetDate = state.selectedDate;
+        clearTimeout(noteCloudTimer);
+        noteCloudTimer = setTimeout(() => {
+          syncDailyChangeToCloud(targetDate, { [staffId]: state.daily[targetDate][staffId] });
+        }, 600);
       }
     });
 
     $("all-normal-btn").addEventListener("click", () => {
+      if (window.AppCloud?.isRestrictedInspector()) return;
       ensureDayInitialized(state.selectedDate);
       const weekend = isWeekend(state.selectedDate);
       for (const staff of state.roster) {
@@ -892,9 +974,11 @@
       persistRoster();
       renderCalendar();
       renderDailyDetail();
+      syncDailyChangeToCloud(state.selectedDate, state.daily[state.selectedDate]);
     });
 
     $("all-leave-btn").addEventListener("click", () => {
+      if (window.AppCloud?.isRestrictedInspector()) return;
       ensureDayInitialized(state.selectedDate);
       for (const staff of state.roster) {
         state.daily[state.selectedDate][staff.id] = {
@@ -907,19 +991,23 @@
       persistRoster();
       renderCalendar();
       renderDailyDetail();
+      syncDailyChangeToCloud(state.selectedDate, state.daily[state.selectedDate]);
     });
 
     // 人員異動管理事件
     $("add-staff-btn").addEventListener("click", () => {
+      if (window.AppCloud?.isRestrictedInspector()) return;
       const id = `staff-${Date.now()}`;
       state.roster.push({ id, name: "新同仁", supervisor: true, defaultAttending: true, defaultNoncritical: false });
       persistRoster();
       renderRosterManage();
       renderCalendar();
       renderDailyDetail();
+      window.AppCloud?.pushTeamStateRoster(state.roster);
     });
 
     $("roster-manage-rows").addEventListener("change", e => {
+      if (window.AppCloud?.isRestrictedInspector()) return;
       const ctrl = e.target;
       const staff = state.roster.find(s => s.id === ctrl.dataset.id);
       if (!staff) return;
@@ -935,9 +1023,11 @@
       renderRosterManage();
       renderCalendar();
       renderDailyDetail();
+      window.AppCloud?.pushTeamStateRoster(state.roster);
     });
 
     $("roster-manage-rows").addEventListener("click", e => {
+      if (window.AppCloud?.isRestrictedInspector()) return;
       const btn = e.target.closest("button[data-rm-action]");
       if (!btn) return;
       const idx = state.roster.findIndex(s => s.id === btn.dataset.id);
@@ -959,10 +1049,12 @@
       renderRosterManage();
       renderCalendar();
       renderDailyDetail();
+      window.AppCloud?.pushTeamStateRoster(state.roster);
     });
 
-    // 特別任務彈窗控制（雙擊日期或點擊編輯）
+    // 特別任務彈窗控制（雙擊日期或點擊編輯，僅限管理員）
     function openTaskModal(dateStr) {
+      if (window.AppCloud?.isRestrictedInspector()) return;
       state.editingTaskDate = dateStr;
       $("task-modal-date").textContent = rocDateLabel(dateStr);
       $("task-modal-input").value = state.dayNotes[dateStr] || "";
@@ -974,6 +1066,7 @@
       state.editingTaskDate = null;
     }
     function saveTaskModal() {
+      if (window.AppCloud?.isRestrictedInspector()) return;
       const dateStr = state.editingTaskDate;
       if (!dateStr) return;
       const val = $("task-modal-input").value.trim();
@@ -983,9 +1076,11 @@
       closeTaskModal();
       renderCalendar();
       renderDailyDetail();
+      window.AppCloud?.pushTeamStateDayNotes(state.dayNotes);
     }
 
     $("cal-days").addEventListener("dblclick", e => {
+      if (window.AppCloud?.isRestrictedInspector()) return;
       const cell = e.target.closest(".cal-cell[data-date]");
       if (!cell) return;
       openTaskModal(cell.dataset.date);
@@ -1006,29 +1101,44 @@
       $("task-modal-input").focus();
     });
 
-    window.addEventListener("storage", e => {
-      if (e.key === "dispatch-roster-v2" && e.newValue) {
-        try {
-          const saved = JSON.parse(e.newValue);
-          if (saved?.roster?.length) {
-            state.roster = saved.roster.map(s => ({ ...s, defaultAttending: true, defaultNoncritical: s.id === "staff-1" }));
-            state.daily = saved.daily || {};
-            renderRosterManage();
-            renderCalendar();
-            renderDailyDetail();
-          }
-        } catch (_) {}
-      } else if (e.key === "dispatch-day-notes-v1" && e.newValue) {
-        try {
-          state.dayNotes = JSON.parse(e.newValue) || {};
-          renderCalendar();
-          renderDailyDetail();
-        } catch (_) {}
+    $("att-rbac-banner").addEventListener("change", e => {
+      if (e.target.id === "att-quick-bind" && e.target.value) {
+        window.AppCloud?.bindMyStaff(e.target.value);
+      }
+    });
+    $("att-rbac-banner").addEventListener("click", e => {
+      if (e.target.id === "att-open-auth-btn") {
+        window.AppCloud?.openModal();
       }
     });
 
-    initializeRoster();
+    function reloadFromLocalStorage() {
+      try {
+        const saved = JSON.parse(localStorage.getItem("dispatch-roster-v2") || "null");
+        if (saved?.roster?.length) {
+          state.roster = saved.roster.map(s => ({ ...s, defaultAttending: true, defaultNoncritical: s.id === "staff-1" }));
+          state.daily = saved.daily || {};
+        }
+        state.dayNotes = JSON.parse(localStorage.getItem("dispatch-day-notes-v1") || "{}") || {};
+      } catch (_) {}
+      renderRosterManage();
+      renderCalendar();
+      renderDailyDetail();
+    }
+
+    window.addEventListener("storage", e => {
+      if (e.key === "dispatch-roster-v2" || e.key === "dispatch-day-notes-v1") {
+        reloadFromLocalStorage();
+      }
+    });
+
+    if (window.AppCloud) {
+      window.AppCloud.onChange(() => reloadFromLocalStorage());
+    }
+
+    initializeRoster().then(() => {
+      window.AppCloud?.initReady?.then(() => reloadFromLocalStorage());
+    });
   </script>
-  <script src="version.js"></script>
 </body>
 </html>
