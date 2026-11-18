@@ -106,12 +106,23 @@
       main{padding:0 12px 40px;margin-top:20px}
     }
     @media print{
-      header,.intro,.toolbar-card,.accept-hint,.accept-form,.del-col,.foot{display:none!important}
+      header,.intro,.toolbar-card,.cloud-dates-bar,.accept-hint,.accept-form,.del-col,.foot{display:none!important}
       body{background:#fff}
       main{margin:0;padding:0;max-width:100%}
       .sheets-grid{grid-template-columns:1.8fr 1fr;gap:10px}
       .sheet-card{box-shadow:none;border-radius:0}
     }
+    .cloud-dates-bar{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;box-shadow:var(--shadow)}
+    .cloud-dates-bar[hidden]{display:none}
+    .cloud-dates-title{font-size:12px;font-weight:800;color:var(--navy);margin-right:4px;white-space:nowrap}
+    .cloud-date-pill{border:1px solid var(--line);background:#f8fafb;color:var(--ink);border-radius:18px;padding:4px 11px;font:700 12px inherit;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:.15s}
+    .cloud-date-pill:hover{border-color:var(--teal);color:var(--teal);background:#f0faf8}
+    .cloud-date-pill.active{background:var(--navy);border-color:var(--navy);color:#fff}
+    .cloud-date-tag{font-size:10px;padding:1px 6px;border-radius:10px;font-weight:800}
+    .cloud-date-tag.assigned{background:#dff3ef;color:#087f78}
+    .cloud-date-tag.pending{background:#fef3c7;color:#92400e}
+    .cloud-date-pill.active .cloud-date-tag.assigned{background:#59c5b2;color:#123344}
+    .cloud-date-pill.active .cloud-date-tag.pending{background:#fde68a;color:#78350f}
     .app-ver-badge{font-size:10px;font-weight:800;color:#93c5fd;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);padding:3px 7px;border-radius:12px;letter-spacing:.04em}
     .module-nav a.nav-btn,.nav-btn{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;border-radius:6px;padding:4px 9px;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;line-height:1.2;transition:all .15s;text-decoration:none}
     .module-nav a.nav-btn:hover,.nav-btn:hover{background:var(--teal);border-color:var(--teal);color:#fff}
@@ -128,13 +139,14 @@
     <nav class="module-nav" aria-label="系統功能">
       <a href="attendance.html">每月出勤</a>
       <a class="current" href="daily.html" aria-current="page">每日工作</a>
+      <a href="upload.html">上傳工作</a>
       <a href="index.html">派工任務</a>
       <a href="coordinates.html">圖號座標</a>
       <span class="muted">路程安排</span>
       <span class="muted">匯出雲端</span>
       <span class="muted">報表列印</span>
       <button class="nav-btn nav-history-btn" id="nav-history-btn" type="button" title="查詢並直接載入雲端派工紀錄"><span class="cloud-dot" id="nav-cloud-dot"></span><span class="nav-history-label">歷史查詢</span></button>
-      <span class="app-ver-badge">V2.3</span>
+      <span class="app-ver-badge">V3.0</span>
     </nav>
   </header>
 
@@ -177,10 +189,12 @@
       </div>
     </div>
 
+    <div class="cloud-dates-bar" id="cloud-dates-bar" hidden></div>
+
     <div class="rbac-banner" id="daily-rbac-banner" hidden></div>
 
     <div class="empty-banner" id="no-dispatch-banner" hidden>
-      此日期尚未產生派工資料。請先前往 <a href="index.html" style="color:var(--teal);font-weight:800">派工任務</a> 上傳 Excel 並確認指派，或點擊 <button type="button" id="banner-history-btn" style="border:0;background:none;padding:0;color:var(--teal);font:inherit;font-weight:800;cursor:pointer;text-decoration:underline">歷史查詢</button> 讀取雲端已安排好的工作。
+      此日期尚未匯入施工資料。請先前往 <a href="upload.html" style="color:var(--teal);font-weight:800">上傳工作</a> 預先匯入施工 Excel（免指派即可預存未來工作），或前往 <a href="index.html" style="color:var(--teal);font-weight:800">派工任務</a> 進行指派，或點擊 <button type="button" id="banner-history-btn" style="border:0;background:none;padding:0;color:var(--teal);font:inherit;font-weight:800;cursor:pointer;text-decoration:underline">歷史查詢</button> 讀取雲端資料。
     </div>
 
     <div class="sheets-grid">
@@ -266,7 +280,7 @@
       { key: "甲工區人手孔及配電場所設備檢點維護工作", label: "人手孔檢點(甲)", bClass: false },
       { key: "乙工區人手孔及配電場所設備檢點維護工作", label: "人手孔檢點(乙)", bClass: false },
       { key: "設備油漆及美化工作", label: "油漆美化工程", bClass: false },
-      { key: "人手孔及配電場所防水維護作業", label: "防水維護作業", bClass: false },
+      { key: "人手孔及配電場所防水維護", label: "防水維護作業", bClass: false },
       { key: "電桿牌裝設暨桿上設備檢點維護工作", label: "桿上設備點檢", bClass: false }
     ];
 
@@ -313,10 +327,14 @@
       $("left-sheet-meta").textContent = `${roc} · ${weekday} · 天氣(${weather})`;
       $("goto-edit-dispatch").href = `index.html?date=${encodeURIComponent(currentDate)}`;
 
-      const restricted = window.AppCloud?.isRestrictedInspector();
+      const restricted = !!window.AppCloud?.isRestrictedInspector();
+      const isAssistant = !!window.AppCloud?.isAssistant();
       const rbacBanner = $("daily-rbac-banner");
       if (rbacBanner) {
-        if (restricted) {
+        if (isAssistant) {
+          rbacBanner.hidden = false;
+          rbacBanner.innerHTML = `<span>📤 <strong>助理唯讀檢視模式：</strong>您可預覽每日工作總表與未來施工資料；指派、備註與驗收紀錄均為唯讀。</span>`;
+        } else if (restricted) {
           rbacBanner.hidden = false;
           rbacBanner.innerHTML = `<span>👤 <strong>檢驗員模式：</strong>左表檢驗員指派為唯讀；您可填寫左表「備註」及管理右表「檢驗員驗收紀錄」，完成後點選「☁ 儲存變更到雲端」同步。</span>`;
         } else {
@@ -324,6 +342,9 @@
         }
       }
       $("goto-edit-dispatch").textContent = restricted ? "查看派工任務卡片" : "✎ 回派工任務調整";
+      $("weather-select").disabled = isAssistant;
+      $("cloud-save-daily").hidden = isAssistant;
+      $("accept-form").hidden = isAssistant;
 
       // 讀取派工快照與人員出勤
       const allDailyWork = loadJson("dispatch-daily-work-v1", {});
@@ -386,12 +407,13 @@
               staffId: item.staffId || "",
               staffName: item.staffName || "",
               method: item.crew,
+              foreman: (item.foremen || []).join("、"),
               time: item.times.join("、"),
               desc: item.descriptions.join("／"),
               empty: false
             }));
           } else {
-            rows.push({ origIdx: -1, noteKey: `zone:${zone.label}`, label: zone.label, bClass: zone.bClass, staffId: "", staffName: "", method: "", time: "", desc: "", empty: true });
+            rows.push({ origIdx: -1, noteKey: `zone:${zone.label}`, label: zone.label, bClass: zone.bClass, staffId: "", staffName: "", method: "", foreman: "", time: "", desc: "", empty: true });
           }
         }
         // 未在 19 項內的額外契約
@@ -405,6 +427,7 @@
             staffId: item.staffId || "",
             staffName: item.staffName || "",
             method: item.crew,
+            foreman: (item.foremen || []).join("、"),
             time: item.times.join("、"),
             desc: item.descriptions.join("／"),
             empty: false
@@ -421,6 +444,7 @@
             staffId: item.staffId || "",
             staffName: item.staffName || "",
             method: item.crew,
+            foreman: (item.foremen || []).join("、"),
             time: item.times.join("、"),
             desc: item.descriptions.join("／"),
             empty: false
@@ -451,14 +475,16 @@
             }
           }
           const workText = r.desc || r.method;
-          const noteVal = workNotes[r.noteKey] || "";
+          const hasCustomNote = Object.prototype.hasOwnProperty.call(workNotes, r.noteKey);
+          const noteVal = hasCustomNote ? workNotes[r.noteKey] : (r.foreman || "");
+          const notePlaceholder = r.foreman ? `領班：${r.foreman}` : "";
           return `
             <tr class="${r.empty ? "empty-row" : ""}">
               <td class="zone-cell${r.bClass ? " zone-b" : ""}">${esc(r.label)}</td>
               ${inspectorHtml}
               <td class="text-left">${esc(workText)}</td>
               <td class="time-cell${isNightTime(r.time) ? " time-night" : ""}">${esc(r.time)}</td>
-              <td><input type="text" class="work-note-input" data-note-key="${esc(r.noteKey)}" value="${esc(noteVal)}" aria-label="備註"></td>
+              <td><input type="text" class="work-note-input" data-note-key="${esc(r.noteKey)}" value="${esc(noteVal)}" placeholder="${esc(notePlaceholder)}" aria-label="備註"${isAssistant ? " disabled" : ""}></td>
               ${leaveHtml}
             </tr>
           `;
@@ -466,15 +492,40 @@
       }
 
       renderAcceptanceTable();
+      renderCloudDatesBar();
+    }
+
+    function renderCloudDatesBar() {
+      const bar = $("cloud-dates-bar");
+      if (!bar) return;
+      const snap = window.AppCloud?.getSnapshot();
+      const rows = snap?.historyRows || [];
+      if (!snap?.loggedIn || !rows.length) {
+        bar.hidden = true;
+        return;
+      }
+      bar.hidden = false;
+      bar.innerHTML = `<span class="cloud-dates-title">☁ 雲端已預存／已排工日期（預覽未來工作）：</span>` + rows.map(row => {
+        const [, m, d] = row.work_date.split("-").map(Number);
+        const yRoc = Number(row.work_date.slice(0, 4)) - 1911;
+        const label = `${yRoc}/${String(m).padStart(2, "0")}/${String(d).padStart(2, "0")}`;
+        const assigned = !!window.AppCloud.hasAssignedStaff(row.payload?.assignments);
+        const active = row.work_date === currentDate;
+        const tag = assigned
+          ? `<span class="cloud-date-tag assigned">✓ 已排工</span>`
+          : `<span class="cloud-date-tag pending">⏳ 待指派</span>`;
+        return `<button type="button" class="cloud-date-pill${active ? " active" : ""}" data-cloud-date="${esc(row.work_date)}">${esc(label)} ${tag}</button>`;
+      }).join("");
     }
 
     function renderAcceptanceTable() {
       const allAcc = loadJson("dispatch-acceptance-v1", {});
       const list = allAcc[currentDate] || [];
+      const isAssistant = !!window.AppCloud?.isAssistant();
       $("accept-count-meta").textContent = `${list.length} 筆`;
       const tbody = $("acceptance-tbody");
       if (!list.length) {
-        tbody.innerHTML = `<tr class="empty-row"><td colspan="5" style="padding:18px">本日尚無驗收紀錄（可於下方新增）</td></tr>`;
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="5" style="padding:18px">${isAssistant ? "本日尚無驗收紀錄" : "本日尚無驗收紀錄（可於下方新增）"}</td></tr>`;
         return;
       }
       tbody.innerHTML = list.map((rec, idx) => `
@@ -483,17 +534,33 @@
           <td>${esc(rec.batch)}</td>
           <td class="inspector-cell">${esc(rec.staff)}</td>
           <td class="note-red">${esc(rec.note)}</td>
-          <td class="del-col"><button type="button" class="del-x" data-acc-del="${idx}" title="移除">×</button></td>
+          <td class="del-col">${isAssistant ? "" : `<button type="button" class="del-x" data-acc-del="${idx}" title="移除">×</button>`}</td>
         </tr>
       `).join("");
     }
 
+    let syncingCloudDate = null;
     async function syncDateFromCloudIfNeeded(dateStr) {
-      if (!window.AppCloud?.isLoggedIn()) return;
-      const allDailyWork = loadJson("dispatch-daily-work-v1", {});
-      if (allDailyWork[dateStr]?.items?.length) return;
-      const loaded = await window.AppCloud.loadCloudDispatch(dateStr, { redirect: false });
-      if (loaded) renderPage();
+      if (!window.AppCloud?.isLoggedIn() || !dateStr || syncingCloudDate === dateStr) return;
+      syncingCloudDate = dateStr;
+      try {
+        const loaded = await window.AppCloud.loadCloudDispatch(dateStr, { redirect: false });
+        if (loaded) renderPage();
+      } finally {
+        if (syncingCloudDate === dateStr) syncingCloudDate = null;
+      }
+    }
+
+    const cloudDatesBar = $("cloud-dates-bar");
+    if (cloudDatesBar) {
+      cloudDatesBar.addEventListener("click", async e => {
+        const btn = e.target.closest("button[data-cloud-date]");
+        if (!btn) return;
+        currentDate = btn.dataset.cloudDate;
+        localStorage.setItem("dispatch-active-date-v1", currentDate);
+        renderPage();
+        await syncDateFromCloudIfNeeded(currentDate);
+      });
     }
 
     // 事件監聽
@@ -506,6 +573,7 @@
     });
 
     $("weather-select").addEventListener("change", e => {
+      if (window.AppCloud?.isAssistant()) return;
       const weatherMap = loadJson("dispatch-weather-v1", {});
       weatherMap[currentDate] = e.target.value;
       localStorage.setItem("dispatch-weather-v1", JSON.stringify(weatherMap));
@@ -516,6 +584,7 @@
     $("print-btn").addEventListener("click", () => window.print());
 
     $("accept-hint").addEventListener("click", e => {
+      if (window.AppCloud?.isAssistant()) return;
       const chip = e.target.closest("button[data-pick-inspector]");
       if (chip) {
         $("acc-staff").value = chip.dataset.pickInspector;
@@ -525,6 +594,7 @@
 
     $("accept-form").addEventListener("submit", async e => {
       e.preventDefault();
+      if (window.AppCloud?.isAssistant()) return;
       const zone = $("acc-zone").value.trim();
       if (!zone) return;
       const dateAtSubmit = currentDate;
@@ -563,6 +633,7 @@
     });
 
     $("acceptance-tbody").addEventListener("click", async e => {
+      if (window.AppCloud?.isAssistant()) return;
       const del = e.target.closest("button[data-acc-del]");
       if (!del) return;
       const idx = Number(del.dataset.accDel);
@@ -588,6 +659,7 @@
     // 左表各列備註即時同步至 daily_work_notes；檢驗員指派變更僅限管理員
     $("daily-work-tbody").addEventListener("change", async e => {
       if (e.target.matches("input[data-note-key]")) {
+        if (window.AppCloud?.isAssistant()) return;
         const inp = e.target;
         if (window.AppCloud?.isLoggedIn()) {
           setDailyCloudStatus("正在同步備註至雲端…", "");
@@ -639,15 +711,14 @@
       setDailyCloudStatus("已變更（尚未同步雲端）", "");
     });
 
-    // 即時儲存各列備註
+    // 即時儲存各列備註（保留空字串以區分刻意清除領班預設值）
     $("daily-work-tbody").addEventListener("input", e => {
+      if (window.AppCloud?.isAssistant()) return;
       const inp = e.target.closest("input[data-note-key]");
       if (!inp) return;
       const allNotes = loadJson("dispatch-work-notes-v1", {});
       const dayNotes = allNotes[currentDate] || (allNotes[currentDate] = {});
-      const val = inp.value;
-      if (val) dayNotes[inp.dataset.noteKey] = val;
-      else delete dayNotes[inp.dataset.noteKey];
+      dayNotes[inp.dataset.noteKey] = inp.value;
       localStorage.setItem("dispatch-work-notes-v1", JSON.stringify(allNotes));
       setDailyCloudStatus("備註已更新（尚未同步雲端）", "");
     });

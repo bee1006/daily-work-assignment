@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>台電檢驗員｜上傳工作</title>
+  <style>
+    :root{--ink:#172a3a;--muted:#6d7b86;--line:#dce5e9;--paper:#fff;--bg:#f3f7f8;--teal:#087f78;--teal2:#dff3ef;--navy:#17364c;--amber:#fff4dc;--shadow:0 12px 32px #1832450c}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;font-size:14px}
+    header{background:var(--navy);color:#fff;padding:16px max(24px,calc((100% - 1120px)/2));display:flex;align-items:center;justify-content:space-between;gap:18px}
+    .brand{display:flex;gap:12px;align-items:center}
+    .mark{height:40px;width:40px;border-radius:12px;background:#59c5b2;display:grid;place-items:center;color:#123344;font-weight:900;font-size:20px}
+    .brand strong{display:block;font-size:18px;letter-spacing:.04em}
+    .brand span{font-size:12px;color:#b8cbd4}
+    .module-nav{display:flex;align-items:center;justify-content:flex-end;gap:5px 12px;flex-wrap:wrap;max-width:680px}
+    .module-nav a,.module-nav span{font-size:11px;line-height:1.2;text-decoration:none;white-space:nowrap}
+    .module-nav a{color:#dce9ed}
+    .module-nav a:hover{color:#fff}
+    .module-nav .current{font-weight:800;color:#6fe0c9}
+    .module-nav .muted{color:#91a9b2}
+    main{max-width:1240px;margin:26px auto;padding:0 24px 60px}
+    .intro{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:18px;gap:16px;flex-wrap:wrap}
+    .eyebrow{font-size:11px;letter-spacing:.16em;color:var(--teal);font-weight:800}
+    .intro h1{font-size:26px;letter-spacing:.02em;margin:6px 0 6px}
+    .intro p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+    .auth-banner{margin:0 0 18px;padding:12px 16px;border-radius:12px;background:#fff8e9;border:1px solid #f0d28c;color:#70551c;font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .auth-banner[hidden]{display:none}
+    .card{background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden}
+    .card-head{padding:18px 22px 12px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #edf2f4;flex-wrap:wrap}
+    .num{width:27px;height:27px;border-radius:9px;background:var(--teal2);color:var(--teal);display:grid;place-items:center;font-size:13px;font-weight:800;flex:0 0 auto}
+    .card-head h2{font-size:16px;margin:0}
+    .card-head small{margin-left:auto;color:var(--muted);font-size:12px}
+    .card-body{padding:18px 22px 22px}
+    .drop{border:2px dashed #abc4ca;background:#f8fbfb;border-radius:14px;padding:24px 20px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:.2s;flex-wrap:wrap}
+    .drop:hover,.drop.drag{border-color:var(--teal);background:#eef9f6}
+    .fileicon{width:46px;height:46px;border-radius:12px;background:#e3f3ef;color:var(--teal);display:grid;place-items:center;font-weight:900;font-size:20px;flex:0 0 auto}
+    .drop strong{display:block;font-size:15px;color:var(--navy)}
+    .drop span{font-size:12px;color:var(--muted);display:block;margin-top:4px}
+    .btn{border:1px solid var(--line);border-radius:8px;padding:8px 13px;background:#fff;color:var(--navy);font:700 12px inherit;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+    .btn:hover{border-color:var(--teal);color:var(--teal)}
+    .btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+    .btn.primary:hover{background:#066b65;color:#fff}
+    .btn.danger{color:#b42318;border-color:#f5c2be;background:#fff8f8}
+    .btn.danger:hover{background:#fee4e2;border-color:#d92d20}
+    .btn:disabled{opacity:.45;cursor:not-allowed}
+    .upload-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;flex-wrap:wrap}
+    .filename{font-size:12px;font-weight:700;color:var(--teal)}
+    .status{font-size:12px;color:var(--muted);line-height:1.5}
+    .status.ok{color:#087f78;font-weight:700}
+    .status.error{color:#b42318;font-weight:700}
+    .preview-card{margin-top:18px;border:1px solid var(--line);border-radius:12px;background:#fbfdfe;overflow:hidden}
+    .preview-card[hidden]{display:none}
+    .cleaning-box{padding:11px 16px;background:#fff8eb;border-bottom:1px solid #fde68a;font-size:12px;color:#78350f;line-height:1.55}
+    .cleaning-box.clean-ok{background:#edf9f6;border-bottom-color:#bce8dc;color:#115e59}
+    .cleaning-box[hidden]{display:none}
+    .cleaning-box details{margin-top:8px}
+    .cleaning-box summary{cursor:pointer;font-weight:700}
+    .cleaning-box table{margin-top:8px;min-width:620px;background:#fff;border:1px solid #fde68a;border-radius:8px;overflow:hidden}
+    .cleaning-box th{background:#fef3c7;color:#78350f;font-size:11px;padding:7px 10px}
+    .cleaning-box td{padding:7px 10px;font-size:11px;border-top:1px solid #fef3c7}
+    .preview-top{padding:12px 16px;background:#f4f8f9;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .preview-tabs{display:flex;gap:6px;flex-wrap:wrap}
+    .date-tab{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:20px;padding:5px 12px;font:700 12px inherit;cursor:pointer}
+    .date-tab.active{background:var(--teal);border-color:var(--teal);color:#fff}
+    .table-wrap{overflow:auto;max-height:420px}
+    table{width:100%;border-collapse:collapse;min-width:760px}
+    th{text-align:left;background:#f8fafb;color:#526673;font-size:11px;padding:10px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:1}
+    td{padding:10px 14px;border-top:1px solid #edf1f3;font-size:12px;vertical-align:top;line-height:1.5}
+    .badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700}
+    .badge.assigned{background:#dff3ef;color:#087f78}
+    .badge.pending{background:#fef3c7;color:#92400e}
+    .grid-code{display:inline-block;font:700 10px ui-monospace,SFMono-Regular,Menlo,monospace;background:#e9f2f4;color:#245863;padding:2px 6px;border-radius:4px;margin:2px 4px 2px 0}
+    .actions-cell{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+    .empty{padding:28px 16px;text-align:center;color:var(--muted);font-size:13px}
+    @media(max-width:560px){
+      header{align-items:flex-start;flex-direction:column;padding:16px 20px}
+      .module-nav{justify-content:flex-start;gap:8px 13px;max-width:100%}
+      main{padding:0 14px 40px;margin-top:18px}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="mark">台</div>
+      <div><strong>台電檢驗員</strong><span>TAIPOWER INSPECTOR</span></div>
+    </div>
+    <nav class="module-nav" aria-label="系統功能">
+      <a href="attendance.html">每月出勤</a>
+      <a href="daily.html">每日工作</a>
+      <a class="current" href="upload.html" aria-current="page">上傳工作</a>
+      <a href="index.html">派工任務</a>
+      <a href="coordinates.html">圖號座標</a>
+      <span class="muted">路程安排</span>
+      <span class="muted">匯出雲端</span>
+      <span class="muted">報表列印</span>
+      <button class="nav-btn nav-history-btn" id="nav-history-btn" type="button" title="查詢並直接載入雲端派工紀錄"><span class="cloud-dot" id="nav-cloud-dot"></span><span class="nav-history-label">歷史查詢</span></button>
+      <span class="app-ver-badge">V3.0</span>
+    </nav>
+  </header>
+
+  <main>
+    <section class="intro">
+      <div>
+        <div class="eyebrow">PRE-UPLOAD WORKSPACE</div>
+        <h1>施工資料預先上傳區（助理專用）</h1>
+        <p>登入後直接匯入 Excel，系統會自動解析並依日期預先存入 Supabase 資料庫（免指派即可存檔）；「每日工作」可立即預覽未來資料，主管再到「派工任務」決定指派即可。</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a class="btn" href="daily.html">📋 前往每日工作預覽</a>
+        <a class="btn primary" href="index.html">⚡ 前往派工任務指派</a>
+      </div>
+    </section>
+
+    <div class="auth-banner" id="upload-auth-banner" hidden>
+      <span>☁ <strong>尚未登入雲端帳號：</strong>請先登入後再上傳 Excel，系統才會在解析完成後自動預存進團隊雲端資料庫。</span>
+      <button type="button" class="btn primary" id="banner-login-btn">登入雲端帳號</button>
+    </div>
+
+    <section class="card">
+      <div class="card-head">
+        <div class="num">1</div>
+        <h2>匯入施工 Excel 並自動預存至雲端</h2>
+        <small>支援 .xlsx / .xlsm（免指派即存檔）</small>
+      </div>
+      <div class="card-body">
+        <div class="drop" id="drop" role="button" tabindex="0" aria-label="選擇或拖曳 Excel 檔案">
+          <div class="fileicon">↑</div>
+          <div>
+            <strong>選擇或拖曳台電施工資料 Excel</strong>
+            <span>上傳後自動依「預定施工日期」切分日期、換算台電圖號座標並同步存入團隊雲端</span>
+          </div>
+          <button type="button" class="btn" id="browse" style="margin-left:auto">選擇檔案</button>
+          <input id="file" type="file" accept=".xlsx,.xlsm" hidden>
+        </div>
+
+        <div class="upload-meta">
+          <div>
+            <div class="filename" id="filename"></div>
+            <div class="status" id="upload-status">請選擇或拖曳施工資料 Excel；已登入狀態下會於解析後自動存入 Supabase。</div>
+          </div>
+          <button type="button" class="btn primary" id="manual-cloud-save-btn" hidden>☁ 登入並儲存至雲端資料庫</button>
+        </div>
+
+        <div class="preview-card" id="preview-card" hidden>
+          <div class="preview-top">
+            <div class="preview-tabs" id="preview-date-tabs"></div>
+            <span id="preview-summary" style="font-size:12px;color:#526673;font-weight:700"></span>
+          </div>
+          <div class="cleaning-box" id="cleaning-report" hidden></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:190px">契約名稱</th>
+                  <th style="width:120px">工作班</th>
+                  <th style="width:95px">領班姓名</th>
+                  <th style="width:115px">施工時間</th>
+                  <th>工作內容</th>
+                  <th style="width:190px">施工地點</th>
+                  <th style="width:155px">圖號座標</th>
+                </tr>
+              </thead>
+              <tbody id="preview-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div class="num">2</div>
+        <h2>雲端已預存工作資料庫一覽</h2>
+        <button type="button" class="btn" id="refresh-cloud-list-btn" style="margin-left:auto">🔄 重新整理清單</button>
+      </div>
+      <div class="card-body" style="padding:0">
+        <div class="table-wrap" style="max-height:none">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:130px">施工日期（民國）</th>
+                <th style="width:155px">狀態</th>
+                <th>匯入檔名</th>
+                <th style="width:145px">工作班／案件數</th>
+                <th style="width:165px">最後更新時間</th>
+                <th style="width:280px">操作</th>
+              </tr>
+            </thead>
+            <tbody id="cloud-preupload-tbody">
+              <tr><td colspan="6" class="empty">正在讀取雲端資料…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="version.js"></script>
+  <script>
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const rocDate = d => {
+      if (!d || !d.includes("-")) return d || "";
+      const [y, m, day] = d.split("-").map(Number);
+      return `${y - 1911}/${String(m).padStart(2, "0")}/${String(day).padStart(2, "0")}`;
+    };
+
+    const uploadState = {
+      pendingUpload: null,
+      previewDate: "",
+      staticPreview: location.hostname.endsWith("github.io")
+    };
+
+    function setUploadStatus(msg, cls = "") {
+      const el = $("upload-status");
+      if (!el) return;
+      el.textContent = msg;
+      el.className = "status" + (cls ? " " + cls : "");
+    }
+
+    function updateAuthUI() {
+      const loggedIn = !!window.AppCloud?.isLoggedIn();
+      const canUpload = !!window.AppCloud?.canUploadWork();
+      const banner = $("upload-auth-banner");
+      if (banner) {
+        if (!loggedIn) {
+          banner.hidden = false;
+          banner.innerHTML = `<span>☁ <strong>尚未登入雲端帳號：</strong>請先登入後再上傳 Excel，系統才會在解析完成後自動預存進團隊雲端資料庫。</span><button type="button" class="btn primary" id="banner-login-btn">登入雲端帳號</button>`;
+        } else if (!canUpload) {
+          banner.hidden = false;
+          banner.innerHTML = `<span>👤 <strong>檢驗員唯讀模式：</strong>匯入 Excel 僅開放助理（<code>guest</code>）或最高使用者（管理員）操作；您可於下方瀏覽雲端已預存工作並點選「預覽每日工作」。</span>`;
+        } else {
+          banner.hidden = true;
+        }
+      }
+
+      const drop = $("drop");
+      const disabledUpload = loggedIn && !canUpload;
+      if (drop) {
+        drop.style.pointerEvents = disabledUpload ? "none" : "";
+        drop.style.opacity = disabledUpload ? "0.55" : "";
+      }
+      if ($("browse")) $("browse").disabled = disabledUpload;
+      if ($("file")) $("file").disabled = disabledUpload;
+
+      const saveBtn = $("manual-cloud-save-btn");
+      if (saveBtn) {
+        const hasUnsaved = !!(uploadState.pendingUpload && !uploadState.pendingUpload.saved);
+        saveBtn.hidden = !hasUnsaved || disabledUpload;
+        saveBtn.textContent = loggedIn ? "☁ 立即補存至雲端資料庫" : "☁ 登入並儲存至雲端資料庫";
+      }
+    }
+
+    function renderParsedPreview() {
+      const p = uploadState.pendingUpload;
+      const card = $("preview-card");
+      const hasCleaningExclusions = !!(p?.cleaning?.excludedCount);
+      if (!p || (!p.jobs?.length && !hasCleaningExclusions)) {
+        if (card) card.hidden = true;
+        return;
+      }
+      card.hidden = false;
+
+      const report = $("cleaning-report");
+      if (report) {
+        const c = p.cleaning;
+        if (!c) {
+          report.hidden = true;
+        } else if (c.excludedCount > 0) {
+          report.hidden = false;
+          report.className = "cleaning-box";
+          const rowsHtml = (c.excludedRows || []).map(r => `
+            <tr>
+              <td>第 ${esc(r.rowNumber)} 列</td>
+              <td>${esc(r.date || "—")}</td>
+              <td>${esc(r.contractor || "—")}</td>
+              <td>${esc(r.crew || "—")}</td>
+              <td>${esc(r.contract || "—")}</td>
+              <td style="color:#b42318;font-weight:700">${esc(r.reason)}</td>
+            </tr>
+          `).join("");
+          report.innerHTML = `
+            <div>🧹 <strong>資料清洗完成：</strong>已保留 <strong>${c.keptCount}</strong> 筆合格承攬商案件，並自動排除 <strong>${c.excludedCount}</strong> 筆非承攬商／格式不符資料（未存入資料庫）。</div>
+            <details>
+              <summary>點擊展開查看已排除的 ${c.excludedCount} 筆資料與原因</summary>
+              <div style="overflow:auto;max-height:240px">
+                <table>
+                  <thead><tr><th>Excel 列號</th><th>日期</th><th>施工者</th><th>工作班</th><th>契約名稱</th><th>排除原因</th></tr></thead>
+                  <tbody>${rowsHtml}</tbody>
+                </table>
+              </div>
+            </details>
+          `;
+        } else {
+          report.hidden = false;
+          report.className = "cleaning-box clean-ok";
+          report.innerHTML = `✓ <strong>資料清洗檢查通過：</strong>全部 <strong>${c.keptCount}</strong> 筆皆為合格承攬商維護工作，無非承攬商或異常列。`;
+        }
+      }
+
+      if (!p.jobs?.length) {
+        $("preview-date-tabs").innerHTML = "";
+        $("preview-summary").textContent = "查無合格承攬商施工案件";
+        $("preview-tbody").innerHTML = `<tr><td colspan="7" class="empty">所有資料列均不符合承攬商格式，已全數攔截。</td></tr>`;
+        return;
+      }
+
+      const dates = [...new Set(p.jobs.map(j => j.date))].sort();
+      if (!uploadState.previewDate || !dates.includes(uploadState.previewDate)) {
+        uploadState.previewDate = dates[0];
+      }
+
+      $("preview-date-tabs").innerHTML = dates.map(d => {
+        const cnt = p.jobs.filter(j => j.date === d).length;
+        return `<button type="button" class="date-tab${d === uploadState.previewDate ? " active" : ""}" data-preview-date="${esc(d)}">${esc(rocDate(d))}（${cnt}筆）</button>`;
+      }).join("");
+
+      const dayJobs = p.jobs.filter(j => j.date === uploadState.previewDate);
+      const crews = new Set(dayJobs.map(j => `${j.contract}|||${j.crew}`));
+      $("preview-summary").textContent = `${rocDate(uploadState.previewDate)}：共 ${crews.size} 組工作班 · ${dayJobs.length} 筆案件`;
+
+      $("preview-tbody").innerHTML = dayJobs.map(j => {
+        const codesHtml = (j.gridCodes || []).map(c => `<span class="grid-code">${esc(c.code)}</span>`).join("") || "<span style='color:#91a9b2'>無</span>";
+        const cleanForeman = String(j.foreman || "").replace(/[A-Za-z0-9+\-()（）\[\]【】:：/／,，;；.。*#\s]+/g, "").trim();
+        return `
+          <tr>
+            <td><strong>${esc(j.contract)}</strong></td>
+            <td>${esc(j.crew)}</td>
+            <td style="font-weight:700;color:#087f78">${esc(cleanForeman || "—")}</td>
+            <td>${esc(j.time || "—")}</td>
+            <td>${esc(j.description || j.workSummary || "—")}</td>
+            <td>${esc(j.location || "—")}</td>
+            <td>${codesHtml}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function renderCloudPreuploadTable() {
+      const tbody = $("cloud-preupload-tbody");
+      if (!tbody) return;
+      if (!window.AppCloud?.isLoggedIn()) {
+        tbody.innerHTML = `<tr><td colspan="6" class="empty">請先登入雲端帳號（點擊右上角「歷史查詢 / 登入」），即可查看與管理團隊已預存的工作日期。</td></tr>`;
+        return;
+      }
+      const snap = window.AppCloud.getSnapshot();
+      const rows = snap.historyRows || [];
+      if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="empty">目前雲端資料庫尚無任何施工資料，請於上方選擇 Excel 匯入。</td></tr>`;
+        return;
+      }
+      const admin = !!snap.isAdmin;
+      tbody.innerHTML = rows.map(row => {
+        const jobs = row.payload?.jobs || [];
+        const crewCount = new Set(jobs.map(j => `${j.contract}|||${j.crew}`)).size;
+        const assigned = !!window.AppCloud.hasAssignedStaff(row.payload?.assignments);
+        const statusBadge = assigned
+          ? `<span class="badge assigned">✓ 已排工</span>`
+          : `<span class="badge pending">⏳ 待指派（已預存）</span>`;
+        const timeStr = row.updated_at ? new Date(row.updated_at).toLocaleString("zh-TW", { hour12: false }) : "—";
+        const assignBtn = admin
+          ? `<a class="btn primary" href="index.html?date=${encodeURIComponent(row.work_date)}">⚡ 前往派工指派</a>`
+          : "";
+        const delBtn = admin
+          ? `<button type="button" class="btn danger" data-del-date="${esc(row.work_date)}">移除</button>`
+          : "";
+        return `
+          <tr>
+            <td><strong>${esc(rocDate(row.work_date))}</strong><div style="font-size:11px;color:#82909a">${esc(row.work_date)}</div></td>
+            <td>${statusBadge}</td>
+            <td>${esc(row.payload?.filename || "未命名檔案")}</td>
+            <td>${crewCount} 組 / ${jobs.length} 筆</td>
+            <td>${esc(timeStr)}</td>
+            <td>
+              <div class="actions-cell">
+                <a class="btn" href="daily.html?date=${encodeURIComponent(row.work_date)}">📋 預覽每日工作</a>
+                ${assignBtn}
+                ${delBtn}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    async function savePendingToCloud() {
+      const p = uploadState.pendingUpload;
+      if (!p || p.saved || p.saving) return;
+      if (!window.AppCloud?.isLoggedIn()) {
+        setUploadStatus(`已解析 ${p.jobs.length} 筆案件，請先登入雲端帳號以預存至 Supabase。`, "error");
+        updateAuthUI();
+        return;
+      }
+      p.saving = true;
+      setUploadStatus("正在將解析資料依日期預存至 Supabase…", "");
+      const { error, savedDates } = await window.AppCloud.savePreUploadedWork(p.filename, p.jobs, p.coordinates);
+      p.saving = false;
+      if (error) {
+        setUploadStatus(`雲端預存失敗：${error.message}`, "error");
+        updateAuthUI();
+        return;
+      }
+      p.saved = true;
+      updateAuthUI();
+      const cleanedNote = p.cleaning?.excludedCount ? `，已自動排除 ${p.cleaning.excludedCount} 筆非承攬商／不符格式資料` : "";
+      setUploadStatus(`✓ 已預存至雲端資料庫（共 ${savedDates.map(rocDate).join("、")}，${p.jobs.length} 筆案件${cleanedNote}）；可至「每日工作」預覽或「派工任務」指派。`, "ok");
+      renderCloudPreuploadTable();
+    }
+
+    async function handleFileUpload(file) {
+      if (!file) return;
+      if (window.AppCloud?.isLoggedIn() && !window.AppCloud.canUploadWork()) {
+        setUploadStatus("目前登入為檢驗員帳號，僅助理（guest）或最高使用者（管理員）可匯入施工資料。", "error");
+        return;
+      }
+      if (uploadState.staticPreview) {
+        setUploadStatus("GitHub Pages 僅提供介面預覽；Excel 解析需要本機 Python 後端（app.py）。", "error");
+        return;
+      }
+      $("filename").textContent = `檔案：${file.name}`;
+      setUploadStatus("正在解析 Excel 並換算台電圖號座標…", "");
+      try {
+        const buf = await file.arrayBuffer();
+        let binary = "";
+        const bytes = new Uint8Array(buf);
+        for (let i = 0; i < bytes.length; i += 0x8000) {
+          binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+        }
+        const response = await fetch("/api/parse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ file: btoa(binary) })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "無法讀取檔案");
+
+        uploadState.pendingUpload = {
+          filename: file.name,
+          jobs: result.jobs || [],
+          coordinates: result.coordinates || { matched: 0, decoded: 0, total: 0, available: false },
+          cleaning: result.cleaning || null,
+          saved: false,
+          saving: false
+        };
+        uploadState.previewDate = "";
+        renderParsedPreview();
+
+        if (!result.jobs?.length) {
+          const ex = result.cleaning?.excludedCount || 0;
+          setUploadStatus(ex ? `已排除 ${ex} 筆非承攬商或格式不符資料，查無可匯入的承攬商施工案件。` : "Excel 中沒有可用的施工資料列。", "error");
+          return;
+        }
+        await savePendingToCloud();
+      } catch (err) {
+        setUploadStatus(`匯入失敗：${err.message}`, "error");
+      }
+    }
+
+    $("browse").addEventListener("click", e => {
+      e.preventDefault();
+      e.stopPropagation();
+      $("file").click();
+    });
+    $("drop").addEventListener("click", e => {
+      if (e.target.closest("button")) return;
+      $("file").click();
+    });
+    $("drop").addEventListener("keydown", e => {
+      if (e.target.closest("button")) return;
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        $("file").click();
+      }
+    });
+    ["dragenter", "dragover"].forEach(ev => $("drop").addEventListener(ev, e => {
+      e.preventDefault();
+      $("drop").classList.add("drag");
+    }));
+    ["dragleave", "drop"].forEach(ev => $("drop").addEventListener(ev, e => {
+      e.preventDefault();
+      $("drop").classList.remove("drag");
+    }));
+    $("drop").addEventListener("drop", e => {
+      const f = e.dataTransfer.files?.[0];
+      if (f) handleFileUpload(f);
+    });
+    $("file").addEventListener("change", e => {
+      const f = e.target.files?.[0];
+      if (f) handleFileUpload(f);
+      e.target.value = "";
+    });
+
+    $("preview-date-tabs").addEventListener("click", e => {
+      const tab = e.target.closest("button[data-preview-date]");
+      if (!tab) return;
+      uploadState.previewDate = tab.dataset.previewDate;
+      renderParsedPreview();
+    });
+
+    $("upload-auth-banner").addEventListener("click", e => {
+      if (e.target.closest("#banner-login-btn")) window.AppCloud?.openModal();
+    });
+    $("manual-cloud-save-btn").addEventListener("click", () => {
+      if (!window.AppCloud?.isLoggedIn()) {
+        window.AppCloud?.openModal();
+      } else {
+        savePendingToCloud();
+      }
+    });
+
+    $("refresh-cloud-list-btn").addEventListener("click", () => {
+      if (!window.AppCloud?.isLoggedIn()) {
+        window.AppCloud?.openModal();
+        return;
+      }
+      window.AppCloud.refreshCloudHistory();
+    });
+
+    $("cloud-preupload-tbody").addEventListener("click", async e => {
+      const delBtn = e.target.closest("button[data-del-date]");
+      if (!delBtn) return;
+      const d = delBtn.dataset.delDate;
+      if (!confirm(`確定要從雲端移除 ${rocDate(d)}（${d}）的施工／派工資料嗎？`)) return;
+      delBtn.disabled = true;
+      const { error } = await window.AppCloud.deleteCloudDispatch(d);
+      if (error) {
+        alert(`移除失敗：${error.message}`);
+        delBtn.disabled = false;
+      }
+    });
+
+    if (window.AppCloud) {
+      window.AppCloud.onChange(ev => {
+        updateAuthUI();
+        renderCloudPreuploadTable();
+        if (ev.loggedIn && window.AppCloud.canUploadWork() && uploadState.pendingUpload && !uploadState.pendingUpload.saved && !uploadState.pendingUpload.saving) {
+          savePendingToCloud();
+        }
+      });
+    }
+
+    updateAuthUI();
+    renderCloudPreuploadTable();
+    window.AppCloud?.initReady?.then(() => {
+      updateAuthUI();
+      renderCloudPreuploadTable();
+    });
+  </script>
+</body>
+</html>

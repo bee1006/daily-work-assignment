@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import base64
 import csv
+import io
 import json
 import os
 import re
 import sqlite3
 import threading
-from datetime import date, datetime
+import xml.etree.ElementTree as ET
+import zipfile
+from datetime import date, datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -41,10 +44,35 @@ HEADERS = {
     "contractor": "施工者",
     "contract": "契約名稱",
     "crew": "工作班",
+    "foreman": "領班及聯絡電話",
     "time": "施工時間",
     "description": "工作內容",
     "location": "施工地點",
 }
+CONTRACT_KEYWORDS = [
+    "蘆竹區配電線路設備維護暨事故搶修工作",
+    "龜山區配電線路設備維護暨事故搶修工作",
+    "桃園區配電線路設備維護暨事故搶修工作",
+    "八德區配電線路設備維護暨事故搶修工作",
+    "乙工區配電線路設備維護暨事故搶修工作",
+    "大園區配電線路設備維護暨事故搶修工作",
+    "中壢區配電線路設備維護暨事故搶修工作",
+    "觀音區配電線路設備維護暨事故搶修工作",
+    "丁工區配電線路設備維護暨事故搶修工作",
+    "變壓器現場停電檢測工作",
+    "甲工區人手孔加固維護工作",
+    "乙工區人手孔加固維護工作",
+    "丙工區人手孔加固維護工作",
+    "自動化開關設備檢點維護工作",
+    "甲工區人手孔及配電場所設備檢點維護工作",
+    "乙工區人手孔及配電場所設備檢點維護工作",
+    "設備油漆及美化工作",
+    "人手孔及配電場所防水維護",
+    "電桿牌裝設暨桿上設備檢點維護工作",
+]
+INTERNAL_CREW_RE = re.compile(r"^(?:線路|巡修|自辦|本課|內部|檢驗|維護組|工務|設計|變電|活線|配電)")
+INTERNAL_CONTRACTOR_RE = re.compile(r"^(?:線路課|維護組|巡修課|巡修股|設計課|工務段|檢驗|變電|自辦|台電)")
+KNOWN_CONTRACTOR_RE = re.compile(r"(?:華陽|高峰|巨舜|統鑫|勤曜|泰昌|營豐|翔泰|工程|電氣|電器|企業|實業|公司|有限|營造|水電|科技|工業)")
 GRID_FULL = re.compile(
     r"(?<![A-Z0-9])[A-Z]\s*\d{4}\s*[A-Z]{2}\s*\d{2}(?:\s*\d{2})?(?![A-Z0-9])",
     re.IGNORECASE,
@@ -245,7 +273,11 @@ def date_key(value):
     if isinstance(value, (date, datetime)):
         return value.strftime("%Y-%m-%d")
     text = str(value).strip().splitlines()[0]
-    match = re.match(r"^(\d{2,4})[/-](\d{1,2})[/-](\d{1,2})$", text)
+    if re.fullmatch(r"\d{5}(?:\.\d+)?", text):
+        serial = float(text)
+        if 30000 <= serial <= 80000:
+            return (date(1899, 12, 30) + timedelta(days=int(serial))).strftime("%Y-%m-%d")
+    match = re.match(r"^(\d{2,4})[/-](\d{1,2})[/-](\d{1,2})(?:\s.*)?$", text)
     if not match:
         return text
     year, month, day = map(int, match.groups())
@@ -254,45 +286,216 @@ def date_key(value):
     return f"{year:04d}-{month:02d}-{day:02d}"
 
 
-def read_excel(payload):
-    if load_workbook is None:
-        raise ValueError("伺服器端尚未安裝 openpyxl，請執行 pip install openpyxl 以支援 Excel 解析。")
+def _xml_local_name(tag):
+    return tag.rsplit("}", 1)[-1] if "}" in tag else tag
+
+
+def _extract_si_text(elem):
+    parts = []
+    for child in elem:
+        local = _xml_local_name(child.tag)
+        if local == "t":
+            parts.append(child.text or "")
+        elif local == "r":
+            for sub in child:
+                if _xml_local_name(sub.tag) == "t":
+                    parts.append(sub.text or "")
+    return "".join(parts)
+
+
+def _col_ref_to_index(ref):
+    match = re.match(r"([A-Za-z]+)", ref or "")
+    if not match:
+        return None
+    col = 0
+    for ch in match.group(1).upper():
+        col = col * 26 + (ord(ch) - 64)
+    return col - 1
+
+
+def _read_xlsx_rows_stdlib(data: bytes):
+    try:
+        zf = zipfile.ZipFile(io.BytesIO(data))
+    except zipfile.BadZipFile as exc:
+        raise ValueError("無法解析此 Excel 檔案，請確認上傳的是有效的 .xlsx 或 .xlsm 檔案。") from exc
+
+    with zf:
+        names = zf.namelist()
+        shared_strings = []
+        shared_path = next((n for n in names if n.lower() == "xl/sharedstrings.xml"), None)
+        if shared_path:
+            root = ET.fromstring(zf.read(shared_path))
+            for elem in root:
+                if _xml_local_name(elem.tag) == "si":
+                    shared_strings.append(_extract_si_text(elem))
+
+        sheet_path = next((n for n in names if n.lower() == "xl/worksheets/sheet1.xml"), None)
+        if not sheet_path:
+            sheets = sorted(n for n in names if n.lower().startswith("xl/worksheets/sheet") and n.lower().endswith(".xml"))
+            if not sheets:
+                raise ValueError("Excel 檔案內找不到工作表資料。")
+            sheet_path = sheets[0]
+
+        sheet_root = ET.fromstring(zf.read(sheet_path))
+        rows = []
+        for row_elem in sheet_root.iter():
+            if _xml_local_name(row_elem.tag) != "row":
+                continue
+            row_vals = []
+            next_col = 0
+            for cell in row_elem:
+                if _xml_local_name(cell.tag) != "c":
+                    continue
+                col_idx = _col_ref_to_index(cell.attrib.get("r", ""))
+                if col_idx is None:
+                    col_idx = next_col
+                next_col = col_idx + 1
+                while len(row_vals) <= col_idx:
+                    row_vals.append("")
+
+                cell_type = cell.attrib.get("t", "")
+                val = ""
+                if cell_type == "inlineStr":
+                    is_elem = next((c for c in cell if _xml_local_name(c.tag) == "is"), None)
+                    if is_elem is not None:
+                        val = _extract_si_text(is_elem)
+                else:
+                    v_elem = next((c for c in cell if _xml_local_name(c.tag) == "v"), None)
+                    raw_v = v_elem.text if (v_elem is not None and v_elem.text is not None) else ""
+                    if cell_type == "s" and raw_v != "":
+                        idx = int(raw_v)
+                        val = shared_strings[idx] if 0 <= idx < len(shared_strings) else ""
+                    else:
+                        val = raw_v
+                row_vals[col_idx] = val
+            rows.append(row_vals)
+        return rows
+
+
+def extract_foreman_name(raw_value):
+    text = str(raw_value or "").strip()
+    if not text:
+        return ""
+    cleaned = re.sub(r"[A-Za-z0-9+\-()（）\[\]【】:：/／,，;；.。*#]+", " ", text)
+    return "".join(cleaned.split())
+
+
+def validate_contractor_row(work_date, department, contractor, contract, crew):
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", work_date or ""):
+        return False, f"預定施工日期「{work_date or '空白'}」格式無效"
+    if not crew:
+        return False, "工作班為空白"
+    if INTERNAL_CREW_RE.match(crew):
+        return False, f"工作班「{crew}」為內部班別（非承攬商）"
+    if not contractor:
+        return False, "施工者為空白"
+    if INTERNAL_CONTRACTOR_RE.match(contractor):
+        slash_parts = [p.strip() for p in re.split(r"[/／]", contractor) if p.strip()]
+        has_partner = len(slash_parts) > 1 and any(not INTERNAL_CONTRACTOR_RE.match(p) for p in slash_parts[1:])
+        if not has_partner and not KNOWN_CONTRACTOR_RE.search(contractor):
+            return False, f"施工者「{contractor}」為內部單位（非承攬商）"
+    if not contract or contract in ("無", "自辦") or not any(kw in contract for kw in CONTRACT_KEYWORDS):
+        return False, f"契約名稱「{contract or '空白'}」不屬於承攬商維護契約"
+    return True, ""
+
+
+def parse_excel_with_cleaning(payload):
     data = base64.b64decode(payload)
-    workbook = load_workbook(filename=__import__("io").BytesIO(data), read_only=True, data_only=True)
-    sheet = workbook.active
-    header_row = None
+    if load_workbook is not None:
+        workbook = load_workbook(filename=io.BytesIO(data), read_only=True, data_only=True)
+        sheet = workbook.active
+        all_rows = [list(r) for r in sheet.iter_rows(values_only=True)]
+    else:
+        all_rows = _read_xlsx_rows_stdlib(data)
+
+    header_row_idx = None
     headers = []
-    for row_num, row in enumerate(sheet.iter_rows(min_row=1, max_row=min(sheet.max_row, 15), values_only=True), start=1):
+    for idx, row in enumerate(all_rows[:15]):
         values = [str(value).strip() if value is not None else "" for value in row]
         if HEADERS["date"] in values and HEADERS["crew"] in values:
-            header_row, headers = row_num, values
+            header_row_idx, headers = idx, values
             break
-    if header_row is None:
+    if header_row_idx is None:
         raise ValueError("找不到「預定施工日期」與「工作班」欄位，請確認上傳的是台電施工資料匯出檔。")
     indexes = {key: headers.index(label) for key, label in HEADERS.items() if label in headers}
+    if "foreman" not in indexes:
+        fallback_idx = next((i for i, h in enumerate(headers) if "領班" in h), None)
+        if fallback_idx is not None:
+            indexes["foreman"] = fallback_idx
+
     jobs = []
-    for row in sheet.iter_rows(min_row=header_row + 1, values_only=True):
+    excluded_rows = []
+    seen_jobs = set()
+    for offset, row in enumerate(all_rows[header_row_idx + 1:], start=header_row_idx + 2):
         get = lambda key: row[indexes[key]] if key in indexes and indexes[key] < len(row) else None
-        work_date = date_key(get("date"))
-        crew = str(get("crew") or "").strip()
-        if not work_date or not crew:
-            continue
+        raw_date = get("date")
+        work_date = date_key(raw_date)
+        department = str(get("department") or "").replace("\n", " ").strip()
+        job_no = str(get("job_no") or "").strip()
+        contractor = str(get("contractor") or "").replace("\n", " ").strip()
+        contract = str(get("contract") or "").replace("\n", " ").strip()
+        crew = str(get("crew") or "").replace("\n", " ").strip()
+        raw_foreman = str(get("foreman") or "").strip()
+        time_str = str(get("time") or "").replace("\n", "–").strip()
         description = str(get("description") or "").strip()
         location = str(get("location") or "").strip()
+
+        if not any([work_date, crew, contractor, contract, description, location, job_no]):
+            continue
+
+        is_valid, reason = validate_contractor_row(work_date, department, contractor, contract, crew)
+        if not is_valid:
+            excluded_rows.append({
+                "rowNumber": offset,
+                "date": work_date or str(raw_date or ""),
+                "contractor": contractor,
+                "crew": crew,
+                "contract": contract,
+                "reason": reason,
+            })
+            continue
+
+        dedup_key = (work_date, job_no, contract, crew, time_str, description, location)
+        if dedup_key in seen_jobs:
+            excluded_rows.append({
+                "rowNumber": offset,
+                "date": work_date,
+                "contractor": contractor,
+                "crew": crew,
+                "contract": contract,
+                "reason": "與同檔案前述施工案件完全重複（已自動去重）",
+            })
+            continue
+        seen_jobs.add(dedup_key)
+
         work_summary = next((line.strip() for line in description.splitlines() if line.strip()), "")
         jobs.append({
             "date": work_date,
-            "department": str(get("department") or "").replace("\n", " ").strip(),
-            "jobNo": str(get("job_no") or "").strip(),
-            "contractor": str(get("contractor") or "").strip(),
-            "contract": str(get("contract") or "").strip(),
-            "crew": crew.replace("\n", " ").strip(),
-            "time": str(get("time") or "").replace("\n", "–").strip(),
+            "department": department,
+            "jobNo": job_no,
+            "contractor": contractor,
+            "contract": contract,
+            "crew": crew,
+            "foreman": extract_foreman_name(raw_foreman),
+            "foremanRaw": raw_foreman,
+            "time": time_str,
             "description": description,
             "workSummary": work_summary,
             "location": location,
             "gridCodes": extract_grid_codes(description, location),
         })
+
+    cleaning = {
+        "totalRows": len(jobs) + len(excluded_rows),
+        "keptCount": len(jobs),
+        "excludedCount": len(excluded_rows),
+        "excludedRows": excluded_rows,
+    }
+    return jobs, cleaning
+
+
+def read_excel(payload):
+    jobs, _ = parse_excel_with_cleaning(payload)
     return jobs
 
 
@@ -317,6 +520,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, (ROOT / "attendance.html").read_bytes(), "text/html; charset=utf-8")
         if path == "/daily.html":
             return self._send(200, (ROOT / "daily.html").read_bytes(), "text/html; charset=utf-8")
+        if path == "/upload.html":
+            return self._send(200, (ROOT / "upload.html").read_bytes(), "text/html; charset=utf-8")
         if path == "/version.js":
             return self._send(200, (ROOT / "version.js").read_bytes(), "text/javascript; charset=utf-8")
         if path == "/supabase-config.js":
@@ -372,9 +577,9 @@ class Handler(BaseHTTPRequestHandler):
         try:
             length = int(self.headers.get("Content-Length", "0"))
             body = json.loads(self.rfile.read(length))
-            jobs = read_excel(body.get("file", ""))
+            jobs, cleaning = parse_excel_with_cleaning(body.get("file", ""))
             coordinate_summary = add_grid_coordinates(jobs)
-            self._send(200, json.dumps({"jobs": jobs, "coordinates": coordinate_summary}, ensure_ascii=False))
+            self._send(200, json.dumps({"jobs": jobs, "coordinates": coordinate_summary, "cleaning": cleaning}, ensure_ascii=False))
         except Exception as exc:
             self._send(400, json.dumps({"error": str(exc)}, ensure_ascii=False))
 

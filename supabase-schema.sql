@@ -1,18 +1,24 @@
 -- Run in Supabase Dashboard > SQL Editor after creating the project.
--- V2.3 Normalized 7-Table Architecture with Row-Level RBAC
+-- V3.0 Normalized 8-Table Architecture with Outer Login Gate & Assistant Table Separation
 -- Admins: u971503@taipower.com.tw, bee1006@gmail.com
+-- Assistant (pre-reserved): guest@taipower.local (login as "guest" / "123456")
 
 -- ============================================================
--- 1. User profiles & roles
+-- 1. User profiles & roles (admin / inspector / assistant)
 -- ============================================================
 create table if not exists public.user_profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
   email text not null,
   role text not null default 'inspector' check (role in ('admin', 'inspector')),
+  sub_role text not null default 'inspector' check (sub_role in ('admin', 'inspector', 'assistant')),
   staff_id text,
   staff_name text,
   updated_at timestamptz not null default now()
 );
+
+alter table public.user_profiles
+  add column if not exists sub_role text not null default 'inspector'
+  check (sub_role in ('admin', 'inspector', 'assistant'));
 
 alter table public.user_profiles enable row level security;
 
@@ -32,12 +38,29 @@ as $$
   select lower(coalesce((select auth.jwt()) ->> 'email', '')) in ('u971503@taipower.com.tw', 'bee1006@gmail.com')
     or exists (
       select 1 from public.user_profiles
-      where user_id = (select auth.uid()) and role = 'admin'
+      where user_id = (select auth.uid()) and (role = 'admin' or sub_role = 'admin')
     );
 $$;
 
 revoke execute on function public.is_admin() from public, anon;
 grant execute on function public.is_admin() to authenticated;
+
+create or replace function public.is_assistant()
+returns boolean
+language sql
+stable
+security invoker
+set search_path = public
+as $$
+  select lower(coalesce((select auth.jwt()) ->> 'email', '')) = 'guest@taipower.local'
+    or exists (
+      select 1 from public.user_profiles
+      where user_id = (select auth.uid()) and (sub_role = 'assistant' or staff_id = '__assistant__')
+    );
+$$;
+
+revoke execute on function public.is_assistant() from public, anon;
+grant execute on function public.is_assistant() to authenticated;
 
 create or replace function public.my_staff_id()
 returns text
@@ -52,15 +75,46 @@ $$;
 revoke execute on function public.my_staff_id() from public, anon;
 grant execute on function public.my_staff_id() to authenticated;
 
+-- Auto-confirm new accounts created by Admin or pre-seeded assistant
+create schema if not exists private;
+
+create or replace function private.auto_confirm_auth_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if new.email_confirmed_at is null then
+    new.email_confirmed_at := now();
+  end if;
+  return new;
+end;
+$$;
+
+revoke execute on function private.auto_confirm_auth_user() from public, anon, authenticated;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_trigger
+    where tgname = 'on_auth_user_auto_confirm'
+  ) then
+    create trigger on_auth_user_auto_confirm
+      before insert on auth.users
+      for each row execute function private.auto_confirm_auth_user();
+  end if;
+end
+$$;
+
 drop policy if exists "Users insert own profile" on public.user_profiles;
 create policy "Users insert own profile"
   on public.user_profiles for insert to authenticated
   with check (
-    (select auth.uid()) = user_id
-    and (
-      role = 'inspector'
-      or lower(coalesce((select auth.jwt()) ->> 'email', '')) in ('u971503@taipower.com.tw', 'bee1006@gmail.com')
-      or (select public.is_admin())
+    (select public.is_admin())
+    or (
+      (select auth.uid()) = user_id
+      and role = 'inspector'
     )
   );
 
@@ -82,7 +136,7 @@ create policy "Users update own profile or admin updates"
 grant select, insert, update on public.user_profiles to authenticated;
 
 -- ============================================================
--- 2. Staff roster (一人一列)
+-- 2. Staff roster (一人一列；僅最高使用者增刪改)
 -- ============================================================
 create table if not exists public.staff_roster (
   id text primary key,
@@ -121,7 +175,7 @@ create policy "Admins delete staff roster"
 grant select, insert, update, delete on public.staff_roster to authenticated;
 
 -- ============================================================
--- 3. Attendance records (日期 + 人員 一列；一般同仁僅能修改本人)
+-- 3. Attendance records (日期 + 人員 一列；檢驗員僅能改本人，助理純觀看)
 -- ============================================================
 create table if not exists public.attendance_records (
   work_date date not null,
@@ -148,13 +202,22 @@ create policy "Team reads attendance records"
 drop policy if exists "Admin or self inserts attendance record" on public.attendance_records;
 create policy "Admin or self inserts attendance record"
   on public.attendance_records for insert to authenticated
-  with check ((select public.is_admin()) or staff_id = (select public.my_staff_id()));
+  with check (
+    (select public.is_admin())
+    or (not (select public.is_assistant()) and staff_id = (select public.my_staff_id()))
+  );
 
 drop policy if exists "Admin or self updates attendance record" on public.attendance_records;
 create policy "Admin or self updates attendance record"
   on public.attendance_records for update to authenticated
-  using ((select public.is_admin()) or staff_id = (select public.my_staff_id()))
-  with check ((select public.is_admin()) or staff_id = (select public.my_staff_id()));
+  using (
+    (select public.is_admin())
+    or (not (select public.is_assistant()) and staff_id = (select public.my_staff_id()))
+  )
+  with check (
+    (select public.is_admin())
+    or (not (select public.is_assistant()) and staff_id = (select public.my_staff_id()))
+  );
 
 drop policy if exists "Admins delete attendance record" on public.attendance_records;
 create policy "Admins delete attendance record"
@@ -164,7 +227,7 @@ create policy "Admins delete attendance record"
 grant select, insert, update, delete on public.attendance_records to authenticated;
 
 -- ============================================================
--- 4. Calendar day notes (每日特別任務 — 一日一列)
+-- 4. Calendar day notes (每日特別任務 — 一日一列；僅最高使用者增刪改)
 -- ============================================================
 create table if not exists public.calendar_day_notes (
   work_date date primary key,
@@ -201,7 +264,47 @@ create policy "Admins delete calendar day notes"
 grant select, insert, update, delete on public.calendar_day_notes to authenticated;
 
 -- ============================================================
--- 5. Daily dispatches (每日派工主表 — 一日一列；僅最高使用者寫入)
+-- 5. Raw work uploads (助理專用上游表 — 僅助理與管理員可寫入，全員可讀)
+-- ============================================================
+create table if not exists public.raw_work_uploads (
+  work_date date primary key,
+  filename text not null default '',
+  coordinates jsonb not null default '{}'::jsonb,
+  jobs jsonb not null default '[]'::jsonb,
+  uploaded_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists raw_work_uploads_uploaded_by_idx on public.raw_work_uploads (uploaded_by);
+
+alter table public.raw_work_uploads enable row level security;
+
+drop policy if exists "Team reads raw work uploads" on public.raw_work_uploads;
+create policy "Team reads raw work uploads"
+  on public.raw_work_uploads for select to authenticated
+  using (true);
+
+drop policy if exists "Admin or assistant inserts raw work uploads" on public.raw_work_uploads;
+create policy "Admin or assistant inserts raw work uploads"
+  on public.raw_work_uploads for insert to authenticated
+  with check ((select public.is_admin()) or (select public.is_assistant()));
+
+drop policy if exists "Admin or assistant updates raw work uploads" on public.raw_work_uploads;
+create policy "Admin or assistant updates raw work uploads"
+  on public.raw_work_uploads for update to authenticated
+  using ((select public.is_admin()) or (select public.is_assistant()))
+  with check ((select public.is_admin()) or (select public.is_assistant()));
+
+drop policy if exists "Admins delete raw work uploads" on public.raw_work_uploads;
+create policy "Admins delete raw work uploads"
+  on public.raw_work_uploads for delete to authenticated
+  using ((select public.is_admin()));
+
+grant select, insert, update, delete on public.raw_work_uploads to authenticated;
+
+-- ============================================================
+-- 6. Daily dispatches (主管確認後的正式派工表 — 僅最高使用者寫入，全員可讀)
 -- ============================================================
 create table if not exists public.daily_dispatches (
   work_date date primary key,
@@ -228,12 +331,14 @@ create policy "Team reads daily dispatches"
   using (true);
 
 drop policy if exists "Admins insert daily dispatches" on public.daily_dispatches;
-create policy "Admins insert daily dispatches"
+drop policy if exists "Team inserts daily dispatches" on public.daily_dispatches;
+create policy "Team inserts daily dispatches"
   on public.daily_dispatches for insert to authenticated
   with check ((select public.is_admin()));
 
 drop policy if exists "Admins update daily dispatches" on public.daily_dispatches;
-create policy "Admins update daily dispatches"
+drop policy if exists "Team updates daily dispatches" on public.daily_dispatches;
+create policy "Team updates daily dispatches"
   on public.daily_dispatches for update to authenticated
   using ((select public.is_admin()))
   with check ((select public.is_admin()));
@@ -246,7 +351,7 @@ create policy "Admins delete daily dispatches"
 grant select, insert, update, delete on public.daily_dispatches to authenticated;
 
 -- ============================================================
--- 6. Daily work notes (每日工作備註 — 日期 + 工班 一列)
+-- 7. Daily work notes (每日工作備註 — 僅最高使用者與檢驗員寫入，助理純觀看)
 -- ============================================================
 create table if not exists public.daily_work_notes (
   work_date date not null,
@@ -269,23 +374,23 @@ create policy "Team reads daily work notes"
 drop policy if exists "Team inserts daily work notes" on public.daily_work_notes;
 create policy "Team inserts daily work notes"
   on public.daily_work_notes for insert to authenticated
-  with check (true);
+  with check ((select public.is_admin()) or not (select public.is_assistant()));
 
 drop policy if exists "Team updates daily work notes" on public.daily_work_notes;
 create policy "Team updates daily work notes"
   on public.daily_work_notes for update to authenticated
-  using (true)
-  with check (true);
+  using ((select public.is_admin()) or not (select public.is_assistant()))
+  with check ((select public.is_admin()) or not (select public.is_assistant()));
 
 drop policy if exists "Team deletes daily work notes" on public.daily_work_notes;
 create policy "Team deletes daily work notes"
   on public.daily_work_notes for delete to authenticated
-  using (true);
+  using ((select public.is_admin()) or not (select public.is_assistant()));
 
 grant select, insert, update, delete on public.daily_work_notes to authenticated;
 
 -- ============================================================
--- 7. Acceptance records (檢驗員驗收紀錄 — 一筆驗收一列)
+-- 8. Acceptance records (檢驗員驗收紀錄 — 僅最高使用者與檢驗員寫入，助理純觀看)
 -- ============================================================
 create table if not exists public.acceptance_records (
   id uuid primary key default gen_random_uuid(),
@@ -311,17 +416,17 @@ create policy "Team reads acceptance records"
 drop policy if exists "Team inserts acceptance records" on public.acceptance_records;
 create policy "Team inserts acceptance records"
   on public.acceptance_records for insert to authenticated
-  with check (true);
+  with check ((select public.is_admin()) or not (select public.is_assistant()));
 
 drop policy if exists "Team updates acceptance records" on public.acceptance_records;
 create policy "Team updates acceptance records"
   on public.acceptance_records for update to authenticated
-  using (true)
-  with check (true);
+  using ((select public.is_admin()) or not (select public.is_assistant()))
+  with check ((select public.is_admin()) or not (select public.is_assistant()));
 
 drop policy if exists "Team deletes acceptance records" on public.acceptance_records;
 create policy "Team deletes acceptance records"
   on public.acceptance_records for delete to authenticated
-  using (true);
+  using ((select public.is_admin()) or not (select public.is_assistant()));
 
 grant select, insert, update, delete on public.acceptance_records to authenticated;
