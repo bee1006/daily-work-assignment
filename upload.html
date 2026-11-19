@@ -72,7 +72,21 @@
     .badge.pending{background:#fef3c7;color:#92400e}
     .grid-code{display:inline-block;font:700 10px ui-monospace,SFMono-Regular,Menlo,monospace;background:#e9f2f4;color:#245863;padding:2px 6px;border-radius:4px;margin:2px 4px 2px 0}
     .actions-cell{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+    .acc-hint{margin-bottom:10px;padding:9px 12px;background:#eef9f6;border:1px solid #bce8dc;border-radius:9px;font-size:12px;color:#115e59;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    .acc-hint[hidden]{display:none}
+    .acc-chip{border:1px solid #99d8ca;background:#fff;color:#087f78;border-radius:14px;padding:3px 10px;font:700 11px inherit;cursor:pointer}
+    .acc-chip:hover{background:#087f78;border-color:#087f78;color:#fff}
+    .acc-form{display:grid;grid-template-columns:145px 1.2fr 110px 115px 1.2fr auto;gap:8px;align-items:center}
+    .acc-form[hidden]{display:none}
+    .acc-form input,.acc-form select{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:12px;color:var(--ink);background:#fff;min-width:0}
+    .acc-form input:focus,.acc-form select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px #087f7818}
+    .acc-filter-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;flex-wrap:wrap}
+    .note-red{color:#b42318;font-weight:600}
     .empty{padding:28px 16px;text-align:center;color:var(--muted);font-size:13px}
+    @media(max-width:920px){
+      .acc-form{grid-template-columns:1fr 1fr}
+      .acc-form button{grid-column:1 / -1}
+    }
     @media(max-width:560px){
       header{align-items:flex-start;flex-direction:column;padding:16px 20px}
       .module-nav{justify-content:flex-start;gap:8px 13px;max-width:100%}
@@ -96,7 +110,7 @@
       <span class="muted">匯出雲端</span>
       <span class="muted">報表列印</span>
       <button class="nav-btn nav-history-btn" id="nav-history-btn" type="button" title="查詢並直接載入雲端派工紀錄"><span class="cloud-dot" id="nav-cloud-dot"></span><span class="nav-history-label">歷史查詢</span></button>
-      <span class="app-ver-badge">V3.0</span>
+      <span class="app-ver-badge">V3.1</span>
     </nav>
   </header>
 
@@ -104,8 +118,8 @@
     <section class="intro">
       <div>
         <div class="eyebrow">PRE-UPLOAD WORKSPACE</div>
-        <h1>施工資料預先上傳區（助理專用）</h1>
-        <p>登入後直接匯入 Excel，系統會自動解析並依日期預先存入 Supabase 資料庫（免指派即可存檔）；「每日工作」可立即預覽未來資料，主管再到「派工任務」決定指派即可。</p>
+        <h1>施工資料與驗收預先上傳區（助理專用）</h1>
+        <p>登入後直接匯入 Excel，系統會自動解析並依日期預先存入 Supabase 資料庫（免指派即可存檔）；亦可在此預先登錄未來任意日期之「檢驗員驗收紀錄」，「每日工作」即可即時彙整追蹤人員去向。</p>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <a class="btn" href="daily.html">📋 前往每日工作預覽</a>
@@ -169,9 +183,53 @@
       </div>
     </section>
 
-    <section class="card">
+    <section class="card" id="acceptance-upload-card">
       <div class="card-head">
         <div class="num">2</div>
+        <h2>預先登錄檢驗員驗收紀錄（可指定未來任意日期）</h2>
+        <small id="acc-upload-count">0 筆</small>
+      </div>
+      <div class="card-body">
+        <div class="acc-hint" id="upload-acc-hint" hidden></div>
+        <form class="acc-form" id="upload-acc-form">
+          <input type="date" id="upload-acc-date" required aria-label="驗收日期">
+          <input type="text" id="upload-acc-zone" placeholder="工區（如 115丙加固）" required aria-label="驗收工區">
+          <input type="text" id="upload-acc-batch" placeholder="批號（如 D013）" aria-label="驗收批號">
+          <select id="upload-acc-staff" aria-label="檢驗員"></select>
+          <input type="text" id="upload-acc-note" placeholder="備註（如 初驗／複驗）" aria-label="驗收備註">
+          <button type="submit" class="btn primary" id="upload-acc-submit">＋ 新增驗收紀錄</button>
+        </form>
+        <div class="acc-filter-row">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <button type="button" class="btn primary" id="acc-filter-upcoming">📅 今日起全部未來驗收</button>
+            <button type="button" class="btn" id="acc-filter-date">🔍 僅看所選日期</button>
+            <button type="button" class="btn" id="acc-refresh-btn">🔄 重新整理</button>
+          </div>
+          <span class="status" id="acc-upload-status">填寫驗收日期與工區並送出，即同步至「每日工作」右表供管理員追蹤人員去向。</span>
+        </div>
+        <div class="table-wrap" style="max-height:360px;margin-top:12px">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:125px">驗收日期（民國）</th>
+                <th style="width:170px">工區</th>
+                <th style="width:110px">批號</th>
+                <th style="width:105px">檢驗員</th>
+                <th>備註</th>
+                <th style="width:185px">操作</th>
+              </tr>
+            </thead>
+            <tbody id="upload-acc-tbody">
+              <tr><td colspan="6" class="empty">正在讀取雲端驗收紀錄…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div class="num">3</div>
         <h2>雲端已預存工作資料庫一覽</h2>
         <button type="button" class="btn" id="refresh-cloud-list-btn" style="margin-left:auto">🔄 重新整理清單</button>
       </div>
@@ -208,10 +266,19 @@
       const [y, m, day] = d.split("-").map(Number);
       return `${y - 1911}/${String(m).padStart(2, "0")}/${String(day).padStart(2, "0")}`;
     };
+    const todayIso = () => {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    };
+    const loadJson = (key, fallback) => {
+      try { return JSON.parse(localStorage.getItem(key) || "null") || fallback; } catch (_) { return fallback; }
+    };
 
     const uploadState = {
       pendingUpload: null,
       previewDate: "",
+      accFilterMode: "upcoming",
+      accRows: [],
       staticPreview: location.hostname.endsWith("github.io")
     };
 
@@ -220,6 +287,53 @@
       if (!el) return;
       el.textContent = msg;
       el.className = "status" + (cls ? " " + cls : "");
+    }
+
+    function setAccStatus(msg, cls = "") {
+      const el = $("acc-upload-status");
+      if (!el) return;
+      el.textContent = msg;
+      el.className = "status" + (cls ? " " + cls : "");
+    }
+
+    function populateAcceptanceStaff() {
+      const sel = $("upload-acc-staff");
+      if (!sel) return;
+      const rosterData = loadJson("dispatch-roster-v2", { roster: [], daily: {} });
+      const roster = rosterData.roster || [];
+      const prev = sel.value;
+      sel.innerHTML = roster.length
+        ? roster.map(s => `<option value="${esc(s.name)}">${esc(s.name)}</option>`).join("")
+        : `<option value="">請先建立名單</option>`;
+      if (prev && roster.some(s => s.name === prev)) sel.value = prev;
+      renderAcceptanceHint();
+    }
+
+    function renderAcceptanceHint() {
+      const hint = $("upload-acc-hint");
+      if (!hint) return;
+      const canUpload = !!window.AppCloud?.canUploadWork();
+      const targetDate = $("upload-acc-date")?.value;
+      if (!canUpload || !targetDate) {
+        hint.hidden = true;
+        return;
+      }
+      const rosterData = loadJson("dispatch-roster-v2", { roster: [], daily: {} });
+      const roster = rosterData.roster || [];
+      const dayAttendance = (rosterData.daily || {})[targetDate] || {};
+      const acceptInspectors = [];
+      for (const s of roster) {
+        const rec = dayAttendance[s.id];
+        if (rec && rec.attending && (rec.statusType === "acceptance" || rec.statusType === "overtime_acceptance" || (rec.noncritical && s.id !== "staff-1"))) {
+          acceptInspectors.push(s.name);
+        }
+      }
+      if (acceptInspectors.length) {
+        hint.hidden = false;
+        hint.innerHTML = `💡 ${esc(rocDate(targetDate))} 每月出勤排定驗收人員：${acceptInspectors.map(n => `<button type="button" class="acc-chip" data-pick-acc-staff="${esc(n)}">${esc(n)}</button>`).join("")}`;
+      } else {
+        hint.hidden = true;
+      }
     }
 
     function updateAuthUI() {
@@ -232,7 +346,7 @@
           banner.innerHTML = `<span>☁ <strong>尚未登入雲端帳號：</strong>請先登入後再上傳 Excel，系統才會在解析完成後自動預存進團隊雲端資料庫。</span><button type="button" class="btn primary" id="banner-login-btn">登入雲端帳號</button>`;
         } else if (!canUpload) {
           banner.hidden = false;
-          banner.innerHTML = `<span>👤 <strong>檢驗員唯讀模式：</strong>匯入 Excel 僅開放助理（<code>guest</code>）或最高使用者（管理員）操作；您可於下方瀏覽雲端已預存工作並點選「預覽每日工作」。</span>`;
+          banner.innerHTML = `<span>👤 <strong>檢驗員唯讀模式：</strong>匯入 Excel 與預先登錄未來驗收紀錄僅開放助理（<code>guest</code>）或最高使用者（管理員）操作；您可於下方檢視雲端已預存工作與驗收排程。</span>`;
         } else {
           banner.hidden = true;
         }
@@ -246,6 +360,8 @@
       }
       if ($("browse")) $("browse").disabled = disabledUpload;
       if ($("file")) $("file").disabled = disabledUpload;
+      if ($("upload-acc-form")) $("upload-acc-form").hidden = !canUpload;
+      renderAcceptanceHint();
 
       const saveBtn = $("manual-cloud-save-btn");
       if (saveBtn) {
@@ -357,10 +473,12 @@
       tbody.innerHTML = rows.map(row => {
         const jobs = row.payload?.jobs || [];
         const crewCount = new Set(jobs.map(j => `${j.contract}|||${j.crew}`)).size;
-        const assigned = !!window.AppCloud.hasAssignedStaff(row.payload?.assignments);
-        const statusBadge = assigned
+        const stats = row.assignmentStats || window.AppCloud.getDispatchAssignmentStats(jobs, row.payload?.assignments);
+        const statusBadge = stats.fullyAssigned
           ? `<span class="badge assigned">✓ 已排工</span>`
-          : `<span class="badge pending">⏳ 待指派（已預存）</span>`;
+          : stats.assignedTeams > 0
+            ? `<span class="badge pending">⏳ 待指派（已派 ${stats.assignedTeams}/${stats.totalTeams}）</span>`
+            : `<span class="badge pending">⏳ 待指派（已預存）</span>`;
         const timeStr = row.updated_at ? new Date(row.updated_at).toLocaleString("zh-TW", { hour12: false }) : "—";
         const assignBtn = admin
           ? `<a class="btn primary" href="index.html?date=${encodeURIComponent(row.work_date)}">⚡ 前往派工指派</a>`
@@ -533,21 +651,183 @@
       }
     });
 
+    function setAccFilterMode(mode) {
+      uploadState.accFilterMode = mode === "date" ? "date" : "upcoming";
+      $("acc-filter-upcoming")?.classList.toggle("primary", uploadState.accFilterMode === "upcoming");
+      $("acc-filter-date")?.classList.toggle("primary", uploadState.accFilterMode === "date");
+    }
+
+    function renderAcceptanceTable() {
+      const tbody = $("upload-acc-tbody");
+      const countEl = $("acc-upload-count");
+      if (!tbody) return;
+      if (!window.AppCloud?.isLoggedIn()) {
+        if (countEl) countEl.textContent = "0 筆";
+        tbody.innerHTML = `<tr><td colspan="6" class="empty">請先登入雲端帳號，即可登錄與查看驗收人員紀錄。</td></tr>`;
+        return;
+      }
+      const rows = uploadState.accRows || [];
+      if (countEl) countEl.textContent = `${rows.length} 筆`;
+      if (!rows.length) {
+        const msg = uploadState.accFilterMode === "date"
+          ? `${rocDate($("upload-acc-date")?.value || "")} 尚無驗收紀錄`
+          : "今日起尚無已登錄的驗收紀錄";
+        tbody.innerHTML = `<tr><td colspan="6" class="empty">${esc(msg)}</td></tr>`;
+        return;
+      }
+      const snap = window.AppCloud.getSnapshot();
+      const myUserId = snap?.user?.id || null;
+      const canUpload = !!window.AppCloud.canUploadWork();
+      tbody.innerHTML = rows.map(rec => {
+        const canDel = canUpload && (snap.isAdmin || (!!myUserId && rec.createdBy === myUserId));
+        const delBtn = canDel
+          ? `<button type="button" class="btn danger" data-acc-del-id="${esc(rec.id)}">移除</button>`
+          : "";
+        return `
+          <tr>
+            <td><strong>${esc(rocDate(rec.workDate))}</strong><div style="font-size:11px;color:#82909a">${esc(rec.workDate)}</div></td>
+            <td style="font-weight:700">${esc(rec.zone)}</td>
+            <td>${esc(rec.batch || "—")}</td>
+            <td style="font-weight:700;color:#087f78">${esc(rec.staff || "—")}</td>
+            <td class="note-red">${esc(rec.note || "")}</td>
+            <td>
+              <div class="actions-cell">
+                <a class="btn" href="daily.html?date=${encodeURIComponent(rec.workDate)}">📋 檢視當日工作</a>
+                ${delBtn}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    async function loadAcceptanceList() {
+      if (!window.AppCloud?.isLoggedIn()) {
+        uploadState.accRows = [];
+        renderAcceptanceTable();
+        return;
+      }
+      const selDate = $("upload-acc-date")?.value;
+      const opts = uploadState.accFilterMode === "date" && selDate
+        ? { workDate: selDate }
+        : { fromDate: todayIso() };
+      const { data, error } = await window.AppCloud.fetchAcceptanceRecords(opts);
+      if (error) {
+        setAccStatus(`讀取驗收紀錄失敗：${error.message}`, "error");
+        return;
+      }
+      uploadState.accRows = data || [];
+      renderAcceptanceTable();
+    }
+
     if (window.AppCloud) {
       window.AppCloud.onChange(ev => {
         updateAuthUI();
+        populateAcceptanceStaff();
         renderCloudPreuploadTable();
+        if (ev.reason === "login" || ev.reason === "logout") {
+          loadAcceptanceList();
+        }
         if (ev.loggedIn && window.AppCloud.canUploadWork() && uploadState.pendingUpload && !uploadState.pendingUpload.saved && !uploadState.pendingUpload.saving) {
           savePendingToCloud();
         }
       });
     }
 
+    if ($("upload-acc-date")) $("upload-acc-date").value = todayIso();
+
+    $("upload-acc-date")?.addEventListener("change", () => {
+      renderAcceptanceHint();
+      if (uploadState.accFilterMode === "date") loadAcceptanceList();
+    });
+
+    $("upload-acc-hint")?.addEventListener("click", e => {
+      const chip = e.target.closest("button[data-pick-acc-staff]");
+      if (chip && $("upload-acc-staff")) {
+        $("upload-acc-staff").value = chip.dataset.pickAccStaff;
+        $("upload-acc-zone")?.focus();
+      }
+    });
+
+    $("acc-filter-upcoming")?.addEventListener("click", () => {
+      setAccFilterMode("upcoming");
+      loadAcceptanceList();
+    });
+    $("acc-filter-date")?.addEventListener("click", () => {
+      setAccFilterMode("date");
+      loadAcceptanceList();
+    });
+    $("acc-refresh-btn")?.addEventListener("click", () => {
+      if (!window.AppCloud?.isLoggedIn()) {
+        window.AppCloud?.openModal();
+        return;
+      }
+      loadAcceptanceList();
+    });
+
+    $("upload-acc-form")?.addEventListener("submit", async e => {
+      e.preventDefault();
+      if (!window.AppCloud?.isLoggedIn()) {
+        window.AppCloud?.openModal();
+        return;
+      }
+      if (!window.AppCloud.canUploadWork()) {
+        setAccStatus("僅限助理（guest）或管理員可預登驗收紀錄。", "error");
+        return;
+      }
+      const workDate = $("upload-acc-date").value;
+      const zone = $("upload-acc-zone").value.trim();
+      if (!workDate || !zone) return;
+      const rec = {
+        zone,
+        batch: $("upload-acc-batch").value.trim(),
+        staff: $("upload-acc-staff").value,
+        note: $("upload-acc-note").value.trim()
+      };
+      const btn = $("upload-acc-submit");
+      if (btn) btn.disabled = true;
+      setAccStatus(`正在儲存 ${rocDate(workDate)} 驗收紀錄至雲端…`);
+      const { error } = await window.AppCloud.addAcceptanceRow(workDate, rec);
+      if (btn) btn.disabled = false;
+      if (error) {
+        setAccStatus(`新增驗收紀錄失敗：${error.message}`, "error");
+        return;
+      }
+      $("upload-acc-zone").value = "";
+      $("upload-acc-batch").value = "";
+      $("upload-acc-note").value = "";
+      if (workDate < todayIso()) setAccFilterMode("date");
+      await loadAcceptanceList();
+      setAccStatus(`✓ 已將 ${rocDate(workDate)}「${zone}」預先存入雲端，管理員於「每日工作」即可看見人員去向。`, "ok");
+      $("upload-acc-zone")?.focus();
+    });
+
+    $("upload-acc-tbody")?.addEventListener("click", async e => {
+      const delBtn = e.target.closest("button[data-acc-del-id]");
+      if (!delBtn) return;
+      const id = delBtn.dataset.accDelId;
+      if (!id) return;
+      delBtn.disabled = true;
+      setAccStatus("正在從雲端移除驗收紀錄…");
+      const { error } = await window.AppCloud.deleteAcceptanceRow(id);
+      if (error) {
+        delBtn.disabled = false;
+        setAccStatus(`移除驗收紀錄失敗：${error.message}`, "error");
+        return;
+      }
+      await loadAcceptanceList();
+      setAccStatus("✓ 已從雲端移除驗收紀錄", "ok");
+    });
+
     updateAuthUI();
+    populateAcceptanceStaff();
     renderCloudPreuploadTable();
+    loadAcceptanceList();
     window.AppCloud?.initReady?.then(() => {
       updateAuthUI();
+      populateAcceptanceStaff();
       renderCloudPreuploadTable();
+      loadAcceptanceList();
     });
   </script>
 </body>

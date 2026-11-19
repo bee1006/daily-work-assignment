@@ -88,6 +88,7 @@
     .tag-wknd{background:#f1f5f9;color:#64748b;font-weight:600}
     .tag-holiday{background:#fee2e2;color:#b91c1c;border-color:#fca5a5;font-weight:800}
     .tag-task{background:#e0f2fe;color:#0369a1;border-color:#bae6fd;font-weight:800}
+    .tag-conflict{background:#fff7ed;color:#c2410c;border-color:#fdba74;font-weight:800}
 
     .special-task-banner{
       margin:14px 22px 0;padding:10px 14px;background:#f0f9ff;border:1px solid #bae6fd;
@@ -95,6 +96,15 @@
       font-size:13px;color:#0c4a6e;
     }
     .special-task-banner .task-empty{color:#64748b;font-size:12px}
+    .accept-sync-banner{
+      margin:10px 22px 0;padding:10px 14px;background:#f5f3ff;border:1px solid #ddd6fe;
+      border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+      font-size:12px;color:#5b21b6;line-height:1.5;
+    }
+    .accept-sync-banner[hidden]{display:none}
+    .accept-src-tag{font-size:10px;padding:2px 6px;border-radius:5px;background:var(--purple-bg);color:var(--purple-ink);border:1px solid var(--purple-line);font-weight:700}
+    .staff-acc-meta{font-size:11px;color:#6d28d9;background:#f5f3ff;border:1px dashed #c4b5fd;border-radius:6px;padding:5px 8px;line-height:1.45}
+    .staff-acc-conflict{font-size:11px;color:#b42318;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:5px 8px;font-weight:700;line-height:1.45}
 
     .modal-overlay{position:fixed;inset:0;background:rgba(18,40,56,0.55);backdrop-filter:blur(2px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
     .modal-overlay[hidden]{display:none!important}
@@ -178,6 +188,32 @@
     .roster-actions button:hover{border-color:var(--teal);color:var(--teal)}
     .roster-actions button.del-btn:hover{border-color:#dc2626;color:#dc2626;background:#fef2f2}
 
+    .cal-tag.tag-night{background:#e0e7ff;color:#3730a3;border-color:#c7d2fe}
+    .dispatch-src-tag{font-size:10px;font-weight:800;padding:2px 6px;border-radius:10px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa}
+    .night-src-tag{font-size:10px;font-weight:800;padding:2px 6px;border-radius:10px;background:#e0e7ff;color:#3730a3;border:1px solid #c7d2fe}
+
+    .month-grid-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 22px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted)}
+    .mg-code{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 3px;border-radius:4px;font-size:11px;font-weight:900;line-height:1}
+    .mg-ot{background:#ffedd5;color:#c2410c}
+    .mg-night{background:#e0e7ff;color:#3730a3}
+    .mg-acc{background:#ede9fe;color:#6d28d9}
+    .mg-leave{background:#fee2e2;color:#b91c1c}
+    .month-grid-wrap{overflow:auto;padding:0 0 4px}
+    .month-grid{border-collapse:separate;border-spacing:0;font-size:12px;min-width:100%}
+    .month-grid th,.month-grid td{border-right:1px solid #edf1f3;border-bottom:1px solid #edf1f3;text-align:center;padding:4px 2px;min-width:30px;height:34px}
+    .month-grid thead th{background:#f8fafb;color:#526673;font-weight:800;position:sticky;top:0;z-index:1}
+    .month-grid thead th .wd{display:block;font-size:10px;font-weight:600;color:#93a1aa}
+    .month-grid th.wk,.month-grid td.wk{background:#fff8f3}
+    .month-grid thead th.wk{color:#dc2626;background:#fef2f2}
+    .month-grid .name-col{position:sticky;left:0;background:#fff;z-index:2;text-align:left;padding:4px 14px;min-width:90px;font-size:15px;font-weight:800;color:var(--navy);white-space:nowrap}
+    .month-grid thead .name-col{background:#f8fafb;z-index:3}
+    .month-grid td .codes{display:inline-flex;flex-direction:column;gap:2px;align-items:center}
+    .month-grid .total-col{min-width:44px;font-weight:900;background:#f8fafb}
+    .month-grid .total-col.ot{color:#c2410c}
+    .month-grid .total-col.night{color:#3730a3}
+    .month-grid .total-col.acc{color:#6d28d9}
+    .month-grid .total-col.leave{color:#b91c1c}
+
     .foot{color:#84919a;text-align:center;font-size:11px;margin-top:20px}
     .app-ver-badge{font-size:10px;font-weight:800;color:#93c5fd;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);padding:3px 7px;border-radius:12px;letter-spacing:.04em}
     .module-nav a.nav-btn,.nav-btn{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;border-radius:6px;padding:4px 9px;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;line-height:1.2;transition:all .15s;text-decoration:none}
@@ -218,7 +254,7 @@
       <span class="muted">匯出雲端</span>
       <span class="muted">報表列印</span>
       <button class="nav-btn nav-history-btn" id="nav-history-btn" type="button" title="查詢並直接載入雲端派工紀錄"><span class="cloud-dot" id="nav-cloud-dot"></span><span class="nav-history-label">歷史查詢</span></button>
-      <span class="app-ver-badge">V3.0</span>
+      <span class="app-ver-badge">V3.1</span>
     </nav>
   </header>
 
@@ -288,16 +324,33 @@
         <div id="special-task-text"><span class="task-empty">📌 當日尚無特別任務（可在上方日曆對日期「點兩下」快速新增）</span></div>
         <button class="btn" id="edit-special-task-btn" type="button">✎ 編輯特別任務</button>
       </div>
+      <div class="accept-sync-banner" id="acceptance-sync-banner" hidden></div>
       <div class="detail-notice">
         💡 <strong>與派工任務連動說明：</strong>設定「<strong>休假</strong>」時，該同仁當日不會被指派任何工作；設定「<strong>驗收（非關鍵）</strong>」時，該同仁當日「非關鍵性作業」自動設為 <strong>Y</strong>，派工時僅會分配 C 類作業，不會安排 A/B 類關鍵作業；週末設定「<strong>假日加班</strong>」才會納入當日出勤派工名單。
       </div>
       <div class="staff-grid" id="staff-grid"></div>
     </section>
 
+    <section class="card" id="month-grid-card">
+      <div class="card-head">
+        <div class="num">3</div>
+        <h2 id="month-grid-title">同仁每月出勤一覽（橫式）</h2>
+      </div>
+      <div class="month-grid-toolbar">
+        <span>圖例：</span>
+        <span><span class="mg-code mg-ot">加</span> 假日加班</span>
+        <span><span class="mg-code mg-night">夜</span> 夜班（派工指派夜間工作）</span>
+        <span><span class="mg-code mg-acc">驗</span> 驗收／非關鍵</span>
+        <span><span class="mg-code mg-leave">休</span> 平日休假</span>
+        <span style="margin-left:auto">僅供統計檢視，修改請於上方「2」操作；假日加班與夜班會自動帶入雲端派工結果</span>
+      </div>
+      <div class="month-grid-wrap" id="month-grid-wrap"></div>
+    </section>
+
     <section class="card" id="roster-manage-card">
       <details class="roster-details" id="roster-details">
         <summary>
-          <span class="num">3</span>
+          <span class="num">4</span>
           <span>人員名單異動管理（新增／移除／證照資格）</span>
           <span class="summary-hint" id="roster-total-hint">點擊展開設定</span>
         </summary>
@@ -373,6 +426,7 @@
       roster: [],
       daily: {},
       dayNotes: {},
+      acceptanceByDate: {},
       editingTaskDate: null,
       viewYear: now.getFullYear(),
       viewMonth: now.getMonth(), // 0-11
@@ -495,10 +549,99 @@
       }
     }
 
+    function getDateAcceptanceRecords(dateStr) {
+      return Array.isArray(state.acceptanceByDate?.[dateStr]) ? state.acceptanceByDate[dateStr] : [];
+    }
+
+    function getStaffAcceptanceRecords(staffName, dateStr) {
+      if (!staffName) return [];
+      return getDateAcceptanceRecords(dateStr).filter(r => String(r.staff || "").trim() === staffName);
+    }
+
+    function isNightTime(timeStr) {
+      if (!timeStr) return false;
+      if (/夜|凌晨|深夜|晚班/.test(timeStr)) return true;
+      const matches = [...String(timeStr).matchAll(/(\d{1,2})(?::(\d{2}))?\s*[-–~]\s*(\d{1,2})(?::(\d{2}))?/g)];
+      for (const m of matches) {
+        const sh = Number(m[1]), eh = Number(m[3]);
+        if (sh < 7 || sh >= 20 || (eh > 0 && eh < sh)) return true;
+      }
+      return false;
+    }
+
+    // 由派工結果（雲端歷史 + 本機每日工作快照）推導每位同仁每日是否出勤、是否夜班
+    let dispatchWorkCache = null;
+    function invalidateDispatchWork() { dispatchWorkCache = null; }
+    function buildDispatchWorkMap() {
+      const map = {};
+      const setDate = (date, entries) => {
+        const day = {};
+        for (const { staffId, staffName, night, crew } of entries) {
+          let id = staffId;
+          if (!state.roster.some(s => s.id === id) && staffName) {
+            id = state.roster.find(s => s.name === staffName)?.id || id;
+          }
+          if (!id) continue;
+          const cur = day[id] || (day[id] = { day: false, night: false, crews: [] });
+          if (night) cur.night = true; else cur.day = true;
+          if (crew && !cur.crews.includes(crew)) cur.crews.push(crew);
+        }
+        map[date] = day;
+      };
+      try {
+        const local = JSON.parse(localStorage.getItem("dispatch-daily-work-v1") || "{}") || {};
+        for (const [date, dw] of Object.entries(local)) {
+          setDate(date, (dw?.items || []).filter(it => it.staffId || it.staffName).map(it => ({
+            staffId: it.staffId, staffName: it.staffName, crew: it.crew,
+            night: (it.times || []).some(isNightTime)
+          })));
+        }
+      } catch (_) {}
+      const rows = window.AppCloud?.getSnapshot?.()?.historyRows || [];
+      for (const row of rows) {
+        const jobs = row.payload?.jobs || [];
+        const assignments = row.payload?.assignments || {};
+        if (!jobs.length) continue;
+        const teams = new Map();
+        for (const j of jobs) {
+          const key = `${j.contract}|||${j.crew}`;
+          if (!teams.has(key)) teams.set(key, { crew: j.crew, night: false });
+          if (isNightTime(j.time)) teams.get(key).night = true;
+        }
+        const entries = [];
+        for (const [key, t] of teams.entries()) {
+          const sid = assignments[key]?.staffId;
+          if (sid) entries.push({ staffId: sid, staffName: assignments[key]?.staffName, crew: t.crew, night: t.night });
+        }
+        setDate(row.work_date, entries);
+      }
+      return map;
+    }
+    function getDispatchWork(dateStr) {
+      if (!dispatchWorkCache) dispatchWorkCache = buildDispatchWorkMap();
+      return dispatchWorkCache[dateStr] || {};
+    }
+
     function getStaffDayRecord(staff, dateStr) {
+      const base = getStaffDayRecordBase(staff, dateStr);
+      const work = getDispatchWork(dateStr)[staff.id];
+      if (!work) return base;
+      const rec = { ...base, dispatch: work, nightShift: !!work.night };
+      if (isWeekend(dateStr) && !base.attending) {
+        rec.attending = true;
+        rec.acceptanceConflict = false;
+        rec.statusType = base.accRecords?.length ? "overtime_acceptance" : "overtime";
+        rec.fromDispatch = true;
+      }
+      return rec;
+    }
+
+    function getStaffDayRecordBase(staff, dateStr) {
       const dayMap = state.daily[dateStr];
       const weekend = isWeekend(dateStr);
-      if (dayMap && dayMap[staff.id]) {
+      const hasExplicit = !!(dayMap && dayMap[staff.id]);
+      let base;
+      if (hasExplicit) {
         const rec = dayMap[staff.id];
         // 相容舊資料：推斷 statusType
         let statusType = rec.statusType;
@@ -508,35 +651,50 @@
           else if (rec.noncritical && !staff.defaultNoncritical) statusType = "acceptance";
           else statusType = "normal";
         }
-        return {
+        base = {
           attending: !!rec.attending,
           noncritical: !!rec.noncritical,
           statusType,
           note: rec.note || ""
         };
-      }
-      // 尚未特別設定過的日期預設值
-      if (weekend) {
-        return {
+      } else if (weekend) {
+        base = {
           attending: false,
           noncritical: staff.defaultNoncritical ?? false,
           statusType: "leave",
           note: ""
         };
+      } else {
+        base = {
+          attending: staff.defaultAttending ?? true,
+          noncritical: staff.defaultNoncritical ?? false,
+          statusType: "normal",
+          note: ""
+        };
       }
-      return {
-        attending: staff.defaultAttending ?? true,
-        noncritical: staff.defaultNoncritical ?? false,
-        statusType: "normal",
-        note: ""
-      };
+
+      const accRecords = getStaffAcceptanceRecords(staff.name, dateStr);
+      if (accRecords.length) {
+        if (hasExplicit && !base.attending) {
+          return { ...base, acceptanceConflict: true, accRecords };
+        }
+        return {
+          attending: true,
+          noncritical: true,
+          statusType: weekend ? "overtime_acceptance" : "acceptance",
+          note: base.note || "",
+          fromAcceptanceRecord: true,
+          accRecords
+        };
+      }
+      return base;
     }
 
     function ensureDayInitialized(dateStr) {
       if (!state.daily[dateStr]) state.daily[dateStr] = {};
       for (const staff of state.roster) {
         if (!state.daily[dateStr][staff.id]) {
-          state.daily[dateStr][staff.id] = getStaffDayRecord(staff, dateStr);
+          state.daily[dateStr][staff.id] = getStaffDayRecordBase(staff, dateStr);
         }
       }
     }
@@ -652,35 +810,62 @@
         const leaves = [];
         const overtimes = [];
         const acceptances = [];
+        const conflicts = [];
+        const nights = [];
         let attendingCount = 0;
 
         for (const staff of state.roster) {
           const rec = getStaffDayRecord(staff, dateStr);
           if (rec.attending) attendingCount++;
-          if (!rec.attending && (!weekend || rec.note)) {
+          if (rec.nightShift) nights.push(staff.name);
+          if (rec.acceptanceConflict) {
+            leaves.push(staff.name);
+            conflicts.push({ name: staff.name, accRecords: rec.accRecords || [] });
+          } else if (!rec.attending && (!weekend || rec.note)) {
             leaves.push(staff.name);
           } else if (rec.statusType === "overtime" || (weekend && rec.attending && rec.statusType !== "overtime_acceptance")) {
             overtimes.push(staff.name);
           } else if (rec.statusType === "acceptance" || rec.statusType === "overtime_acceptance") {
             if (rec.statusType === "overtime_acceptance") overtimes.push(staff.name);
-            acceptances.push(staff.name);
+            acceptances.push({ name: staff.name, accRecords: rec.accRecords || [] });
           } else if (rec.noncritical && !staff.defaultNoncritical && rec.attending) {
-            acceptances.push(staff.name);
+            acceptances.push({ name: staff.name, accRecords: rec.accRecords || [] });
           }
         }
 
+        const knownNames = new Set(state.roster.map(s => s.name));
+        const extraAccMap = new Map();
+        for (const r of getDateAcceptanceRecords(dateStr)) {
+          const name = String(r.staff || "").trim();
+          if (!name || knownNames.has(name)) continue;
+          if (!extraAccMap.has(name)) extraAccMap.set(name, []);
+          extraAccMap.get(name).push(r);
+        }
+        for (const [name, recs] of extraAccMap.entries()) {
+          acceptances.push({ name, accRecords: recs });
+        }
+
+        const formatAccDetail = recs => recs.map(r => `${r.zone}${r.batch ? `(${r.batch})` : ""}${r.note ? ` ${r.note}` : ""}`).join("；");
         const tags = [];
         const specialTask = state.dayNotes[dateStr];
         if (holidayName) {
           tags.push(`<span class="cal-tag tag-holiday" title="${esc(holidayName)}">${esc(holidayName)}</span>`);
-        } else if (weekend && !overtimes.length && !acceptances.length && !leaves.length && !specialTask) {
+        } else if (weekend && !overtimes.length && !acceptances.length && !conflicts.length && !leaves.length && !nights.length && !specialTask) {
           tags.push('<span class="cal-tag tag-wknd">例假日</span>');
         }
         if (specialTask) {
           tags.push(`<span class="cal-tag tag-task" title="特別任務：${esc(specialTask)}">📌 ${esc(specialTask)}</span>`);
         }
         overtimes.forEach(name => tags.push(`<span class="cal-tag tag-overtime" title="假日加班：${esc(name)}">加班：${esc(name)}</span>`));
-        acceptances.forEach(name => tags.push(`<span class="cal-tag tag-accept" title="驗收/非關鍵作業：${esc(name)}">驗收：${esc(name)}</span>`));
+        nights.forEach(name => tags.push(`<span class="cal-tag tag-night" title="夜班：${esc(name)}">夜：${esc(name)}</span>`));
+        acceptances.forEach(({ name, accRecords }) => {
+          const detail = accRecords.length ? `（${formatAccDetail(accRecords)}）` : "";
+          tags.push(`<span class="cal-tag tag-accept" title="驗收/非關鍵作業：${esc(name + detail)}">驗收：${esc(name)}</span>`);
+        });
+        conflicts.forEach(({ name, accRecords }) => {
+          const detail = formatAccDetail(accRecords);
+          tags.push(`<span class="cal-tag tag-conflict" title="休假中但有驗收紀錄：${esc(detail)}">⚠ 驗收衝突：${esc(name)}</span>`);
+        });
         leaves.forEach(name => tags.push(`<span class="cal-tag tag-leave" title="休假：${esc(name)}">休：${esc(name)}</span>`));
 
         const countText = weekend
@@ -700,6 +885,44 @@
       $("cal-days").innerHTML = html;
       const summaryEl = $("month-summary");
       if (summaryEl) summaryEl.textContent = `本月工作日 ${workDaysCount} 天 · 假日 ${holidayDaysCount} 天`;
+      renderMonthGrid();
+    }
+
+    function renderMonthGrid() {
+      const wrap = $("month-grid-wrap");
+      if (!wrap) return;
+      const y = state.viewYear, m = state.viewMonth;
+      const daysInMonth = new Date(y, m + 1, 0).getDate();
+      const weekdays = ["日", "一", "二", "三", "四", "五", "六"];
+      $("month-grid-title").textContent = `同仁每月出勤一覽（民國 ${y - 1911} 年 ${m + 1} 月）`;
+      if (!state.roster.length) {
+        wrap.innerHTML = `<div style="padding:18px 22px;color:var(--muted)">尚無人員名單</div>`;
+        return;
+      }
+      const dates = [];
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = formatDate(y, m, d);
+        dates.push({ d, dateStr, weekend: isWeekend(dateStr), wd: weekdays[new Date(y, m, d).getDay()], holiday: getHolidayName(dateStr) });
+      }
+      const head = `<tr><th class="name-col">人員姓名</th>${dates.map(x => `<th class="${x.weekend ? "wk" : ""}" title="${esc(x.holiday || "")}">${x.d}<span class="wd">${x.wd}</span></th>`).join("")}<th class="total-col ot">加班</th><th class="total-col night">夜班</th><th class="total-col acc">驗收</th><th class="total-col leave">休假</th></tr>`;
+      const body = state.roster.map(staff => {
+        let ot = 0, night = 0, acc = 0, leave = 0;
+        const cells = dates.map(x => {
+          const rec = getStaffDayRecord(staff, x.dateStr);
+          const codes = [];
+          const titles = [];
+          if (x.weekend && rec.attending) { codes.push(`<span class="mg-code mg-ot">加</span>`); titles.push("假日加班"); ot++; }
+          if (rec.nightShift) { codes.push(`<span class="mg-code mg-night">夜</span>`); titles.push("夜班"); night++; }
+          const isAcc = rec.attending && (rec.statusType === "acceptance" || rec.statusType === "overtime_acceptance" || (rec.noncritical && !staff.defaultNoncritical));
+          if (isAcc) { codes.push(`<span class="mg-code mg-acc">驗</span>`); titles.push("驗收"); acc++; }
+          if (!rec.attending && !x.weekend) { codes.push(`<span class="mg-code mg-leave">休</span>`); titles.push("休假"); leave++; }
+          if (rec.dispatch?.crews?.length) titles.push(`派工：${rec.dispatch.crews.join("、")}`);
+          if (rec.note) titles.push(`備註：${rec.note}`);
+          return `<td class="day-cell${x.weekend ? " wk" : ""}" title="${esc(`${x.dateStr} ${titles.join("／")}`)}"><span class="codes">${codes.join("")}</span></td>`;
+        }).join("");
+        return `<tr><td class="name-col">${esc(staff.name)}</td>${cells}<td class="total-col ot">${ot || ""}</td><td class="total-col night">${night || ""}</td><td class="total-col acc">${acc || ""}</td><td class="total-col leave">${leave || ""}</td></tr>`;
+      }).join("");
+      wrap.innerHTML = `<table class="month-grid"><thead>${head}</thead><tbody>${body}</tbody></table>`;
     }
 
     function renderDailyDetail() {
@@ -724,6 +947,18 @@
         ? `📌 <strong>當日特別任務：</strong>${esc(specialTask)}`
         : `<span class="task-empty">📌 當日尚無特別任務（可在上方日曆對日期「點兩下」快速新增）</span>`;
 
+      const accBanner = $("acceptance-sync-banner");
+      const dayAccList = getDateAcceptanceRecords(dateStr);
+      if (accBanner) {
+        if (dayAccList.length) {
+          const summaryText = dayAccList.map(r => `${esc(r.staff || "未指定")}：${esc(r.zone)}${r.batch ? `(${esc(r.batch)})` : ""}${r.note ? ` · ${esc(r.note)}` : ""}`).join(" ／ ");
+          accBanner.hidden = false;
+          accBanner.innerHTML = `<span>📋 <strong>驗收資料同步（${dayAccList.length} 筆）：</strong>${summaryText}</span><a class="btn" href="daily.html?date=${encodeURIComponent(dateStr)}" style="padding:4px 10px;font-size:11px">前往每日工作</a>`;
+        } else {
+          accBanner.hidden = true;
+        }
+      }
+
       let attendingCount = 0, leaveCount = 0, noncriticalCount = 0;
       const cardsHtml = state.roster.map(staff => {
         const rec = getStaffDayRecord(staff, dateStr);
@@ -744,10 +979,17 @@
 
         const restricted = window.AppCloud?.isRestrictedInspector();
         const myStaffId = window.AppCloud?.getMyStaffId();
-        const canEdit = !restricted || (staff.id === myStaffId);
+        const canEdit = canEditStaffRecord(staff.id);
         const cardExtraClass = (isLeave ? " is-leave" : isAccept ? " is-accept" : isOvertime ? " is-overtime" : "") + (canEdit ? "" : " is-locked");
         const disAttr = canEdit ? "" : " disabled";
-        const selfBadge = (restricted && staff.id === myStaffId) ? `<span class="qual-tag" style="background:#dbeafe;color:#1e40af">本人可編輯</span>` : (!canEdit ? `<span style="font-size:10px;color:var(--muted)">（唯讀）</span>` : "");
+        const selfBadge = (restricted && staff.id === myStaffId && !window.AppCloud?.isAssistant()) ? `<span class="qual-tag" style="background:#dbeafe;color:#1e40af">本人可編輯</span>` : (!canEdit ? `<span style="font-size:10px;color:var(--muted)">（唯讀）</span>` : "");
+        const srcBadge = (rec.fromAcceptanceRecord ? `<span class="accept-src-tag">來自驗收資料</span>` : "")
+          + (rec.fromDispatch ? `<span class="dispatch-src-tag" title="${esc((rec.dispatch?.crews || []).join("、"))}">來自派工</span>` : "")
+          + (rec.nightShift ? `<span class="night-src-tag" title="${esc((rec.dispatch?.crews || []).join("、"))}">🌙 夜班</span>` : "");
+        const accSummary = (rec.accRecords || []).map(r => `${esc(r.zone)}${r.batch ? `(${esc(r.batch)})` : ""}${r.note ? ` ${esc(r.note)}` : ""}`).join("；");
+        const accDetailHtml = rec.acceptanceConflict
+          ? `<div class="staff-acc-conflict">⚠ 休假中但已有驗收紀錄，請確認：${accSummary}</div>`
+          : (rec.fromAcceptanceRecord && accSummary ? `<div class="staff-acc-meta">📋 當日驗收：${accSummary}</div>` : "");
 
         const buttonsHtml = weekend
           ? `
@@ -767,6 +1009,7 @@
               <div class="staff-name">
                 ${esc(staff.name)}
                 <span class="qual-tag${staff.supervisor ? " sup" : ""}">${staff.supervisor ? "有監造照" : "無監造照"}</span>
+                ${srcBadge}
                 ${selfBadge}
               </div>
               <span class="status-badge ${badgeClass}">${badgeText}</span>
@@ -779,6 +1022,7 @@
               </label>
               <input class="note-input" type="text" data-note-staff="${esc(staff.id)}" value="${esc(rec.note)}" placeholder="備註（如：特休、XX驗收）"${disAttr}>
             </div>
+            ${accDetailHtml}
           </article>
         `;
       }).join("");
@@ -803,7 +1047,7 @@
       const isAssistant = !!window.AppCloud?.isAssistant();
       if (isAssistant) {
         banner.hidden = false;
-        banner.innerHTML = `<span>📤 <strong>助理唯讀檢視模式：</strong>您可瀏覽每月出勤日曆與當日出勤狀態；助理帳號僅開放於「上傳工作」匯入施工資料。</span>`;
+        banner.innerHTML = `<span>📤 <strong>助理唯讀檢視模式：</strong>您可瀏覽每月出勤日曆與當日出勤狀態；助理帳號僅開放於「上傳工作」匯入施工資料與預先登錄驗收人員。</span>`;
         return;
       }
       const restricted = window.AppCloud?.isRestrictedInspector();
@@ -849,6 +1093,11 @@
         state.dayNotes = JSON.parse(localStorage.getItem("dispatch-day-notes-v1") || "{}") || {};
       } catch (e) {
         state.dayNotes = {};
+      }
+      try {
+        state.acceptanceByDate = JSON.parse(localStorage.getItem("dispatch-acceptance-v1") || "{}") || {};
+      } catch (e) {
+        state.acceptanceByDate = {};
       }
       renderCalendar();
       renderDailyDetail();
@@ -1121,6 +1370,7 @@
     });
 
     function reloadFromLocalStorage() {
+      invalidateDispatchWork();
       try {
         const saved = JSON.parse(localStorage.getItem("dispatch-roster-v2") || "null");
         if (saved?.roster?.length) {
@@ -1128,6 +1378,7 @@
           state.daily = saved.daily || {};
         }
         state.dayNotes = JSON.parse(localStorage.getItem("dispatch-day-notes-v1") || "{}") || {};
+        state.acceptanceByDate = JSON.parse(localStorage.getItem("dispatch-acceptance-v1") || "{}") || {};
       } catch (_) {}
       renderRosterManage();
       renderCalendar();
@@ -1135,7 +1386,7 @@
     }
 
     window.addEventListener("storage", e => {
-      if (e.key === "dispatch-roster-v2" || e.key === "dispatch-day-notes-v1") {
+      if (e.key === "dispatch-roster-v2" || e.key === "dispatch-day-notes-v1" || e.key === "dispatch-acceptance-v1" || e.key === "dispatch-daily-work-v1") {
         reloadFromLocalStorage();
       }
     });
@@ -1145,7 +1396,13 @@
     }
 
     initializeRoster().then(() => {
-      window.AppCloud?.initReady?.then(() => reloadFromLocalStorage());
+      window.AppCloud?.initReady?.then(async () => {
+        reloadFromLocalStorage();
+        if (window.AppCloud?.isLoggedIn?.() && !(window.AppCloud.getSnapshot?.()?.historyRows || []).length) {
+          try { await window.AppCloud.refreshCloudHistory(); } catch (_) {}
+          reloadFromLocalStorage();
+        }
+      });
     });
   </script>
 </body>

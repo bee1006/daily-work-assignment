@@ -390,7 +390,7 @@ create policy "Team deletes daily work notes"
 grant select, insert, update, delete on public.daily_work_notes to authenticated;
 
 -- ============================================================
--- 8. Acceptance records (檢驗員驗收紀錄 — 僅最高使用者與檢驗員寫入，助理純觀看)
+-- 8. Acceptance records (檢驗員驗收紀錄 — 管理員與檢驗員可管理全部；助理可新增及刪除／修改自己建立的紀錄)
 -- ============================================================
 create table if not exists public.acceptance_records (
   id uuid primary key default gen_random_uuid(),
@@ -416,17 +416,17 @@ create policy "Team reads acceptance records"
 drop policy if exists "Team inserts acceptance records" on public.acceptance_records;
 create policy "Team inserts acceptance records"
   on public.acceptance_records for insert to authenticated
-  with check ((select public.is_admin()) or not (select public.is_assistant()));
+  with check ((select auth.uid()) is not null and (created_by is null or created_by = (select auth.uid())));
 
 drop policy if exists "Team updates acceptance records" on public.acceptance_records;
 create policy "Team updates acceptance records"
   on public.acceptance_records for update to authenticated
-  using ((select public.is_admin()) or not (select public.is_assistant()))
-  with check ((select public.is_admin()) or not (select public.is_assistant()));
+  using ((select public.is_admin()) or not (select public.is_assistant()) or created_by = (select auth.uid()))
+  with check ((select public.is_admin()) or not (select public.is_assistant()) or created_by = (select auth.uid()));
 
 drop policy if exists "Team deletes acceptance records" on public.acceptance_records;
 create policy "Team deletes acceptance records"
   on public.acceptance_records for delete to authenticated
-  using ((select public.is_admin()) or not (select public.is_assistant()));
+  using ((select public.is_admin()) or not (select public.is_assistant()) or created_by = (select auth.uid()));
 
 grant select, insert, update, delete on public.acceptance_records to authenticated;

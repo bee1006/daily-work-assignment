@@ -91,6 +91,10 @@
     .accept-form input,.accept-form select{border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit;font-size:12px;width:100%;min-width:0}
     .del-x{border:0;background:none;color:#94a3b8;cursor:pointer;font-size:14px;font-weight:800;padding:2px 5px}
     .del-x:hover{color:var(--excel-red)}
+    .acc-sync-row td{background:#faf8ff}
+    .acc-sync-badge{display:inline-block;padding:2px 7px;border-radius:10px;background:#f3e8ff;color:#6b21a8;font-size:11px;font-weight:700}
+    .acc-fill-btn{border:1px solid #c4b5fd;background:#fff;color:#6b21a8;border-radius:6px;padding:2px 7px;font:700 11px inherit;cursor:pointer}
+    .acc-fill-btn:hover{background:#7c3aed;border-color:#7c3aed;color:#fff}
 
     .empty-banner{padding:28px;text-align:center;color:var(--muted);font-size:13px;background:#fff;border-radius:12px;border:1px dashed var(--line);margin-bottom:16px}
     .foot{color:#84919a;text-align:center;font-size:11px;margin-top:20px}
@@ -106,7 +110,7 @@
       main{padding:0 12px 40px;margin-top:20px}
     }
     @media print{
-      header,.intro,.toolbar-card,.cloud-dates-bar,.accept-hint,.accept-form,.del-col,.foot{display:none!important}
+      header,.intro,.toolbar-card,.cloud-dates-bar,.accept-hint,.accept-form,.del-col,.acc-fill-btn,.foot{display:none!important}
       body{background:#fff}
       main{margin:0;padding:0;max-width:100%}
       .sheets-grid{grid-template-columns:1.8fr 1fr;gap:10px}
@@ -146,7 +150,7 @@
       <span class="muted">匯出雲端</span>
       <span class="muted">報表列印</span>
       <button class="nav-btn nav-history-btn" id="nav-history-btn" type="button" title="查詢並直接載入雲端派工紀錄"><span class="cloud-dot" id="nav-cloud-dot"></span><span class="nav-history-label">歷史查詢</span></button>
-      <span class="app-ver-badge">V3.0</span>
+      <span class="app-ver-badge">V3.1</span>
     </nav>
   </header>
 
@@ -307,9 +311,13 @@
 
     function isNightTime(timeStr) {
       if (!timeStr) return false;
-      return /\b0{1,2}(?::\d{2})?\s*[-–~]\s*0?[1-7](?::\d{2})?\b/.test(timeStr)
-        || /\b(2[1-4])(?::\d{2})?\s*[-–~]\s*(0?[1-8]|2[2-4])(?::\d{2})?\b/.test(timeStr)
-        || /夜|凌晨|深夜/.test(timeStr);
+      if (/夜|凌晨|深夜|晚班/.test(timeStr)) return true;
+      const matches = [...String(timeStr).matchAll(/(\d{1,2})(?::(\d{2}))?\s*[-–~]\s*(\d{1,2})(?::(\d{2}))?/g)];
+      for (const m of matches) {
+        const sh = Number(m[1]), eh = Number(m[3]);
+        if (sh < 7 || sh >= 20 || (eh > 0 && eh < sh)) return true;
+      }
+      return false;
     }
 
     const params = new URLSearchParams(location.search);
@@ -333,7 +341,7 @@
       if (rbacBanner) {
         if (isAssistant) {
           rbacBanner.hidden = false;
-          rbacBanner.innerHTML = `<span>📤 <strong>助理唯讀檢視模式：</strong>您可預覽每日工作總表與未來施工資料；指派、備註與驗收紀錄均為唯讀。</span>`;
+          rbacBanner.innerHTML = `<span>📤 <strong>助理唯讀檢視模式：</strong>您可預覽每日工作總表與未來施工資料；匯入施工資料與預先登錄驗收人員請前往 <a href="upload.html" style="color:#087f78;font-weight:800">上傳工作</a> 頁面操作。</span>`;
         } else if (restricted) {
           rbacBanner.hidden = false;
           rbacBanner.innerHTML = `<span>👤 <strong>檢驗員模式：</strong>左表檢驗員指派為唯讀；您可填寫左表「備註」及管理右表「檢驗員驗收紀錄」，完成後點選「☁ 儲存變更到雲端」同步。</span>`;
@@ -504,31 +512,57 @@
         bar.hidden = true;
         return;
       }
+      const visibleRows = rows.slice(0, 6);
+      const moreBtn = rows.length > 6
+        ? `<button type="button" class="cloud-date-pill" data-open-history="1">⋯ 更多歷史（+${rows.length - 6}）</button>`
+        : "";
       bar.hidden = false;
-      bar.innerHTML = `<span class="cloud-dates-title">☁ 雲端已預存／已排工日期（預覽未來工作）：</span>` + rows.map(row => {
+      bar.innerHTML = `<span class="cloud-dates-title">☁ 雲端已預存／已排工日期（最新 6 筆）：</span>` + visibleRows.map(row => {
         const [, m, d] = row.work_date.split("-").map(Number);
         const yRoc = Number(row.work_date.slice(0, 4)) - 1911;
         const label = `${yRoc}/${String(m).padStart(2, "0")}/${String(d).padStart(2, "0")}`;
-        const assigned = !!window.AppCloud.hasAssignedStaff(row.payload?.assignments);
+        const stats = row.assignmentStats || window.AppCloud.getDispatchAssignmentStats(row.payload?.jobs, row.payload?.assignments);
         const active = row.work_date === currentDate;
-        const tag = assigned
-          ? `<span class="cloud-date-tag assigned">✓ 已排工</span>`
-          : `<span class="cloud-date-tag pending">⏳ 待指派</span>`;
+        let tag;
+        if (stats.fullyAssigned) {
+          tag = `<span class="cloud-date-tag assigned">✓ 已排工</span>`;
+        } else if (stats.assignedTeams > 0) {
+          tag = `<span class="cloud-date-tag pending">⏳ 待指派 ${stats.assignedTeams}/${stats.totalTeams}</span>`;
+        } else {
+          tag = `<span class="cloud-date-tag pending">⏳ 待指派</span>`;
+        }
         return `<button type="button" class="cloud-date-pill${active ? " active" : ""}" data-cloud-date="${esc(row.work_date)}">${esc(label)} ${tag}</button>`;
-      }).join("");
+      }).join("") + moreBtn;
     }
 
     function renderAcceptanceTable() {
       const allAcc = loadJson("dispatch-acceptance-v1", {});
       const list = allAcc[currentDate] || [];
+      const rosterData = loadJson("dispatch-roster-v2", { roster: [], daily: {} });
+      const roster = rosterData.roster || [];
+      const dayAttendance = (rosterData.daily || {})[currentDate] || {};
+      const coveredNames = new Set(list.map(rec => String(rec.staff || "").trim()).filter(Boolean));
+      const syncedRows = [];
+      for (const s of roster) {
+        const rec = dayAttendance[s.id];
+        if (!rec || !rec.attending) continue;
+        const isAccept = rec.statusType === "acceptance" || rec.statusType === "overtime_acceptance" || (rec.noncritical && s.id !== "staff-1");
+        if (isAccept && !coveredNames.has(s.name)) {
+          syncedRows.push({ staff: s.name, note: rec.note || "（每月出勤同步）" });
+        }
+      }
+
       const isAssistant = !!window.AppCloud?.isAssistant();
-      $("accept-count-meta").textContent = `${list.length} 筆`;
+      const totalCount = list.length + syncedRows.length;
+      $("accept-count-meta").textContent = (list.length && syncedRows.length)
+        ? `共 ${totalCount} 筆（含出勤同步 ${syncedRows.length}）`
+        : `${totalCount} 筆`;
       const tbody = $("acceptance-tbody");
-      if (!list.length) {
-        tbody.innerHTML = `<tr class="empty-row"><td colspan="5" style="padding:18px">${isAssistant ? "本日尚無驗收紀錄" : "本日尚無驗收紀錄（可於下方新增）"}</td></tr>`;
+      if (!totalCount) {
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="5" style="padding:18px">${isAssistant ? "本日尚無驗收紀錄（助理請至「上傳工作」頁面預登）" : "本日尚無驗收紀錄（可於下方新增）"}</td></tr>`;
         return;
       }
-      tbody.innerHTML = list.map((rec, idx) => `
+      const formalHtml = list.map((rec, idx) => `
         <tr>
           <td class="text-left" style="font-weight:700">${esc(rec.zone)}</td>
           <td>${esc(rec.batch)}</td>
@@ -537,23 +571,38 @@
           <td class="del-col">${isAssistant ? "" : `<button type="button" class="del-x" data-acc-del="${idx}" title="移除">×</button>`}</td>
         </tr>
       `).join("");
+      const syncHtml = syncedRows.map(rec => `
+        <tr class="acc-sync-row">
+          <td class="text-left"><span class="acc-sync-badge">每月出勤排定</span></td>
+          <td style="color:var(--muted)">—</td>
+          <td class="inspector-cell">${esc(rec.staff)}</td>
+          <td style="color:#6d28d9;font-size:12px">${esc(rec.note)}</td>
+          <td class="del-col">${isAssistant ? "" : `<button type="button" class="acc-fill-btn" data-pick-inspector="${esc(rec.staff)}" title="補填工區與批號">＋</button>`}</td>
+        </tr>
+      `).join("");
+      tbody.innerHTML = formalHtml + syncHtml;
     }
 
-    let syncingCloudDate = null;
+    let cloudSyncSeq = 0;
+    const pendingDailySaves = new Map();
     async function syncDateFromCloudIfNeeded(dateStr) {
-      if (!window.AppCloud?.isLoggedIn() || !dateStr || syncingCloudDate === dateStr) return;
-      syncingCloudDate = dateStr;
-      try {
-        const loaded = await window.AppCloud.loadCloudDispatch(dateStr, { redirect: false });
-        if (loaded) renderPage();
-      } finally {
-        if (syncingCloudDate === dateStr) syncingCloudDate = null;
+      if (!window.AppCloud?.isLoggedIn() || !dateStr) return;
+      const seq = ++cloudSyncSeq;
+      if (pendingDailySaves.has(dateStr)) {
+        try { await pendingDailySaves.get(dateStr); } catch (_) {}
       }
+      if (seq !== cloudSyncSeq) return;
+      const loaded = await window.AppCloud.loadCloudDispatch(dateStr, { redirect: false });
+      if (seq === cloudSyncSeq && dateStr === currentDate && loaded) renderPage();
     }
 
     const cloudDatesBar = $("cloud-dates-bar");
     if (cloudDatesBar) {
       cloudDatesBar.addEventListener("click", async e => {
+        if (e.target.closest("button[data-open-history]")) {
+          window.AppCloud?.openModal();
+          return;
+        }
         const btn = e.target.closest("button[data-cloud-date]");
         if (!btn) return;
         currentDate = btn.dataset.cloudDate;
@@ -598,11 +647,13 @@
       const zone = $("acc-zone").value.trim();
       if (!zone) return;
       const dateAtSubmit = currentDate;
+      const myUid = window.AppCloud?.getSnapshot?.()?.user?.id || null;
       const newRec = {
         zone,
         batch: $("acc-batch").value.trim(),
         staff: $("acc-staff").value,
-        note: $("acc-note").value.trim()
+        note: $("acc-note").value.trim(),
+        createdBy: myUid
       };
       const allAcc = loadJson("dispatch-acceptance-v1", {});
       const list = allAcc[dateAtSubmit] || (allAcc[dateAtSubmit] = []);
@@ -624,8 +675,9 @@
         if (data?.id) {
           const latestAcc = loadJson("dispatch-acceptance-v1", {});
           const latestList = latestAcc[dateAtSubmit] || [];
-          if (latestList[recIdx]) latestList[recIdx].id = data.id;
-          else newRec.id = data.id;
+          const targetRec = latestList[recIdx] || newRec;
+          targetRec.id = data.id;
+          targetRec.createdBy = data.created_by || myUid;
           localStorage.setItem("dispatch-acceptance-v1", JSON.stringify(latestAcc));
         }
         setDailyCloudStatus("✓ 驗收紀錄已同步至雲端", "ok");
@@ -634,6 +686,12 @@
 
     $("acceptance-tbody").addEventListener("click", async e => {
       if (window.AppCloud?.isAssistant()) return;
+      const pickBtn = e.target.closest("button[data-pick-inspector]");
+      if (pickBtn) {
+        $("acc-staff").value = pickBtn.dataset.pickInspector;
+        $("acc-zone").focus();
+        return;
+      }
       const del = e.target.closest("button[data-acc-del]");
       if (!del) return;
       const idx = Number(del.dataset.accDel);
@@ -656,14 +714,75 @@
       }
     });
 
-    // 左表各列備註即時同步至 daily_work_notes；檢驗員指派變更僅限管理員
+    async function syncDailyDispatchToCloud(dateStr) {
+      if (!window.AppCloud?.isLoggedIn() || !dateStr) {
+        return { error: { message: "請先至「歷史查詢」登入雲端帳號" } };
+      }
+      const executeSave = async () => {
+        const allCache = loadJson("dispatch-session-cache-v1", {});
+        const cached = allCache[dateStr];
+        const allDailyWork = loadJson("dispatch-daily-work-v1", {});
+        const dayWork = allDailyWork[dateStr];
+        const snap = window.AppCloud.getSnapshot?.();
+        const historyRow = (snap?.historyRows || []).find(r => r.work_date === dateStr);
+        const jobs = cached?.jobs?.length ? cached.jobs : (historyRow?.payload?.jobs || []);
+        if (!jobs.length && !dayWork?.items?.length) {
+          return { error: { message: "當日無派工資料可儲存" } };
+        }
+
+        const rosterData = loadJson("dispatch-roster-v2", { roster: [], daily: {} });
+        const manualAll = loadJson("dispatch-manual-v1", {});
+        const weatherMap = loadJson("dispatch-weather-v1", {});
+        const accMap = loadJson("dispatch-acceptance-v1", {});
+        const workNotesMap = loadJson("dispatch-work-notes-v1", {});
+
+        const assignments = {};
+        if (dayWork?.items) {
+          for (const it of dayWork.items) {
+            assignments[`${it.contract}|||${it.crew}`] = { staffId: it.staffId || null, manual: !!it.manual };
+          }
+        }
+
+        const payload = {
+          version: 1,
+          filename: cached?.filename || dayWork?.filename || historyRow?.payload?.filename || "每日工作調整",
+          jobs,
+          roster: rosterData.roster || [],
+          daily: { [dateStr]: (rosterData.daily || {})[dateStr] || {} },
+          manualAssignments: { [dateStr]: manualAll[dateStr] || {} },
+          assignments: Object.keys(assignments).length ? assignments : (cached?.assignments || historyRow?.payload?.assignments || {}),
+          coordinates: cached?.coordinates || { matched: 0, decoded: 0, total: 0, available: false },
+          proximityKm: cached?.proximityKm || 10,
+          weather: weatherMap[dateStr] || "晴",
+          acceptance: accMap[dateStr] || [],
+          workNotes: workNotesMap[dateStr] || {}
+        };
+
+        const firstStaff = cached?.firstStaff || dayWork?.firstStaff || historyRow?.first_staff || (rosterData.roster?.[0]?.id || "staff-1");
+        return await window.AppCloud.saveTeamDispatchHistory(dateStr, firstStaff, payload);
+      };
+
+      const prev = pendingDailySaves.get(dateStr) || Promise.resolve();
+      const next = prev.catch(() => {}).then(executeSave);
+      pendingDailySaves.set(dateStr, next);
+      try {
+        return await next;
+      } finally {
+        if (pendingDailySaves.get(dateStr) === next) {
+          pendingDailySaves.delete(dateStr);
+        }
+      }
+    }
+
+    // 左表各列備註即時同步至 daily_work_notes；檢驗員指派變更僅限管理員（同步寫回雲端）
     $("daily-work-tbody").addEventListener("change", async e => {
       if (e.target.matches("input[data-note-key]")) {
         if (window.AppCloud?.isAssistant()) return;
         const inp = e.target;
+        const dateAtChange = currentDate;
         if (window.AppCloud?.isLoggedIn()) {
           setDailyCloudStatus("正在同步備註至雲端…", "");
-          const { error } = await window.AppCloud.saveWorkNoteRow(currentDate, inp.dataset.noteKey, inp.value);
+          const { error } = await window.AppCloud.saveWorkNoteRow(dateAtChange, inp.dataset.noteKey, inp.value);
           if (error) {
             setDailyCloudStatus(`備註雲端同步失敗：${error.message}`, "error");
           } else {
@@ -677,9 +796,10 @@
       if (!sel) return;
       const idx = Number(sel.dataset.workIdx);
       const newStaffId = sel.value || null;
+      const dateAtChange = currentDate;
 
       const allDailyWork = loadJson("dispatch-daily-work-v1", {});
-      const dayWork = allDailyWork[currentDate];
+      const dayWork = allDailyWork[dateAtChange];
       if (!dayWork || !dayWork.items?.[idx]) return;
 
       const rosterData = loadJson("dispatch-roster-v2", { roster: [], daily: {} });
@@ -688,27 +808,38 @@
       const item = dayWork.items[idx];
       item.staffId = staff ? staff.id : null;
       item.staffName = staff ? staff.name : null;
-      item.manual = true;
+      item.manual = Boolean(staff);
       dayWork.updatedAt = new Date().toISOString();
       localStorage.setItem("dispatch-daily-work-v1", JSON.stringify(allDailyWork));
 
       // 同步寫入手動指派紀錄 (dispatch-manual-v1)
       const teamKey = `${item.contract}|||${item.crew}`;
       const manualAll = loadJson("dispatch-manual-v1", {});
-      const dayManual = manualAll[currentDate] || (manualAll[currentDate] = {});
+      const dayManual = manualAll[dateAtChange] || (manualAll[dateAtChange] = {});
       if (newStaffId) dayManual[teamKey] = newStaffId;
       else delete dayManual[teamKey];
       localStorage.setItem("dispatch-manual-v1", JSON.stringify(manualAll));
 
       // 同步更新 session cache
       const allCache = loadJson("dispatch-session-cache-v1", {});
-      if (allCache[currentDate]?.assignments) {
-        allCache[currentDate].assignments[teamKey] = { staffId: item.staffId, manual: true };
+      if (allCache[dateAtChange]) {
+        if (!allCache[dateAtChange].assignments) allCache[dateAtChange].assignments = {};
+        allCache[dateAtChange].assignments[teamKey] = { staffId: item.staffId, manual: true };
         localStorage.setItem("dispatch-session-cache-v1", JSON.stringify(allCache));
       }
 
       sel.classList.toggle("is-pending", !newStaffId);
-      setDailyCloudStatus("已變更（尚未同步雲端）", "");
+      if (window.AppCloud?.isLoggedIn()) {
+        setDailyCloudStatus("正在同步指派至雲端…", "");
+        const { error } = await syncDailyDispatchToCloud(dateAtChange);
+        if (error) {
+          setDailyCloudStatus(`指派雲端同步失敗：${error.message}`, "error");
+        } else {
+          setDailyCloudStatus("✓ 指派已同步至雲端", "ok");
+        }
+      } else {
+        setDailyCloudStatus("已變更（尚未同步雲端）", "");
+      }
     });
 
     // 即時儲存各列備註（保留空字串以區分刻意清除領班預設值）
@@ -741,49 +872,12 @@
         window.AppCloud?.openModal();
         return;
       }
-      const allCache = loadJson("dispatch-session-cache-v1", {});
-      const cached = allCache[currentDate];
-      const allDailyWork = loadJson("dispatch-daily-work-v1", {});
-      const dayWork = allDailyWork[currentDate];
-      if (!cached?.jobs?.length && !dayWork?.items?.length) {
-        setDailyCloudStatus("當日無派工資料可儲存", "error");
-        return;
-      }
-
+      const saveDate = currentDate;
       const btn = $("cloud-save-daily");
       btn.disabled = true;
       setDailyCloudStatus("正在儲存至雲端…", "");
 
-      const rosterData = loadJson("dispatch-roster-v2", { roster: [], daily: {} });
-      const manualAll = loadJson("dispatch-manual-v1", {});
-      const weatherMap = loadJson("dispatch-weather-v1", {});
-      const accMap = loadJson("dispatch-acceptance-v1", {});
-      const workNotesMap = loadJson("dispatch-work-notes-v1", {});
-
-      const assignments = {};
-      if (dayWork?.items) {
-        for (const it of dayWork.items) {
-          assignments[`${it.contract}|||${it.crew}`] = { staffId: it.staffId || null, manual: !!it.manual };
-        }
-      }
-
-      const payload = {
-        version: 1,
-        filename: cached?.filename || dayWork?.filename || "每日工作調整",
-        jobs: cached?.jobs || [],
-        roster: rosterData.roster || [],
-        daily: { [currentDate]: (rosterData.daily || {})[currentDate] || {} },
-        manualAssignments: { [currentDate]: manualAll[currentDate] || {} },
-        assignments: Object.keys(assignments).length ? assignments : (cached?.assignments || {}),
-        coordinates: cached?.coordinates || { matched: 0, decoded: 0, total: 0, available: false },
-        proximityKm: cached?.proximityKm || 10,
-        weather: weatherMap[currentDate] || "晴",
-        acceptance: accMap[currentDate] || [],
-        workNotes: workNotesMap[currentDate] || {}
-      };
-
-      const firstStaff = cached?.firstStaff || dayWork?.firstStaff || (rosterData.roster?.[0]?.id || "staff-1");
-      const { error } = await window.AppCloud.saveTeamDispatchHistory(currentDate, firstStaff, payload);
+      const { error } = await syncDailyDispatchToCloud(saveDate);
 
       btn.disabled = false;
       if (error) {
@@ -800,7 +894,13 @@
     });
 
     if (window.AppCloud) {
-      window.AppCloud.onChange(() => renderPage());
+      window.AppCloud.onChange(ev => {
+        if (ev?.reason === "history_updated") {
+          renderCloudDatesBar();
+          return;
+        }
+        renderPage();
+      });
     }
 
     renderPage();

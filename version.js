@@ -1,6 +1,6 @@
 // 全站統一版本管理、Microsoft/Email 登入、RBAC 權限與 Supabase 團隊雲端同步核心
 (function () {
-  window.APP_VERSION = "V3.0";
+  window.APP_VERSION = "V3.1";
   const ADMIN_EMAIL = "u971503@taipower.com.tw";
   const ADMIN_EMAILS = ["u971503@taipower.com.tw", "bee1006@gmail.com"];
   const GUEST_EMAIL = "guest@taipower.local";
@@ -89,6 +89,10 @@
 
   function loadJson(key, fallback) {
     try { return JSON.parse(localStorage.getItem(key) || "null") || fallback; } catch (_) { return fallback; }
+  }
+
+  function saveJson(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { console.warn("本機快取寫入失敗:", key, e); }
   }
 
   const cloudState = {
@@ -374,7 +378,7 @@
             </div>
           </div>
           <div class="ac-notice">
-            💡 <strong>角色權限說明：</strong>最高使用者（<code>${esc(ADMIN_EMAIL)}</code>）可統一建立帳號、管理名單、指派每日派工；助理（如 <code>guest</code>）僅可於「上傳工作」匯入施工資料，其餘頁面為純觀看；一般檢驗員可於「每月出勤」點選本人狀態與於「每日工作」填寫備註及驗收紀錄。
+            💡 <strong>角色權限說明：</strong>最高使用者（<code>${esc(ADMIN_EMAIL)}</code>）可統一建立帳號、管理名單、指派每日派工；助理（如 <code>guest</code>）僅可於「上傳工作」匯入施工資料與預先登錄任意日期之檢驗員驗收紀錄，其餘頁面均為純觀看；一般檢驗員可於「每月出勤」點選本人狀態與於「每日工作」填寫備註及驗收紀錄。
           </div>
         </div>
       </div>
@@ -482,7 +486,7 @@
         roleBadge.textContent = "👑 最高使用者";
         roleBadge.className = "ac-role-badge ac-role-admin";
       } else if (assistant) {
-        roleBadge.textContent = "📤 助理（僅上傳工作）";
+        roleBadge.textContent = "📤 助理（上傳工作／預登驗收）";
         roleBadge.className = "ac-role-badge ac-role-assistant";
       } else {
         roleBadge.textContent = "👤 一般檢驗員";
@@ -581,7 +585,7 @@
 
   async function pullTeamState() {
     if (!cloudState.supabase || !cloudState.user) return false;
-    const [rosterRes, attRes, notesRes] = await Promise.all([
+    const [rosterRes, attRes, notesRes, accRes] = await Promise.all([
       cloudState.supabase
         .from("staff_roster")
         .select("id,name,supervisor,default_attending,default_noncritical,sort_order")
@@ -592,7 +596,12 @@
         .select("work_date,staff_id,status_type,attending,noncritical,note"),
       cloudState.supabase
         .from("calendar_day_notes")
-        .select("work_date,note")
+        .select("work_date,note"),
+      cloudState.supabase
+        .from("acceptance_records")
+        .select("id,work_date,zone,batch,staff_name,note,created_by,created_at")
+        .order("work_date", { ascending: true })
+        .order("created_at", { ascending: true })
     ]);
 
     if (rosterRes.error || attRes.error || notesRes.error) {
@@ -646,11 +655,27 @@
       ? { ...(localRosterWrap.daily || {}), ...cloudDaily }
       : (localRosterWrap.daily || {});
     if (cloudRoster.length || Object.keys(cloudDaily).length) {
-      localStorage.setItem("dispatch-roster-v2", JSON.stringify({ roster: nextRoster, daily: nextDaily }));
+      saveJson("dispatch-roster-v2", { roster: nextRoster, daily: nextDaily });
       changed = true;
     }
     if ((notesRes.data || []).length || Object.keys(cloudDayNotes).length) {
-      localStorage.setItem("dispatch-day-notes-v1", JSON.stringify(cloudDayNotes));
+      saveJson("dispatch-day-notes-v1", cloudDayNotes);
+      changed = true;
+    }
+    if (accRes && !accRes.error) {
+      const cloudAcceptance = {};
+      for (const r of (accRes.data || [])) {
+        if (!cloudAcceptance[r.work_date]) cloudAcceptance[r.work_date] = [];
+        cloudAcceptance[r.work_date].push({
+          id: r.id,
+          zone: r.zone,
+          batch: r.batch || "",
+          staff: r.staff_name || "",
+          note: r.note || "",
+          createdBy: r.created_by || null
+        });
+      }
+      saveJson("dispatch-acceptance-v1", cloudAcceptance);
       changed = true;
     }
 
@@ -820,6 +845,58 @@
       .eq("id", id);
   }
 
+  async function fetchAcceptanceRecords(options = {}) {
+    if (!cloudState.supabase || !cloudState.user) {
+      return { data: [], error: { message: "請先登入 Supabase。" } };
+    }
+    let query = cloudState.supabase
+      .from("acceptance_records")
+      .select("id,work_date,zone,batch,staff_name,note,created_by,created_at");
+    if (options.workDate) {
+      query = query.eq("work_date", options.workDate);
+    } else if (options.fromDate) {
+      query = query.gte("work_date", options.fromDate);
+    }
+    const { data, error } = await query
+      .order("work_date", { ascending: true })
+      .order("created_at", { ascending: true });
+    if (error) {
+      return { data: [], error };
+    }
+    const rows = (data || []).map(r => ({
+      id: r.id,
+      workDate: r.work_date,
+      zone: r.zone,
+      batch: r.batch || "",
+      staff: r.staff_name || "",
+      note: r.note || "",
+      createdBy: r.created_by || null
+    }));
+
+    const toLocalItem = r => ({
+      id: r.id,
+      zone: r.zone,
+      batch: r.batch,
+      staff: r.staff,
+      note: r.note,
+      createdBy: r.createdBy
+    });
+    const am = loadJson("dispatch-acceptance-v1", {});
+    if (options.workDate) {
+      am[options.workDate] = rows.map(toLocalItem);
+    } else {
+      for (const k of Object.keys(am)) {
+        if (!options.fromDate || k >= options.fromDate) delete am[k];
+      }
+      for (const r of rows) {
+        if (!am[r.workDate]) am[r.workDate] = [];
+        am[r.workDate].push(toLocalItem(r));
+      }
+    }
+    saveJson("dispatch-acceptance-v1", am);
+    return { data: rows, error: null };
+  }
+
   async function saveTeamDispatchHistory(workDate, firstStaff, payload) {
     if (!cloudState.supabase || !cloudState.user) {
       return { error: { message: "請先登入 Supabase。" } };
@@ -892,14 +969,47 @@
           }
         });
         am[workDate] = localList;
-        localStorage.setItem("dispatch-acceptance-v1", JSON.stringify(am));
+        saveJson("dispatch-acceptance-v1", am);
       }
     }
 
+    await refreshCloudHistory();
     return { error: null };
   }
 
-  function hasAssignedStaff(assignments) {
+  function getDispatchAssignmentStats(jobs, assignments) {
+    const assignMap = (assignments && typeof assignments === "object") ? assignments : {};
+    const jobList = Array.isArray(jobs) ? jobs : [];
+    if (jobList.length) {
+      const teamKeys = [...new Set(jobList.map(j => `${j.contract}|||${j.crew}`))];
+      const totalTeams = teamKeys.length;
+      const assignedTeams = teamKeys.filter(k => Boolean(assignMap[k]?.staffId)).length;
+      return {
+        totalTeams,
+        assignedTeams,
+        anyAssigned: assignedTeams > 0,
+        fullyAssigned: totalTeams > 0 && assignedTeams === totalTeams
+      };
+    }
+    const vals = Object.values(assignMap);
+    const totalTeams = vals.length;
+    const assignedTeams = vals.filter(a => Boolean(a && a.staffId)).length;
+    return {
+      totalTeams,
+      assignedTeams,
+      anyAssigned: assignedTeams > 0,
+      fullyAssigned: totalTeams > 0 && assignedTeams === totalTeams
+    };
+  }
+
+  function isFullyAssigned(jobs, assignments) {
+    return getDispatchAssignmentStats(jobs, assignments).fullyAssigned;
+  }
+
+  function hasAssignedStaff(assignments, jobs) {
+    if (Array.isArray(jobs)) {
+      return isFullyAssigned(jobs, assignments);
+    }
     if (!assignments || typeof assignments !== "object") return false;
     return Object.values(assignments).some(a => a && a.staffId);
   }
@@ -973,8 +1083,8 @@
         assignments
       };
     }
-    localStorage.setItem("dispatch-daily-work-v1", JSON.stringify(allDailyWork));
-    localStorage.setItem("dispatch-session-cache-v1", JSON.stringify(allCache));
+    saveJson("dispatch-daily-work-v1", allDailyWork);
+    saveJson("dispatch-session-cache-v1", allCache);
 
     await refreshCloudHistory();
     notifyListeners("preupload_saved");
@@ -1026,12 +1136,16 @@
     const admin = isAdmin();
     list.innerHTML = rows.map(row => {
       const jobsCount = row.payload?.jobs?.length || 0;
-      const crewSet = new Set((row.payload?.jobs || []).map(j => `${j.contract}|||${j.crew}`));
-      const crewCount = crewSet.size || (row.payload?.assignments ? Object.keys(row.payload.assignments).length : 0);
-      const assigned = hasAssignedStaff(row.payload?.assignments);
-      const badgeHtml = assigned
-        ? '<span class="ac-history-badge">✓ 已排工</span>'
-        : '<span class="ac-history-badge" style="background:#fef3c7;color:#92400e">⏳ 待指派（已預存）</span>';
+      const stats = row.assignmentStats || getDispatchAssignmentStats(row.payload?.jobs, row.payload?.assignments);
+      const crewCount = stats.totalTeams;
+      let badgeHtml;
+      if (stats.fullyAssigned) {
+        badgeHtml = '<span class="ac-history-badge">✓ 已排工</span>';
+      } else if (stats.assignedTeams > 0) {
+        badgeHtml = `<span class="ac-history-badge" style="background:#fef3c7;color:#92400e">⏳ 待指派（已派 ${stats.assignedTeams}/${stats.totalTeams}）</span>`;
+      } else {
+        badgeHtml = '<span class="ac-history-badge" style="background:#fef3c7;color:#92400e">⏳ 待指派（已預存）</span>';
+      }
       const timeStr = new Date(row.updated_at).toLocaleString("zh-TW", { hour12: false });
       const dispatchLink = admin
         ? `<a class="ac-btn" href="index.html?date=${encodeURIComponent(row.work_date)}" style="text-decoration:none">前往派工</a>`
@@ -1089,12 +1203,14 @@
       const dispRow = dispByDate.get(workDate);
       const jobs = rawRow?.jobs?.length ? rawRow.jobs : (dispRow?.jobs || []);
       const assignments = dispRow?.assignments || {};
+      const assignmentStats = getDispatchAssignmentStats(jobs, assignments);
       const updatedAt = [rawRow?.updated_at, dispRow?.updated_at].filter(Boolean).sort().pop() || new Date().toISOString();
       return {
         work_date: workDate,
         first_staff: dispRow?.first_staff || "",
         updated_at: updatedAt,
-        assigned: hasAssignedStaff(assignments),
+        assigned: assignmentStats.fullyAssigned,
+        assignmentStats,
         payload: {
           filename: rawRow?.filename || dispRow?.filename || "",
           weather: dispRow?.weather || "晴",
@@ -1133,7 +1249,7 @@
         .eq("work_date", workDate),
       cloudState.supabase
         .from("acceptance_records")
-        .select("id,zone,batch,staff_name,note,created_at")
+        .select("id,zone,batch,staff_name,note,created_by,created_at")
         .eq("work_date", workDate)
         .order("created_at", { ascending: true }),
       cloudState.supabase
@@ -1144,7 +1260,8 @@
 
     const raw = rawRes.data;
     const dispatch = dispRes.data;
-    if ((rawRes.error && dispRes.error) || (!raw && !dispatch)) {
+    const hasExtraRecords = !!(accRes.data?.length || notesRes.data?.length || attRes.data?.length);
+    if ((rawRes.error && dispRes.error) || (!raw && !dispatch && !hasExtraRecords)) {
       setAuthMsg(`讀取失敗：${(rawRes.error || dispRes.error)?.message || "找不到該日紀錄"}`, true);
       return null;
     }
@@ -1181,15 +1298,15 @@
       }
       mergedDaily[workDate] = dayAtt;
     }
-    localStorage.setItem("dispatch-roster-v2", JSON.stringify({ roster: mergedRoster, daily: mergedDaily }));
+    saveJson("dispatch-roster-v2", { roster: mergedRoster, daily: mergedDaily });
 
     const existingManual = loadJson("dispatch-manual-v1", {});
     existingManual[workDate] = dispatch?.manual_assignments || {};
-    localStorage.setItem("dispatch-manual-v1", JSON.stringify(existingManual));
+    saveJson("dispatch-manual-v1", existingManual);
 
     const wm = loadJson("dispatch-weather-v1", {});
     wm[workDate] = dispatch?.weather || "晴";
-    localStorage.setItem("dispatch-weather-v1", JSON.stringify(wm));
+    saveJson("dispatch-weather-v1", wm);
 
     const am = loadJson("dispatch-acceptance-v1", {});
     am[workDate] = (accRes.data || []).map(r => ({
@@ -1197,9 +1314,10 @@
       zone: r.zone,
       batch: r.batch || "",
       staff: r.staff_name || "",
-      note: r.note || ""
+      note: r.note || "",
+      createdBy: r.created_by || null
     }));
-    localStorage.setItem("dispatch-acceptance-v1", JSON.stringify(am));
+    saveJson("dispatch-acceptance-v1", am);
 
     const wn = loadJson("dispatch-work-notes-v1", {});
     const dayWorkNotes = {};
@@ -1207,7 +1325,7 @@
       if (r.note !== null && r.note !== undefined) dayWorkNotes[r.team_key] = r.note;
     }
     wn[workDate] = dayWorkNotes;
-    localStorage.setItem("dispatch-work-notes-v1", JSON.stringify(wn));
+    saveJson("dispatch-work-notes-v1", wn);
 
     const useRawJobs = raw?.jobs?.length;
     const payloadShape = {
@@ -1220,29 +1338,31 @@
     };
     const mergedUpdatedAt = [raw?.updated_at, dispatch?.updated_at].filter(Boolean).sort().pop() || new Date().toISOString();
 
-    // 重建 daily.html 所需的 dispatch-daily-work-v1 與 dispatch-session-cache-v1
-    const allDailyWork = loadJson("dispatch-daily-work-v1", {});
-    allDailyWork[workDate] = {
-      date: workDate,
-      filename: payloadShape.filename,
-      firstStaff: dispatch?.first_staff || "",
-      updatedAt: mergedUpdatedAt,
-      items: buildDailyWorkItemsFromPayload(payloadShape, mergedRoster)
-    };
-    localStorage.setItem("dispatch-daily-work-v1", JSON.stringify(allDailyWork));
+    if (raw || dispatch) {
+      // 重建 daily.html 所需的 dispatch-daily-work-v1 與 dispatch-session-cache-v1
+      const allDailyWork = loadJson("dispatch-daily-work-v1", {});
+      allDailyWork[workDate] = {
+        date: workDate,
+        filename: payloadShape.filename,
+        firstStaff: dispatch?.first_staff || "",
+        updatedAt: mergedUpdatedAt,
+        items: buildDailyWorkItemsFromPayload(payloadShape, mergedRoster)
+      };
+      saveJson("dispatch-daily-work-v1", allDailyWork);
 
-    const allCache = loadJson("dispatch-session-cache-v1", {});
-    allCache[workDate] = {
-      date: workDate,
-      filename: payloadShape.filename,
-      firstStaff: dispatch?.first_staff || "",
-      proximityKm: payloadShape.proximityKm,
-      coordinates: payloadShape.coordinates,
-      jobs: payloadShape.jobs,
-      assignments: payloadShape.assignments
-    };
-    localStorage.setItem("dispatch-session-cache-v1", JSON.stringify(allCache));
-    localStorage.setItem("dispatch-active-date-v1", workDate);
+      const allCache = loadJson("dispatch-session-cache-v1", {});
+      allCache[workDate] = {
+        date: workDate,
+        filename: payloadShape.filename,
+        firstStaff: dispatch?.first_staff || "",
+        proximityKm: payloadShape.proximityKm,
+        coordinates: payloadShape.coordinates,
+        jobs: payloadShape.jobs,
+        assignments: payloadShape.assignments
+      };
+      saveJson("dispatch-session-cache-v1", allCache);
+    }
+    try { localStorage.setItem("dispatch-active-date-v1", workDate); } catch (_) {}
 
     closeModal();
     if (options.redirect !== false) {
@@ -1622,10 +1742,13 @@
     saveTeamDispatchHistory,
     savePreUploadedWork,
     deleteCloudDispatch,
+    getDispatchAssignmentStats,
+    isFullyAssigned,
     hasAssignedStaff,
     saveWorkNoteRow,
     addAcceptanceRow,
     deleteAcceptanceRow,
+    fetchAcceptanceRecords,
     onChange(cb) {
       cloudState.listeners.add(cb);
       return () => cloudState.listeners.delete(cb);
