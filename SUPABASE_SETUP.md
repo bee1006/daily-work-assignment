@@ -1,4 +1,4 @@
-# Supabase 團隊共用雲端、最外層強制登入與帳號控管（V3.0 正規化 8 表架構）
+# Supabase 團隊共用雲端、最外層強制登入與帳號控管（V3.2 Microsoft 核准閘門與 9 表架構）
 
 本系統採用 **最外層強制登入閘門 + 管理員統一註冊 + 助理專屬上游資料表隔離 + 資料庫列級 RLS 權限控管（RBAC）**。
 - 最高使用者（管理員）：`u971503@taipower.com.tw`（測試管理員：`bee1006@gmail.com`）。
@@ -29,7 +29,38 @@
 
 ---
 
-## 三、設定網址白名單與 Microsoft (Azure) OAuth（選擇性）
+## 三、啟用公司 Microsoft (Azure Entra ID / M365) 登入與管理員開通流程
 
-1. 在 Supabase Dashboard ➔ **Authentication** ➔ **URL Configuration** 加入網站網址（例如 `http://localhost:8000/**`、`http://0.0.0.0:8000/**`）。
-2. 若要啟用 Microsoft 一鍵登入，請於 Azure Portal 建立應用程式並將 Client ID / Secret 填入 **Authentication** ➔ **Providers** ➔ **Azure**。
+本系統支援同仁直接使用公司配發的 Microsoft 帳號登入，同時透過資料庫 `approved` 旗標與 `public.preapproved_users` 白名單強制把關：**任何未經管理員核准開通的 Microsoft 帳號，即使通過微軟認證也無法進入系統或存取任何資料表**。
+
+### 步驟 1：於 Azure Portal（Microsoft Entra ID）建立應用程式
+1. 使用管理員帳號登入 [Azure Portal](https://portal.azure.com/#home) ➔ 進入 **Microsoft Entra ID** ➔ **應用程式註冊（App registrations）** ➔ **新增註冊（New registration）**。
+2. 輸入名稱（例如 `台電檢驗員派工系統`）。
+3. **支援的帳戶類型（Supported account types）**：
+   - 若全體同仁皆在同一間公司的 Microsoft 365／Entra ID 組織目錄下，建議選擇 **「僅限此組織目錄中的帳戶（Single tenant）」**（最高安全性）。
+   - 若同仁亦使用個人 Microsoft 帳號或跨租戶帳號，可選擇 **「任何組織目錄中的帳戶與個人 Microsoft 帳戶」**（依然會受本系統管理員核准機制攔截）。
+4. **重新導向 URI（Redirect URI）**：平台選 **Web**，貼上本專案專用回呼網址：
+   ```text
+   https://lszdchrnkfkdbovkdbyj.supabase.co/auth/v1/callback
+   ```
+5. 點擊註冊後，在總覽頁記下 **應用程式 (用戶端) 識別碼（Application (client) ID）** 與 **目錄 (租戶) 識別碼（Directory (tenant) ID）**。
+6. 至左側 **憑證與密碼（Certificates & secrets）** ➔ **新增用戶端密碼（New client secret）**，建立後務必複製 **「值（Value）」**（非「密碼識別碼 / Secret ID」）。
+7. **設定必要電子郵件聲明（Token Claims）**：至左側 **資訊清單（Manifest）**（或「權杖設定 ➔ 新增選擇性宣告」），確認 ID 權杖與存取權杖包含 `email` 與 `xms_edov` 宣告，確保 Supabase 能取得公司認證後的 Email。
+
+### 步驟 2：於 Supabase Dashboard 設定 Azure Provider 與導向白名單
+1. 登入 Supabase Dashboard ➔ **Authentication** ➔ **Providers** ➔ 展開 **Azure**：
+   - 開啟 **Azure enabled**。
+   - **Azure Client ID**：貼上步驟 1 的 Application (client) ID。
+   - **Azure Secret**：貼上步驟 1 的 Client Secret **Value**。
+   - **Azure Tenant URL**（建議僅單一公司組織登入時填寫）：`https://login.microsoftonline.com/<您的 Directory (tenant) ID>`（若允許跨租戶則留空或填 `https://login.microsoftonline.com/common`）。
+   - 點擊 **Save**。
+2. 前往 **Authentication** ➔ **URL Configuration**，設定 **Site URL** 並在 **Redirect URLs** 加入實際使用網址：
+   - `https://bee1006.github.io/**`（若部署於 GitHub Pages）
+   - `http://localhost:8000/**`
+   - `http://0.0.0.0:8000/**`
+
+### 步驟 3：兩種開通同仁 Microsoft 帳號的方式
+管理員登入後點擊右上角 **「歷史查詢／帳號管理」**：
+- **方式 A（事先加入白名單 — 推薦）**：於「預先開通公司 Microsoft 帳號」輸入同仁的公司 Microsoft Email，選擇角色（檢驗員／助理／管理員）與綁定同仁姓名，點 **「加入白名單」**。該同仁第一次點擊 Microsoft 登入時即自動核准並綁定進入。
+- **方式 B（同仁先登入申請 ➔ 管理員一鍵核准）**：同仁先點「使用公司 Microsoft 帳號登入」，驗證微軟後會停留在 **「⏳ 帳號待管理員核准開通」** 鎖定畫面；管理員於右上角看到紅色 **「🔔 N 待開通」** 提示後，選擇角色與對應姓名並按 **「✓ 核准開通」**，同仁點「重新檢查開通狀態」即可進入系統。
+- 管理員亦可隨時點擊已開通帳號旁的 **「停用」**，立即將該帳號退回待審核狀態並封鎖資料庫存取。

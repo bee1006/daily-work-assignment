@@ -1,6 +1,6 @@
 // 全站統一版本管理、Microsoft/Email 登入、RBAC 權限與 Supabase 團隊雲端同步核心
 (function () {
-  window.APP_VERSION = "V3.1";
+  window.APP_VERSION = "V3.2";
   const ADMIN_EMAIL = "u971503@taipower.com.tw";
   const ADMIN_EMAILS = ["u971503@taipower.com.tw", "bee1006@gmail.com"];
   const GUEST_EMAIL = "guest@taipower.local";
@@ -101,23 +101,35 @@
     profile: null,
     ready: false,
     teamStateLoaded: false,
+    pendingUsersCount: 0,
     historyRows: [],
     listeners: new Set()
   };
 
+  function isApproved() {
+    if (!cloudState.user) return false;
+    const email = String(cloudState.user.email || "").trim().toLowerCase();
+    if (ADMIN_EMAILS.includes(email) || email === GUEST_EMAIL) return true;
+    return cloudState.profile?.approved === true;
+  }
+
+  function isPendingApproval() {
+    return !!cloudState.user && !isApproved();
+  }
+
   function isLoggedIn() {
-    return !!cloudState.user;
+    return !!cloudState.user && isApproved();
   }
 
   function isAdmin() {
-    if (!cloudState.user) return false;
+    if (!isApproved()) return false;
     const email = String(cloudState.user.email || "").trim().toLowerCase();
     if (ADMIN_EMAILS.includes(email)) return true;
     return cloudState.profile?.sub_role === "admin" || cloudState.profile?.role === "admin";
   }
 
   function isAssistant() {
-    if (!cloudState.user || isAdmin()) return false;
+    if (!isApproved() || isAdmin()) return false;
     const email = String(cloudState.user.email || "").trim().toLowerCase();
     if (email === GUEST_EMAIL) return true;
     return cloudState.profile?.sub_role === "assistant" || cloudState.profile?.staff_id === "__assistant__";
@@ -140,12 +152,12 @@
   }
 
   function getMyStaffId() {
-    if (isAssistant()) return "";
+    if (!isApproved() || isAssistant()) return "";
     return cloudState.profile?.staff_id || localStorage.getItem("dispatch-my-staff-id") || "";
   }
 
   function getMyStaffName() {
-    if (isAssistant()) return "";
+    if (!isApproved() || isAssistant()) return "";
     const myId = getMyStaffId();
     if (!myId) return "";
     const rosterData = loadJson("dispatch-roster-v2", { roster: [] });
@@ -163,6 +175,9 @@
     return {
       ready: cloudState.ready,
       loggedIn: isLoggedIn(),
+      isApproved: isApproved(),
+      isPendingApproval: isPendingApproval(),
+      pendingUsersCount: cloudState.pendingUsersCount,
       isAdmin: isAdmin(),
       isAssistant: isAssistant(),
       isInspector: isInspector(),
@@ -192,11 +207,12 @@
         .role-pill-nav.admin{background:#fef3c7;color:#92400e}
         .role-pill-nav.inspector{background:#dbeafe;color:#1e40af}
         .role-pill-nav.assistant{background:#fef3c7;color:#78350f}
+        .role-pill-nav.pending-alert{background:#fee2e2;color:#b91c1c;margin-left:3px}
         body.ac-gate-locked{overflow:hidden}
         body.ac-gate-locked > *:not(#app-login-gate){visibility:hidden}
         .ac-login-gate{position:fixed;inset:0;z-index:20000;background:linear-gradient(145deg,#0f293c 0%,#17364c 55%,#0b4f53 100%);display:flex;align-items:center;justify-content:center;padding:20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif}
         .ac-login-gate[hidden]{display:none!important}
-        .ac-gate-card{background:#fff;border-radius:18px;box-shadow:0 28px 60px rgba(0,0,0,0.38);width:100%;max-width:430px;padding:28px 26px;border:1px solid rgba(255,255,255,0.2);color:#172a3a}
+        .ac-gate-card{background:#fff;border-radius:18px;box-shadow:0 28px 60px rgba(0,0,0,0.38);width:100%;max-width:440px;padding:28px 26px;border:1px solid rgba(255,255,255,0.2);color:#172a3a}
         .ac-gate-brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}
         .ac-gate-mark{width:44px;height:44px;border-radius:12px;background:#59c5b2;color:#123344;display:grid;place-items:center;font-weight:900;font-size:21px;flex:0 0 auto}
         .ac-gate-brand h2{margin:0;font-size:19px;font-weight:900;color:#17364c}
@@ -210,9 +226,14 @@
         .ac-gate-submit:hover{background:#066b65}
         .ac-gate-submit:disabled{opacity:.5;cursor:not-allowed}
         .ac-gate-foot{margin-top:14px;padding:10px 12px;border-radius:9px;background:#f4f8f9;font-size:11px;color:#526673;line-height:1.55}
+        .ac-pending-box{background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;padding:14px 15px;margin-bottom:12px}
+        .ac-pending-title{font-size:15px;font-weight:900;color:#92400e;margin-bottom:8px}
+        .ac-pending-acct{background:#fff;border:1px solid #fde68a;border-radius:8px;padding:8px 10px;font-size:12px;color:#17364c;margin-bottom:8px;word-break:break-all}
+        .ac-pending-desc{margin:0;font-size:12px;color:#78350f;line-height:1.6}
+        .ac-pending-actions{display:flex;flex-direction:column;gap:8px}
         .ac-modal-overlay{position:fixed;inset:0;background:rgba(18,40,56,0.6);backdrop-filter:blur(3px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
         .ac-modal-overlay[hidden]{display:none!important}
-        .ac-modal-card{background:#fff;border-radius:16px;box-shadow:0 24px 48px rgba(0,0,0,0.25);width:100%;max-width:680px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;border:1px solid #dce5e9;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif}
+        .ac-modal-card{background:#fff;border-radius:16px;box-shadow:0 24px 48px rgba(0,0,0,0.25);width:100%;max-width:720px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;border:1px solid #dce5e9;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif}
         .ac-modal-head{padding:16px 20px;background:#17364c;color:#fff;display:flex;align-items:center;justify-content:space-between}
         .ac-modal-head h3{margin:0;font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px}
         .ac-modal-close{background:none;border:0;color:#c6d8df;font-size:22px;cursor:pointer;line-height:1;padding:0 4px}
@@ -223,9 +244,20 @@
         .ac-admin-box{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:14px}
         .ac-admin-box[hidden]{display:none}
         .ac-admin-box h4{margin:0 0 10px;font-size:13px;color:#92400e;display:flex;align-items:center;justify-content:space-between;gap:8px}
-        .ac-user-list{margin-top:10px;display:flex;flex-direction:column;gap:6px;max-height:190px;overflow-y:auto}
+        .ac-user-list{margin-top:8px;display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto}
         .ac-user-row{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid #fde68a;border-radius:8px;padding:7px 10px;font-size:12px}
+        .ac-user-row.is-pending{border-color:#fca5a5;background:#fef2f2}
         .ac-user-row select{border:1px solid #dce5e9;border-radius:6px;padding:4px 7px;font:inherit;font-size:11px;background:#fff}
+        .ac-provider-tag{display:inline-block;font-size:10px;font-weight:800;padding:1px 6px;border-radius:5px;margin-left:5px;vertical-align:middle}
+        .ac-provider-tag.ms{background:#dbeafe;color:#1d4ed8}
+        .ac-provider-tag.pw{background:#f1f5f9;color:#475569}
+        .ac-reg-details{margin-top:8px;border:1px dashed #fcd34d;border-radius:8px;padding:8px 10px;background:rgba(255,255,255,0.6)}
+        .ac-reg-details summary{cursor:pointer;font-size:12px;font-weight:700;color:#92400e}
+        .ac-reg-details[open] summary{margin-bottom:8px}
+        .ac-btn.danger{border-color:#fecaca;color:#b91c1c;background:#fff}
+        .ac-btn.danger:hover{background:#fef2f2}
+        .ac-btn.warn{border-color:#fed7aa;color:#c2410c;background:#fff}
+        .ac-btn.warn:hover{background:#fff7ed}
         .ac-ms-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;padding:10px 14px;border-radius:9px;border:1px solid #cbd5e1;background:#fff;color:#1e293b;font:700 13px inherit;cursor:pointer;margin-bottom:10px;transition:.15s;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
         .ac-ms-btn:hover{background:#f8fafc;border-color:#087f78}
         .ac-divider{display:flex;align-items:center;gap:8px;font-size:11px;color:#82909a;margin:8px 0}
@@ -278,9 +310,9 @@
         <div id="ac-gate-form-wrap" hidden>
           <button type="button" class="ac-ms-btn" id="ac-gate-ms-login">
             <svg width="16" height="16" viewBox="0 0 21 21" aria-hidden="true"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
-            使用 Microsoft 帳號登入（OneDrive / Outlook）
+            使用公司 Microsoft 帳號登入（須經管理員開通）
           </button>
-          <div class="ac-divider">或使用帳號／Email 密碼登入</div>
+          <div class="ac-divider">或使用系統帳號／Email 密碼登入</div>
           <form id="ac-gate-form">
             <div class="ac-gate-field">
               <label for="ac-gate-email">帳號或電子郵件</label>
@@ -294,9 +326,24 @@
           </form>
           <p id="ac-gate-msg" class="ac-status" role="status"></p>
           <div class="ac-gate-foot">
-            🔒 本系統採內部帳號控管，未開放外部公開註冊。<br>
-            如需新增系統帳號、重設密碼或調整權限，請洽最高使用者（管理員）統一建立。
+            🔒 本系統採公司 Microsoft 帳號結合管理員核准控管，未經開通的 Microsoft 帳號無法存取任何資料。<br>
+            首次以公司 Microsoft 帳號登入後須等候管理員審核開通；或請管理員事先將您的公司 Email 加入開通白名單即可直接進入。
           </div>
+        </div>
+        <div id="ac-gate-pending-wrap" hidden>
+          <div class="ac-pending-box">
+            <div class="ac-pending-title">⏳ 帳號待管理員核准開通</div>
+            <div id="ac-gate-pending-account" class="ac-pending-acct"></div>
+            <p class="ac-pending-desc">
+              您已成功驗證 Microsoft 身份，但此帳號尚未經管理員開通權限，目前無法瀏覽或寫入系統任何資料。<br>
+              請通知管理員（<code>${esc(ADMIN_EMAIL)}</code>）於「帳號管理」核准開通並綁定姓名後，點擊下方按鈕重新驗證即可進入。
+            </p>
+          </div>
+          <div class="ac-pending-actions">
+            <button id="ac-gate-recheck-btn" class="ac-gate-submit" type="button">🔄 重新檢查開通狀態</button>
+            <button id="ac-gate-switch-btn" class="ac-btn" type="button" style="width:100%;padding:10px 14px;font-size:13px">登出／切換其他帳號</button>
+          </div>
+          <p id="ac-gate-pending-msg" class="ac-status" role="status"></p>
         </div>
       </div>
     `;
@@ -325,9 +372,9 @@
             <div id="ac-auth-inputs">
               <button type="button" class="ac-ms-btn" id="ac-ms-login">
                 <svg width="16" height="16" viewBox="0 0 21 21" aria-hidden="true"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
-                使用 Microsoft 帳號登入（OneDrive / Outlook）
+                使用公司 Microsoft 帳號登入（須經管理員開通）
               </button>
-              <div class="ac-divider">或使用帳號／Email 密碼登入</div>
+              <div class="ac-divider">或使用系統帳號／Email 密碼登入</div>
               <div class="ac-auth-row">
                 <input id="ac-email" type="text" autocomplete="username" placeholder="帳號或 Email（例：guest）">
                 <input id="ac-password" type="password" autocomplete="current-password" placeholder="密碼">
@@ -351,21 +398,45 @@
           </div>
           <div class="ac-admin-box" id="ac-admin-box" hidden>
             <h4>
-              <span>👑 管理員專屬：帳號註冊與權限管理</span>
-              <span style="font-size:11px;font-weight:600;color:#b45309">帳號建立後即可直接登入</span>
+              <span>👑 管理員專屬：Microsoft 核准開通與帳號權限管理</span>
+              <span style="font-size:11px;font-weight:600;color:#b45309">未經開通的 Microsoft 帳號會被攔截</span>
             </h4>
-            <div class="ac-auth-row">
-              <input id="ac-reg-email" type="text" placeholder="新帳號或 Email（例：guest2）">
-              <input id="ac-reg-password" type="password" placeholder="密碼（至少 6 碼）">
-              <select id="ac-reg-role" style="flex:0 0 135px">
-                <option value="inspector">檢驗員</option>
-                <option value="assistant">助理（僅上傳工作）</option>
-                <option value="admin">管理員</option>
-              </select>
-              <select id="ac-reg-staff" style="flex:0 0 130px"></select>
-              <button id="ac-reg-btn" class="ac-btn primary" type="button">➕ 建立帳號</button>
+            <div id="ac-pending-section" hidden style="margin-bottom:12px">
+              <div style="font-size:12px;font-weight:800;color:#b91c1c;margin-bottom:6px">
+                🔔 待審核開通申請（<span id="ac-pending-count-label">0</span>）
+              </div>
+              <div class="ac-user-list" id="ac-pending-list"></div>
             </div>
+            <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px dashed #fcd34d">
+              <div style="font-size:12px;font-weight:800;color:#92400e;margin-bottom:6px">🟦 預先開通公司 Microsoft 帳號（白名單，免設密碼）</div>
+              <div class="ac-auth-row">
+                <input id="ac-pre-email" type="email" placeholder="同仁公司 Microsoft Email（例：u123456@taipower.com.tw）">
+                <select id="ac-pre-role" style="flex:0 0 135px">
+                  <option value="inspector">檢驗員</option>
+                  <option value="assistant">助理（僅上傳工作）</option>
+                  <option value="admin">管理員</option>
+                </select>
+                <select id="ac-pre-staff" style="flex:0 0 130px"></select>
+                <button id="ac-pre-btn" class="ac-btn primary" type="button">➕ 加入白名單</button>
+              </div>
+              <div class="ac-user-list" id="ac-preapproved-list"></div>
+            </div>
+            <details class="ac-reg-details">
+              <summary>🔑 建立傳統帳號密碼（如 guest 等非 Microsoft 帳號）</summary>
+              <div class="ac-auth-row">
+                <input id="ac-reg-email" type="text" placeholder="新帳號或 Email（例：guest2）">
+                <input id="ac-reg-password" type="password" placeholder="密碼（至少 6 碼）">
+                <select id="ac-reg-role" style="flex:0 0 135px">
+                  <option value="inspector">檢驗員</option>
+                  <option value="assistant">助理（僅上傳工作）</option>
+                  <option value="admin">管理員</option>
+                </select>
+                <select id="ac-reg-staff" style="flex:0 0 130px"></select>
+                <button id="ac-reg-btn" class="ac-btn primary" type="button">➕ 建立帳號</button>
+              </div>
+            </details>
             <p id="ac-admin-msg" class="ac-status"></p>
+            <div style="font-size:12px;font-weight:800;color:#92400e;margin-top:8px">已開通系統帳號</div>
             <div class="ac-user-list" id="ac-user-list"></div>
           </div>
           <div style="display:flex;flex-direction:column;gap:8px">
@@ -378,7 +449,7 @@
             </div>
           </div>
           <div class="ac-notice">
-            💡 <strong>角色權限說明：</strong>最高使用者（<code>${esc(ADMIN_EMAIL)}</code>）可統一建立帳號、管理名單、指派每日派工；助理（如 <code>guest</code>）僅可於「上傳工作」匯入施工資料與預先登錄任意日期之檢驗員驗收紀錄，其餘頁面均為純觀看；一般檢驗員可於「每月出勤」點選本人狀態與於「每日工作」填寫備註及驗收紀錄。
+            💡 <strong>帳號開通與權限說明：</strong>同仁首次使用公司 Microsoft 帳號登入後，須由最高使用者（<code>${esc(ADMIN_EMAIL)}</code>）核准開通（或預先加入白名單）方可使用；助理（如 <code>guest</code>）僅可於「上傳工作」匯入施工資料與預先登錄任意日期之驗收紀錄；一般檢驗員可於「每月出勤」點選本人狀態與於「每日工作」填寫備註及驗收紀錄。
           </div>
         </div>
       </div>
@@ -387,7 +458,7 @@
   }
 
   function setAuthMsg(msg, isError = false) {
-    for (const id of ["ac-auth-msg", "ac-gate-msg"]) {
+    for (const id of ["ac-auth-msg", "ac-gate-msg", "ac-gate-pending-msg"]) {
       const el = document.getElementById(id);
       if (el) {
         el.textContent = msg;
@@ -404,20 +475,65 @@
     }
   }
 
+  function buildStaffOptionsHtml(roster, selectedId, emptyLabel = "-- 未綁定姓名 --") {
+    return `<option value="">${esc(emptyLabel)}</option>` +
+      roster.map(s => `<option value="${esc(s.id)}"${s.id === selectedId ? " selected" : ""}>${esc(s.name)}</option>`).join("");
+  }
+
+  function buildRoleAssignmentFields(targetSubRole, staffId, assistantLabel = "助理專用") {
+    const rosterData = loadJson("dispatch-roster-v2", { roster: [] });
+    const staffObj = (rosterData.roster || []).find(s => s.id === staffId) || null;
+    const isAsst = targetSubRole === "assistant";
+    return {
+      role: targetSubRole === "admin" ? "admin" : "inspector",
+      sub_role: targetSubRole,
+      staff_id: isAsst ? "__assistant__" : (staffId || null),
+      staff_name: isAsst ? assistantLabel : (staffObj ? staffObj.name : null)
+    };
+  }
+
   function populateBindSelect() {
     const rosterData = loadJson("dispatch-roster-v2", { roster: [] });
     const roster = rosterData.roster || [];
     const myId = getMyStaffId();
-    const sel = document.getElementById("ac-bind-staff");
-    if (sel) {
-      sel.innerHTML = `<option value="">-- 請選擇您的姓名 --</option>` +
-        roster.map(s => `<option value="${esc(s.id)}"${s.id === myId ? " selected" : ""}>${esc(s.name)}</option>`).join("");
+    const bindSel = document.getElementById("ac-bind-staff");
+    if (bindSel) bindSel.innerHTML = buildStaffOptionsHtml(roster, myId, "-- 請選擇您的姓名 --");
+    for (const id of ["ac-reg-staff", "ac-pre-staff"]) {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = buildStaffOptionsHtml(roster, el.value, "-- 綁定姓名（選填）--");
     }
-    const regSel = document.getElementById("ac-reg-staff");
-    if (regSel) {
-      const prev = regSel.value;
-      regSel.innerHTML = `<option value="">-- 綁定姓名（選填）--</option>` +
-        roster.map(s => `<option value="${esc(s.id)}"${s.id === prev ? " selected" : ""}>${esc(s.name)}</option>`).join("");
+  }
+
+  function updateNavHistoryBadge() {
+    const signedIn = isLoggedIn();
+    const admin = isAdmin();
+    const assistant = isAssistant();
+    const myName = getMyStaffName();
+    document.querySelectorAll(".cloud-dot").forEach(dot => dot.classList.toggle("connected", signedIn));
+    const navBtn = document.getElementById("nav-history-btn");
+    if (!navBtn) return;
+    let labelSpan = navBtn.querySelector(".nav-history-label");
+    if (!labelSpan) {
+      const dotHtml = '<span class="cloud-dot' + (signedIn ? " connected" : "") + '" id="nav-cloud-dot"></span>';
+      navBtn.innerHTML = `${dotHtml}<span class="nav-history-label">歷史查詢</span>`;
+      labelSpan = navBtn.querySelector(".nav-history-label");
+    }
+    if (!signedIn) {
+      labelSpan.textContent = "歷史查詢 / 登入";
+      navBtn.title = "點擊登入 Microsoft 或系統帳號並查詢歷史紀錄";
+    } else if (admin) {
+      const pendingBadge = cloudState.pendingUsersCount > 0
+        ? ` <span class="role-pill-nav pending-alert">🔔 ${cloudState.pendingUsersCount} 待開通</span>`
+        : "";
+      labelSpan.innerHTML = `歷史查詢 <span class="role-pill-nav admin">👑 管理員</span>${pendingBadge}`;
+      navBtn.title = `最高使用者：${formatUserDisplay(cloudState.user.email)}`;
+    } else if (assistant) {
+      labelSpan.innerHTML = `歷史查詢 <span class="role-pill-nav assistant">📤 助理(${esc(formatUserDisplay(cloudState.user.email).replace("（助理專用）", ""))})</span>`;
+      navBtn.title = `助理專用帳號：${cloudState.user.email}`;
+    } else {
+      const displayTag = myName ? `👤 ${esc(myName)}` : "👤 檢驗員";
+      labelSpan.innerHTML = `歷史查詢 <span class="role-pill-nav inspector">${displayTag}</span>`;
+      navBtn.title = `檢驗員：${cloudState.user.email}`;
     }
   }
 
@@ -426,49 +542,42 @@
       el.textContent = window.APP_VERSION;
     });
     const signedIn = isLoggedIn();
+    const pending = isPendingApproval();
     const admin = isAdmin();
     const assistant = isAssistant();
-    const myName = getMyStaffName();
 
     const gate = document.getElementById("app-login-gate");
     const gateLoading = document.getElementById("ac-gate-loading");
     const gateFormWrap = document.getElementById("ac-gate-form-wrap");
+    const gatePendingWrap = document.getElementById("ac-gate-pending-wrap");
+    const gatePendingAcct = document.getElementById("ac-gate-pending-account");
     if (gate) {
       if (signedIn) {
         gate.hidden = true;
         document.body.classList.remove("ac-gate-locked");
+        if (gatePendingWrap) gatePendingWrap.hidden = true;
       } else {
         gate.hidden = false;
         document.body.classList.add("ac-gate-locked");
-        if (gateLoading) gateLoading.hidden = cloudState.ready;
-        if (gateFormWrap) gateFormWrap.hidden = !cloudState.ready;
+        if (pending) {
+          if (gateLoading) gateLoading.hidden = true;
+          if (gateFormWrap) gateFormWrap.hidden = true;
+          if (gatePendingWrap) gatePendingWrap.hidden = false;
+          if (gatePendingAcct && cloudState.user) {
+            const dispName = cloudState.profile?.display_name || cloudState.user.user_metadata?.full_name || cloudState.user.user_metadata?.name || "";
+            const provider = cloudState.profile?.auth_provider || cloudState.user.app_metadata?.provider || "email";
+            const tag = provider === "azure" ? '<span class="ac-provider-tag ms">Microsoft</span>' : '<span class="ac-provider-tag pw">Email</span>';
+            gatePendingAcct.innerHTML = `<strong>${esc(dispName || cloudState.user.email || "")}</strong>${tag}<div style="font-size:11px;color:#6d7b86;margin-top:2px">${esc(cloudState.user.email || "")}</div>`;
+          }
+        } else {
+          if (gatePendingWrap) gatePendingWrap.hidden = true;
+          if (gateLoading) gateLoading.hidden = cloudState.ready;
+          if (gateFormWrap) gateFormWrap.hidden = !cloudState.ready;
+        }
       }
     }
 
-    document.querySelectorAll(".cloud-dot").forEach(dot => dot.classList.toggle("connected", signedIn));
-    const navBtn = document.getElementById("nav-history-btn");
-    if (navBtn) {
-      let labelSpan = navBtn.querySelector(".nav-history-label");
-      if (!labelSpan) {
-        const dotHtml = '<span class="cloud-dot' + (signedIn ? " connected" : "") + '" id="nav-cloud-dot"></span>';
-        navBtn.innerHTML = `${dotHtml}<span class="nav-history-label">歷史查詢</span>`;
-        labelSpan = navBtn.querySelector(".nav-history-label");
-      }
-      if (!signedIn) {
-        labelSpan.textContent = "歷史查詢 / 登入";
-        navBtn.title = "點擊登入 Microsoft 或 Supabase 帳號並查詢歷史紀錄";
-      } else if (admin) {
-        labelSpan.innerHTML = `歷史查詢 <span class="role-pill-nav admin">👑 管理員</span>`;
-        navBtn.title = `最高使用者：${formatUserDisplay(cloudState.user.email)}`;
-      } else if (assistant) {
-        labelSpan.innerHTML = `歷史查詢 <span class="role-pill-nav assistant">📤 助理(${esc(formatUserDisplay(cloudState.user.email).replace("（助理專用）", ""))})</span>`;
-        navBtn.title = `助理專用帳號：${cloudState.user.email}`;
-      } else {
-        const displayTag = myName ? `👤 ${esc(myName)}` : "👤 檢驗員";
-        labelSpan.innerHTML = `歷史查詢 <span class="role-pill-nav inspector">${displayTag}</span>`;
-        navBtn.title = `檢驗員：${cloudState.user.email}`;
-      }
-    }
+    updateNavHistoryBadge();
 
     const inputs = document.getElementById("ac-auth-inputs");
     const logged = document.getElementById("ac-auth-logged");
@@ -479,7 +588,7 @@
     const adminBox = document.getElementById("ac-admin-box");
     if (inputs) inputs.hidden = signedIn;
     if (logged) logged.hidden = !signedIn;
-    if (statusEl) statusEl.textContent = signedIn ? "已連線登入" : "尚未登入";
+    if (statusEl) statusEl.textContent = signedIn ? "已連線登入" : (pending ? "待管理員開通" : "尚未登入");
     if (signedIn && emailLabel) emailLabel.textContent = formatUserDisplay(cloudState.user.email);
     if (signedIn && roleBadge) {
       if (admin) {
@@ -501,79 +610,79 @@
   async function syncUserProfile() {
     if (!cloudState.supabase || !cloudState.user) {
       cloudState.profile = null;
-      return;
+      return null;
     }
     const uid = cloudState.user.id;
     const email = String(cloudState.user.email || "").trim();
     const lowerEmail = email.toLowerCase();
-    const isAdminEmail = ADMIN_EMAILS.includes(lowerEmail);
-    const isGuestEmail = lowerEmail === GUEST_EMAIL;
+    const metaName = cloudState.user.user_metadata?.full_name || cloudState.user.user_metadata?.name || "";
+    const provider = cloudState.user.app_metadata?.provider || "email";
 
-    const { data: existing } = await cloudState.supabase
-      .from("user_profiles")
-      .select("user_id,email,role,sub_role,staff_id,staff_name")
-      .eq("user_id", uid)
-      .maybeSingle();
-
-    if (existing) {
-      let nextRole = existing.role;
-      let nextSubRole = existing.sub_role || existing.role || "inspector";
-      if (isAdminEmail && (existing.role !== "admin" || existing.sub_role !== "admin")) {
-        nextRole = "admin";
-        nextSubRole = "admin";
-        await cloudState.supabase.from("user_profiles").update({ role: "admin", sub_role: "admin", updated_at: new Date().toISOString() }).eq("user_id", uid);
-      } else if (isGuestEmail && existing.sub_role !== "assistant") {
-        nextSubRole = "assistant";
-      }
-      cloudState.profile = { ...existing, role: nextRole, sub_role: nextSubRole };
-      if (existing.staff_id && nextSubRole !== "assistant") {
-        localStorage.setItem("dispatch-my-staff-id", existing.staff_id);
-      }
-    } else {
-      let guessedStaffId = isGuestEmail ? "__assistant__" : (localStorage.getItem("dispatch-my-staff-id") || null);
-      let guessedStaffName = isGuestEmail ? "助理專用(guest)" : null;
-      const metaName = cloudState.user.user_metadata?.full_name || cloudState.user.user_metadata?.name || "";
-      if (!isGuestEmail && !guessedStaffId && metaName) {
-        const rosterData = loadJson("dispatch-roster-v2", { roster: [] });
-        const matched = (rosterData.roster || []).find(s => metaName.includes(s.name) || s.name.includes(metaName));
-        if (matched) {
-          guessedStaffId = matched.id;
-          guessedStaffName = matched.name;
-          localStorage.setItem("dispatch-my-staff-id", matched.id);
-        }
-      }
-      const nextSubRole = isAdminEmail ? "admin" : (isGuestEmail ? "assistant" : "inspector");
-      const newProf = {
+    const { data, error } = await cloudState.supabase.rpc("sync_my_profile", {
+      p_display_name: metaName || null,
+      p_provider: provider || null
+    });
+    let row = Array.isArray(data) ? data[0] : data;
+    if (error || !row) {
+      if (error) console.warn("sync_my_profile RPC 異常，改查 user_profiles:", error.message);
+      const { data: fallbackRow } = await cloudState.supabase
+        .from("user_profiles")
+        .select("user_id,email,role,sub_role,staff_id,staff_name,approved,auth_provider,display_name")
+        .eq("user_id", uid)
+        .maybeSingle();
+      row = fallbackRow || {
         user_id: uid,
         email,
-        role: isAdminEmail ? "admin" : "inspector",
-        sub_role: nextSubRole,
-        staff_id: guessedStaffId,
-        staff_name: guessedStaffName,
-        updated_at: new Date().toISOString()
+        role: ADMIN_EMAILS.includes(lowerEmail) ? "admin" : "inspector",
+        sub_role: ADMIN_EMAILS.includes(lowerEmail) ? "admin" : (lowerEmail === GUEST_EMAIL ? "assistant" : "inspector"),
+        approved: ADMIN_EMAILS.includes(lowerEmail) || lowerEmail === GUEST_EMAIL,
+        auth_provider: provider,
+        display_name: metaName || null
       };
-      const { error } = await cloudState.supabase.from("user_profiles").upsert(newProf, { onConflict: "user_id" });
-      cloudState.profile = error ? newProf : newProf;
     }
+
+    if (row && row.approved === true && row.sub_role !== "assistant" && !row.staff_id && metaName) {
+      const rosterData = loadJson("dispatch-roster-v2", { roster: [] });
+      const matched = (rosterData.roster || []).find(s => metaName.includes(s.name) || s.name.includes(metaName));
+      if (matched) {
+        const { error: bindErr } = await cloudState.supabase
+          .from("user_profiles")
+          .update({ staff_id: matched.id, staff_name: matched.name, updated_at: new Date().toISOString() })
+          .eq("user_id", uid);
+        if (!bindErr) {
+          row.staff_id = matched.id;
+          row.staff_name = matched.name;
+        }
+      }
+    }
+
+    cloudState.profile = row;
+    if (row?.approved && row.staff_id && row.sub_role !== "assistant") {
+      localStorage.setItem("dispatch-my-staff-id", row.staff_id);
+    }
+    return row;
   }
 
   async function bindMyStaff(staffId) {
-    if (isAssistant()) return;
+    if (!isApproved() || isAssistant()) return;
     const rosterData = loadJson("dispatch-roster-v2", { roster: [] });
     const staff = (rosterData.roster || []).find(s => s.id === staffId) || null;
     if (staffId) localStorage.setItem("dispatch-my-staff-id", staffId);
     else localStorage.removeItem("dispatch-my-staff-id");
 
     if (cloudState.supabase && cloudState.user) {
-      await cloudState.supabase.from("user_profiles").upsert({
-        user_id: cloudState.user.id,
-        email: cloudState.user.email || "",
-        role: isAdmin() ? "admin" : "inspector",
-        sub_role: isAdmin() ? "admin" : "inspector",
-        staff_id: staffId || null,
-        staff_name: staff ? staff.name : null,
-        updated_at: new Date().toISOString()
-      }, { onConflict: "user_id" });
+      const { error } = await cloudState.supabase
+        .from("user_profiles")
+        .update({
+          staff_id: staffId || null,
+          staff_name: staff ? staff.name : null,
+          updated_at: new Date().toISOString()
+        })
+        .eq("user_id", cloudState.user.id);
+      if (error) {
+        setAuthMsg(`更新綁定姓名失敗：${error.message}`, true);
+        return;
+      }
       if (cloudState.profile) {
         cloudState.profile.staff_id = staffId || null;
         cloudState.profile.staff_name = staff ? staff.name : null;
@@ -1380,41 +1489,234 @@
 
   async function refreshAdminUsersList() {
     const listEl = document.getElementById("ac-user-list");
+    const pendingSection = document.getElementById("ac-pending-section");
+    const pendingListEl = document.getElementById("ac-pending-list");
+    const pendingCountLabel = document.getElementById("ac-pending-count-label");
+    const preListEl = document.getElementById("ac-preapproved-list");
     if (!listEl || !cloudState.supabase || !isAdmin()) return;
-    const { data, error } = await cloudState.supabase
-      .from("user_profiles")
-      .select("user_id,email,role,sub_role,staff_id,staff_name,updated_at")
-      .order("updated_at", { ascending: false });
-    if (error) {
-      listEl.innerHTML = `<div style="font-size:11px;color:#b42318">無法讀取帳號清單：${esc(error.message)}</div>`;
+
+    const [usersRes, preRes] = await Promise.all([
+      cloudState.supabase
+        .from("user_profiles")
+        .select("user_id,email,role,sub_role,staff_id,staff_name,approved,auth_provider,display_name,approved_at,updated_at")
+        .order("updated_at", { ascending: false }),
+      cloudState.supabase
+        .from("preapproved_users")
+        .select("email,role,sub_role,staff_id,staff_name,created_at")
+        .is("claimed_at", null)
+        .order("created_at", { ascending: false })
+    ]);
+
+    if (usersRes.error) {
+      listEl.innerHTML = `<div style="font-size:11px;color:#b42318">無法讀取帳號清單：${esc(usersRes.error.message)}</div>`;
       return;
     }
+
     const rosterData = loadJson("dispatch-roster-v2", { roster: [] });
     const roster = rosterData.roster || [];
-    listEl.innerHTML = (data || []).map(u => {
+    const allUsers = usersRes.data || [];
+    const pendingUsers = allUsers.filter(u => !u.approved);
+    const activeUsers = allUsers.filter(u => !!u.approved);
+
+    cloudState.pendingUsersCount = pendingUsers.length;
+    updateNavHistoryBadge();
+
+    if (pendingSection && pendingListEl) {
+      pendingSection.hidden = pendingUsers.length === 0;
+      if (pendingCountLabel) pendingCountLabel.textContent = String(pendingUsers.length);
+      pendingListEl.innerHTML = pendingUsers.map(u => {
+        const providerTag = u.auth_provider === "azure"
+          ? '<span class="ac-provider-tag ms">Microsoft</span>'
+          : '<span class="ac-provider-tag pw">Email</span>';
+        const dispName = String(u.display_name || "").trim();
+        const guessedStaff = (!u.staff_id && dispName)
+          ? (roster.find(s => dispName.includes(s.name) || s.name.includes(dispName))?.id || "")
+          : (u.staff_id || "");
+        const currentSubRole = u.sub_role || u.role || "inspector";
+        return `
+          <div class="ac-user-row is-pending">
+            <div>
+              <strong>${esc(dispName || formatUserDisplay(u.email))}</strong>${providerTag}
+              <div style="font-size:10px;color:#6d7b86">${esc(u.email)} · 申請待核准</div>
+            </div>
+            <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+              <select data-pending-role="${esc(u.user_id)}">
+                <option value="inspector"${currentSubRole === "inspector" ? " selected" : ""}>檢驗員</option>
+                <option value="assistant"${currentSubRole === "assistant" ? " selected" : ""}>助理（僅上傳工作）</option>
+                <option value="admin"${currentSubRole === "admin" ? " selected" : ""}>管理員</option>
+              </select>
+              <select data-pending-staff="${esc(u.user_id)}"${currentSubRole === "assistant" ? " disabled" : ""}>
+                ${buildStaffOptionsHtml(roster, guessedStaff)}
+              </select>
+              <button type="button" class="ac-btn primary" data-approve-uid="${esc(u.user_id)}">✓ 核准開通</button>
+              <button type="button" class="ac-btn danger" data-reject-uid="${esc(u.user_id)}">✕ 拒絕</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    if (preListEl) {
+      const preRows = preRes.data || [];
+      preListEl.innerHTML = preRows.map(p => {
+        const roleLabel = p.sub_role === "admin" ? "管理員" : (p.sub_role === "assistant" ? "助理" : "檢驗員");
+        const staffLabel = p.sub_role === "assistant" ? "助理專用" : (p.staff_name || "未指定同仁");
+        return `
+          <div class="ac-user-row">
+            <div>
+              <strong>${esc(p.email)}</strong><span class="ac-provider-tag ms">待首次登入</span>
+              <div style="font-size:10px;color:#6d7b86">${esc(roleLabel)} · ${esc(staffLabel)}</div>
+            </div>
+            <button type="button" class="ac-btn danger" data-del-pre-email="${esc(p.email)}">移除</button>
+          </div>
+        `;
+      }).join("");
+    }
+
+    listEl.innerHTML = activeUsers.map(u => {
       const currentSubRole = u.sub_role || u.role || "inspector";
-      const isSelfAdmin = ADMIN_EMAILS.includes(String(u.email || "").toLowerCase());
-      const staffOpts = `<option value="">-- 未綁定姓名 --</option>` +
-        roster.map(s => `<option value="${esc(s.id)}"${s.id === u.staff_id ? " selected" : ""}>${esc(s.name)}</option>`).join("");
+      const lowerEmail = String(u.email || "").toLowerCase();
+      const isBuiltInAdmin = ADMIN_EMAILS.includes(lowerEmail);
+      const isBuiltInGuest = lowerEmail === GUEST_EMAIL;
+      const isSelf = u.user_id === cloudState.user?.id;
+      const providerTag = u.auth_provider === "azure"
+        ? '<span class="ac-provider-tag ms">Microsoft</span>'
+        : '<span class="ac-provider-tag pw">密碼</span>';
+      const titleText = u.display_name ? `${u.display_name}（${formatUserDisplay(u.email)}）` : formatUserDisplay(u.email);
+      const revokeBtn = (!isBuiltInAdmin && !isBuiltInGuest && !isSelf)
+        ? `<button type="button" class="ac-btn warn" data-revoke-uid="${esc(u.user_id)}">停用</button>`
+        : "";
       return `
         <div class="ac-user-row">
           <div>
-            <strong>${esc(formatUserDisplay(u.email))}</strong>
+            <strong>${esc(titleText)}</strong>${providerTag}
             <div style="font-size:10px;color:#6d7b86">${esc(u.email)}</div>
           </div>
-          <div style="display:flex;gap:6px;align-items:center">
-            <select data-user-role="${esc(u.user_id)}"${isSelfAdmin ? " disabled" : ""}>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <select data-user-role="${esc(u.user_id)}"${isBuiltInAdmin ? " disabled" : ""}>
               <option value="inspector"${currentSubRole === "inspector" ? " selected" : ""}>檢驗員</option>
               <option value="assistant"${currentSubRole === "assistant" ? " selected" : ""}>助理（僅上傳工作）</option>
               <option value="admin"${currentSubRole === "admin" ? " selected" : ""}>管理員</option>
             </select>
             <select data-user-staff="${esc(u.user_id)}"${currentSubRole === "assistant" ? " disabled" : ""}>
-              ${staffOpts}
+              ${buildStaffOptionsHtml(roster, u.staff_id)}
             </select>
+            ${revokeBtn}
           </div>
         </div>
       `;
     }).join("");
+  }
+
+  async function adminApproveUser(userId, nextSubRole = "inspector", nextStaffId = "") {
+    if (!isAdmin() || !cloudState.supabase || !userId) return { error: { message: "權限不足" } };
+    const fields = buildRoleAssignmentFields(nextSubRole, nextStaffId, "助理專用");
+    const nowIso = new Date().toISOString();
+    const { error } = await cloudState.supabase
+      .from("user_profiles")
+      .update({
+        ...fields,
+        approved: true,
+        approved_at: nowIso,
+        approved_by: cloudState.user?.id || null,
+        updated_at: nowIso
+      })
+      .eq("user_id", userId);
+    if (error) {
+      setAdminMsg(`核准開通失敗：${error.message}`, true);
+      return { error };
+    }
+    setAdminMsg("✓ 已核准開通帳號，同仁重新檢查或重整頁面即可進入系統。");
+    await refreshAdminUsersList();
+    return { error: null };
+  }
+
+  async function adminRevokeUser(userId) {
+    if (!isAdmin() || !cloudState.supabase || !userId) return { error: { message: "權限不足" } };
+    if (userId === cloudState.user?.id) {
+      setAdminMsg("無法停用目前登入中的本人帳號。", true);
+      return { error: { message: "無法停用本人帳號" } };
+    }
+    const { error } = await cloudState.supabase
+      .from("user_profiles")
+      .update({ approved: false, updated_at: new Date().toISOString() })
+      .eq("user_id", userId);
+    if (error) {
+      setAdminMsg(`停用帳號失敗：${error.message}`, true);
+      return { error };
+    }
+    setAdminMsg("✓ 已停用該帳號權限（將被阻擋於登入閘門外）。");
+    await refreshAdminUsersList();
+    return { error: null };
+  }
+
+  async function adminDeleteUserProfile(userId) {
+    if (!isAdmin() || !cloudState.supabase || !userId) return { error: { message: "權限不足" } };
+    if (userId === cloudState.user?.id) {
+      setAdminMsg("無法刪除目前登入中的本人帳號。", true);
+      return { error: { message: "無法刪除本人帳號" } };
+    }
+    const { error } = await cloudState.supabase
+      .from("user_profiles")
+      .delete()
+      .eq("user_id", userId);
+    if (error) {
+      setAdminMsg(`移除申請失敗：${error.message}`, true);
+      return { error };
+    }
+    setAdminMsg("✓ 已拒絕並移除該筆申請紀錄。");
+    await refreshAdminUsersList();
+    return { error: null };
+  }
+
+  async function adminPreapproveEmail(rawEmail, targetSubRole = "inspector", staffId = "") {
+    if (!isAdmin() || !cloudState.supabase) return { error: { message: "權限不足" } };
+    const email = String(rawEmail || "").trim().toLowerCase();
+    if (!email || !email.includes("@")) {
+      setAdminMsg("請輸入完整的公司 Microsoft Email（需含 @）。", true);
+      return { error: { message: "Email 格式不正確" } };
+    }
+    const { data: existingPending } = await cloudState.supabase
+      .from("user_profiles")
+      .select("user_id,approved")
+      .ilike("email", email)
+      .maybeSingle();
+    if (existingPending?.user_id && !existingPending.approved) {
+      return await adminApproveUser(existingPending.user_id, targetSubRole, staffId);
+    }
+    const fields = buildRoleAssignmentFields(targetSubRole, staffId, "助理專用");
+    const { error } = await cloudState.supabase
+      .from("preapproved_users")
+      .upsert({
+        email,
+        ...fields,
+        created_by: cloudState.user?.id || null,
+        created_at: new Date().toISOString(),
+        claimed_at: null,
+        claimed_by: null
+      }, { onConflict: "email" });
+    if (error) {
+      setAdminMsg(`加入預先開通白名單失敗：${error.message}`, true);
+      return { error };
+    }
+    setAdminMsg(`✓ 已將「${email}」加入 Microsoft 預先開通白名單，該同仁首次以 Microsoft 登入即可直接進入。`);
+    await refreshAdminUsersList();
+    return { error: null };
+  }
+
+  async function adminDeletePreapprovedEmail(email) {
+    if (!isAdmin() || !cloudState.supabase || !email) return { error: { message: "權限不足" } };
+    const { error } = await cloudState.supabase
+      .from("preapproved_users")
+      .delete()
+      .eq("email", String(email).trim().toLowerCase());
+    if (error) {
+      setAdminMsg(`移除白名單失敗：${error.message}`, true);
+      return { error };
+    }
+    setAdminMsg(`✓ 已從預先開通白名單移除「${email}」。`);
+    await refreshAdminUsersList();
+    return { error: null };
   }
 
   async function adminCreateUser(rawAccount, password, targetRole = "inspector", staffId = "") {
@@ -1451,17 +1753,17 @@
       return { error: { message: "未取得使用者 ID" } };
     }
 
-    const rosterData = loadJson("dispatch-roster-v2", { roster: [] });
-    const staffObj = (rosterData.roster || []).find(s => s.id === staffId) || null;
-    const roleVal = targetRole === "admin" ? "admin" : "inspector";
+    const fields = buildRoleAssignmentFields(targetRole, staffId, `助理(${formatUserDisplay(email)})`);
+    const nowIso = new Date().toISOString();
     const profRow = {
       user_id: newUid,
       email,
-      role: roleVal,
-      sub_role: targetRole,
-      staff_id: targetRole === "assistant" ? "__assistant__" : (staffId || null),
-      staff_name: targetRole === "assistant" ? `助理(${formatUserDisplay(email)})` : (staffObj ? staffObj.name : null),
-      updated_at: new Date().toISOString()
+      ...fields,
+      approved: true,
+      approved_at: nowIso,
+      approved_by: cloudState.user?.id || null,
+      auth_provider: "email",
+      updated_at: nowIso
     };
     const { error: profErr } = await cloudState.supabase
       .from("user_profiles")
@@ -1477,18 +1779,13 @@
 
   async function adminUpdateUserRole(userId, nextSubRole, nextStaffId) {
     if (!isAdmin() || !cloudState.supabase || !userId) return { error: { message: "權限不足" } };
-    const rosterData = loadJson("dispatch-roster-v2", { roster: [] });
-    const staffObj = (rosterData.roster || []).find(s => s.id === nextStaffId) || null;
-    const updateObj = {
-      role: nextSubRole === "admin" ? "admin" : "inspector",
-      sub_role: nextSubRole,
-      staff_id: nextSubRole === "assistant" ? "__assistant__" : (nextStaffId || null),
-      staff_name: nextSubRole === "assistant" ? "助理專用" : (staffObj ? staffObj.name : null),
-      updated_at: new Date().toISOString()
-    };
+    const fields = buildRoleAssignmentFields(nextSubRole, nextStaffId, "助理專用");
     const { error } = await cloudState.supabase
       .from("user_profiles")
-      .update(updateObj)
+      .update({
+        ...fields,
+        updated_at: new Date().toISOString()
+      })
       .eq("user_id", userId);
     if (error) {
       setAdminMsg(`更新權限失敗：${error.message}`, true);
@@ -1537,13 +1834,17 @@
 
   async function handleMicrosoftLogin() {
     if (!cloudState.supabase) { setAuthMsg("Supabase 尚未初始化", true); return; }
-    setAuthMsg("正在前往 Microsoft 登入畫面…");
-    const redirectTo = window.location.origin + window.location.pathname;
+    setAuthMsg("正在前往公司 Microsoft 登入畫面…");
+    const hostOrigin = (window.location.hostname === "0.0.0.0" || window.location.hostname === "127.0.0.1")
+      ? `${window.location.protocol}//localhost${window.location.port ? ":" + window.location.port : ""}`
+      : window.location.origin;
+    const redirectTo = hostOrigin + window.location.pathname;
     const { error } = await cloudState.supabase.auth.signInWithOAuth({
       provider: "azure",
       options: {
         redirectTo,
-        scopes: "email profile openid"
+        scopes: "email profile openid",
+        queryParams: { prompt: "select_account" }
       }
     });
     if (error) setAuthMsg(`Microsoft 登入失敗：${error.message}`, true);
@@ -1555,6 +1856,7 @@
     if (error) { setAuthMsg(`登出失敗：${error.message}`, true); return; }
     cloudState.user = null;
     cloudState.profile = null;
+    cloudState.pendingUsersCount = 0;
     cloudState.historyRows = [];
     closeModal();
     updateHeaderAndModalUI();
@@ -1563,13 +1865,52 @@
     notifyListeners("logout");
   }
 
+  async function recheckApprovalStatus() {
+    if (!cloudState.supabase || !cloudState.user) return;
+    const btn = document.getElementById("ac-gate-recheck-btn");
+    if (btn) btn.disabled = true;
+    setAuthMsg("正在檢查管理員開通狀態…");
+    await onSessionEstablished();
+    if (btn) btn.disabled = false;
+    if (isPendingApproval()) {
+      setAuthMsg("目前仍為待審核狀態，請確認管理員已於「帳號管理」點擊核准開通。", true);
+    }
+  }
+
   async function onSessionEstablished() {
     await syncUserProfile();
+    if (!isApproved()) {
+      cloudState.historyRows = [];
+      cloudState.pendingUsersCount = 0;
+      closeModal();
+      updateHeaderAndModalUI();
+      renderModalHistoryList([]);
+      notifyListeners("pending_approval");
+      return false;
+    }
     await pullTeamState();
+    if (isAdmin()) await refreshAdminUsersList();
     updateHeaderAndModalUI();
     await refreshCloudHistory();
-    if (isAdmin()) refreshAdminUsersList();
     notifyListeners("login");
+    return true;
+  }
+
+  function extractOAuthCallbackError() {
+    const queryParams = new URLSearchParams(location.search || "");
+    const hashRaw = String(location.hash || "").replace(/^#/, "");
+    const hashParams = new URLSearchParams(hashRaw.includes("=") ? hashRaw : "");
+    const err = queryParams.get("error") || hashParams.get("error");
+    const desc = queryParams.get("error_description") || hashParams.get("error_description") || "";
+    if (!err && !desc) return "";
+    const decoded = String(desc || err).replace(/\+/g, " ");
+    if (/provider is not enabled|azure/i.test(decoded) && /enabled/i.test(decoded)) {
+      return "Microsoft (Azure) 登入尚未於 Supabase 後台啟用，請管理員依 SUPABASE_SETUP.md 完成 Azure Provider 設定。";
+    }
+    if (/email/i.test(decoded)) {
+      return `Microsoft 登入未取得有效的公司 Email：${decoded}`;
+    }
+    return `Microsoft 登入失敗：${decoded}`;
   }
 
   async function initCloud() {
@@ -1580,6 +1921,11 @@
       updateHeaderAndModalUI();
       notifyListeners("init_offline");
       return;
+    }
+
+    const oauthErrMsg = extractOAuthCallbackError();
+    if (oauthErrMsg) {
+      try { history.replaceState(null, "", location.pathname); } catch (_) {}
     }
 
     cloudState.supabase = window.supabase.createClient(cfg.url, cfg.publishableKey);
@@ -1593,15 +1939,19 @@
     }
 
     cloudState.user = data.session?.user || null;
-    if (cloudState.user && location.hash.includes("access_token=")) {
-      history.replaceState(null, "", location.pathname + location.search);
+    if (cloudState.user && (location.hash.includes("access_token=") || location.search.includes("code="))) {
+      try { history.replaceState(null, "", location.pathname); } catch (_) {}
     }
 
     if (cloudState.user) {
       await onSessionEstablished();
     } else {
       renderModalHistoryList([]);
-      setAuthMsg("請輸入系統帳號或使用 Microsoft 帳號登入。");
+      if (oauthErrMsg) {
+        setAuthMsg(oauthErrMsg, true);
+      } else {
+        setAuthMsg("請使用公司 Microsoft 帳號或系統帳號登入。");
+      }
     }
 
     cloudState.ready = true;
@@ -1612,13 +1962,14 @@
       const prevId = cloudState.user?.id || null;
       const nextUser = session?.user || null;
       cloudState.user = nextUser;
-      if (event === "SIGNED_IN" && nextUser && nextUser.id !== prevId) {
-        if (location.hash.includes("access_token=")) {
-          history.replaceState(null, "", location.pathname + location.search);
+      if (event === "SIGNED_IN" && nextUser && (nextUser.id !== prevId || !cloudState.profile)) {
+        if (location.hash.includes("access_token=") || location.search.includes("code=")) {
+          try { history.replaceState(null, "", location.pathname); } catch (_) {}
         }
         await onSessionEstablished();
       } else if (event === "SIGNED_OUT") {
         cloudState.profile = null;
+        cloudState.pendingUsersCount = 0;
         cloudState.historyRows = [];
         closeModal();
         updateHeaderAndModalUI();
@@ -1651,8 +2002,29 @@
         handleMicrosoftLogin();
         return;
       }
+      if (e.target.closest("#ac-gate-recheck-btn")) {
+        recheckApprovalStatus();
+        return;
+      }
+      if (e.target.closest("#ac-gate-switch-btn")) {
+        handleLogout();
+        return;
+      }
       if (e.target.closest("#ac-login")) {
         performPasswordLogin("ac-email", "ac-password", "ac-login");
+        return;
+      }
+      if (e.target.closest("#ac-pre-btn")) {
+        const preEmail = document.getElementById("ac-pre-email")?.value || "";
+        const preRole = document.getElementById("ac-pre-role")?.value || "inspector";
+        const preStaff = document.getElementById("ac-pre-staff")?.value || "";
+        const btn = document.getElementById("ac-pre-btn");
+        if (btn) btn.disabled = true;
+        const { error } = await adminPreapproveEmail(preEmail, preRole, preStaff);
+        if (btn) btn.disabled = false;
+        if (!error && document.getElementById("ac-pre-email")) {
+          document.getElementById("ac-pre-email").value = "";
+        }
         return;
       }
       if (e.target.closest("#ac-reg-btn")) {
@@ -1668,6 +2040,38 @@
           if (document.getElementById("ac-reg-email")) document.getElementById("ac-reg-email").value = "";
           if (document.getElementById("ac-reg-password")) document.getElementById("ac-reg-password").value = "";
         }
+        return;
+      }
+      const approveBtn = e.target.closest("button[data-approve-uid]");
+      if (approveBtn) {
+        const uid = approveBtn.dataset.approveUid;
+        const rowEl = approveBtn.closest(".ac-user-row");
+        const nextRole = rowEl?.querySelector(`select[data-pending-role="${uid}"]`)?.value || "inspector";
+        const nextStaff = rowEl?.querySelector(`select[data-pending-staff="${uid}"]`)?.value || "";
+        approveBtn.disabled = true;
+        await adminApproveUser(uid, nextRole, nextStaff);
+        approveBtn.disabled = false;
+        return;
+      }
+      const rejectBtn = e.target.closest("button[data-reject-uid]");
+      if (rejectBtn) {
+        rejectBtn.disabled = true;
+        await adminDeleteUserProfile(rejectBtn.dataset.rejectUid);
+        rejectBtn.disabled = false;
+        return;
+      }
+      const revokeBtn = e.target.closest("button[data-revoke-uid]");
+      if (revokeBtn) {
+        revokeBtn.disabled = true;
+        await adminRevokeUser(revokeBtn.dataset.revokeUid);
+        revokeBtn.disabled = false;
+        return;
+      }
+      const delPreBtn = e.target.closest("button[data-del-pre-email]");
+      if (delPreBtn) {
+        delPreBtn.disabled = true;
+        await adminDeletePreapprovedEmail(delPreBtn.dataset.delPreEmail);
+        delPreBtn.disabled = false;
         return;
       }
       if (e.target.closest("#ac-logout")) {
@@ -1689,11 +2093,22 @@
         bindMyStaff(e.target.value);
         return;
       }
-      if (e.target.id === "ac-reg-role") {
-        const staffSel = document.getElementById("ac-reg-staff");
+      if (e.target.id === "ac-reg-role" || e.target.id === "ac-pre-role") {
+        const targetId = e.target.id === "ac-reg-role" ? "ac-reg-staff" : "ac-pre-staff";
+        const staffSel = document.getElementById(targetId);
         if (staffSel) {
           staffSel.disabled = e.target.value === "assistant";
           if (e.target.value === "assistant") staffSel.value = "";
+        }
+        return;
+      }
+      const pendingRoleSel = e.target.closest("select[data-pending-role]");
+      if (pendingRoleSel) {
+        const uid = pendingRoleSel.dataset.pendingRole;
+        const staffSel = pendingRoleSel.closest(".ac-user-row")?.querySelector(`select[data-pending-staff="${uid}"]`);
+        if (staffSel) {
+          staffSel.disabled = pendingRoleSel.value === "assistant";
+          if (pendingRoleSel.value === "assistant") staffSel.value = "";
         }
         return;
       }
@@ -1719,6 +2134,8 @@
     ADMIN_EMAIL,
     initReady: null,
     isLoggedIn,
+    isApproved,
+    isPendingApproval,
     isAdmin,
     isAssistant,
     isInspector,
@@ -1728,8 +2145,14 @@
     getMyStaffId,
     getMyStaffName,
     bindMyStaff,
+    recheckApprovalStatus,
     adminCreateUser,
     adminUpdateUserRole,
+    adminApproveUser,
+    adminRevokeUser,
+    adminDeleteUserProfile,
+    adminPreapproveEmail,
+    adminDeletePreapprovedEmail,
     getSnapshot,
     openModal,
     closeModal,
