@@ -1,5 +1,5 @@
 -- Run in Supabase Dashboard > SQL Editor after creating the project.
--- V3.2 Normalized 9-Table Architecture with Microsoft Entra ID Admin Approval Gate & RLS Enforcement
+-- V3.3 Normalized 9-Table Architecture with Microsoft Entra ID Admin Approval Gate, First-Login Password Change & RLS Enforcement
 -- Admins: u971503@taipower.com.tw, bee1006@gmail.com
 -- Assistant (pre-reserved): guest@taipower.local (login as "guest" / "123456")
 
@@ -14,6 +14,7 @@ create table if not exists public.user_profiles (
   staff_id text,
   staff_name text,
   approved boolean not null default false,
+  must_change_password boolean not null default false,
   auth_provider text not null default 'email',
   display_name text,
   approved_at timestamptz,
@@ -27,6 +28,7 @@ alter table public.user_profiles
 
 alter table public.user_profiles
   add column if not exists approved boolean not null default true,
+  add column if not exists must_change_password boolean not null default false,
   add column if not exists auth_provider text not null default 'email',
   add column if not exists display_name text,
   add column if not exists approved_at timestamptz,
@@ -291,6 +293,80 @@ $$;
 
 revoke execute on function public.sync_my_profile(text, text) from public, anon;
 grant execute on function public.sync_my_profile(text, text) to authenticated;
+
+create or replace function public.complete_password_change()
+returns public.user_profiles
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_uid uuid := (select auth.uid());
+  v_result public.user_profiles%rowtype;
+begin
+  if v_uid is null then
+    raise exception 'Not authenticated';
+  end if;
+
+  update public.user_profiles
+  set must_change_password = false,
+      updated_at = now()
+  where user_id = v_uid
+  returning * into v_result;
+
+  return v_result;
+end;
+$$;
+
+revoke execute on function public.complete_password_change() from public, anon;
+grant execute on function public.complete_password_change() to authenticated;
+
+create or replace function public.admin_reset_user_password(p_target_user_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_uid uuid := (select auth.uid());
+  v_email text;
+begin
+  if v_uid is null or not public.is_admin() then
+    raise exception 'Only admins can reset passwords';
+  end if;
+
+  if p_target_user_id is null or p_target_user_id = v_uid then
+    raise exception 'Invalid target user';
+  end if;
+
+  select lower(coalesce(email, '')) into v_email
+  from auth.users
+  where id = p_target_user_id;
+
+  if coalesce(v_email, '') = '' then
+    raise exception 'Target user not found';
+  end if;
+
+  if v_email in ('u971503@taipower.com.tw', 'bee1006@gmail.com') then
+    raise exception 'Cannot reset built-in admin password here';
+  end if;
+
+  update auth.users
+  set encrypted_password = extensions.crypt('123456', extensions.gen_salt('bf')),
+      updated_at = now()
+  where id = p_target_user_id;
+
+  update public.user_profiles
+  set must_change_password = true,
+      updated_at = now()
+  where user_id = p_target_user_id;
+
+  return true;
+end;
+$$;
+
+revoke execute on function public.admin_reset_user_password(uuid) from public, anon;
+grant execute on function public.admin_reset_user_password(uuid) to authenticated;
 
 -- Auto-confirm new accounts created by Admin or pre-seeded assistant
 create schema if not exists private;

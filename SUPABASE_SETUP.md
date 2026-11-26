@@ -1,4 +1,4 @@
-# Supabase 團隊共用雲端、最外層強制登入與帳號控管（V3.2 Microsoft 核准閘門與 9 表架構）
+# Supabase 團隊共用雲端、最外層強制登入與帳號控管（V3.3 Microsoft 核准閘門、首次改密與 9 表架構）
 
 本系統採用 **最外層強制登入閘門 + 管理員統一註冊 + 助理專屬上游資料表隔離 + 資料庫列級 RLS 權限控管（RBAC）**。
 - 最高使用者（管理員）：`u971503@taipower.com.tw`（測試管理員：`bee1006@gmail.com`）。
@@ -55,6 +55,7 @@
    - **Azure Tenant URL**（建議僅單一公司組織登入時填寫）：`https://login.microsoftonline.com/<您的 Directory (tenant) ID>`（若允許跨租戶則留空或填 `https://login.microsoftonline.com/common`）。
    - 點擊 **Save**。
 2. 前往 **Authentication** ➔ **URL Configuration**，設定 **Site URL** 並在 **Redirect URLs** 加入實際使用網址：
+   - `https://dispatch.129-203-135-254.nip.io/**`（公司環境網址）
    - `https://bee1006.github.io/**`（若部署於 GitHub Pages）
    - `http://localhost:8000/**`
    - `http://0.0.0.0:8000/**`

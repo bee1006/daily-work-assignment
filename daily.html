@@ -85,9 +85,11 @@
 
     /* 驗收紀錄快速新增列 */
     .accept-hint{padding:9px 14px;background:#f5f3ff;border-bottom:1px solid #ddd6fe;font-size:12px;color:#5b21b6;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .accept-hint[hidden]{display:none!important}
     .accept-chip{background:#fff;border:1px solid #c4b5fd;color:#6d28d9;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;cursor:pointer}
     .accept-chip:hover{background:#ede9fe}
     .accept-form{padding:10px 12px;background:#f8fafc;border-top:1px solid #cbd5e1;display:grid;grid-template-columns:1.2fr .8fr 1fr .9fr auto;gap:6px;align-items:center}
+    .accept-form[hidden]{display:none!important}
     .accept-form input,.accept-form select{border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit;font-size:12px;width:100%;min-width:0}
     .del-x{border:0;background:none;color:#94a3b8;cursor:pointer;font-size:14px;font-weight:800;padding:2px 5px}
     .del-x:hover{color:var(--excel-red)}
@@ -125,8 +127,11 @@
     .cloud-date-tag{font-size:10px;padding:1px 6px;border-radius:10px;font-weight:800}
     .cloud-date-tag.assigned{background:#dff3ef;color:#087f78}
     .cloud-date-tag.pending{background:#fef3c7;color:#92400e}
+    .cloud-date-tag.empty{background:#f1f5f9;color:#64748b}
+    .cloud-date-pill.is-today{border-color:#087f78}
     .cloud-date-pill.active .cloud-date-tag.assigned{background:#59c5b2;color:#123344}
     .cloud-date-pill.active .cloud-date-tag.pending{background:#fde68a;color:#78350f}
+    .cloud-date-pill.active .cloud-date-tag.empty{background:rgba(255,255,255,0.22);color:#e2e8f0}
     .app-ver-badge{font-size:10px;font-weight:800;color:#93c5fd;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);padding:3px 7px;border-radius:12px;letter-spacing:.04em}
     .module-nav a.nav-btn,.nav-btn{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;border-radius:6px;padding:4px 9px;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;line-height:1.2;transition:all .15s;text-decoration:none}
     .module-nav a.nav-btn:hover,.nav-btn:hover{background:var(--teal);border-color:var(--teal);color:#fff}
@@ -150,7 +155,7 @@
       <span class="muted">匯出雲端</span>
       <span class="muted">報表列印</span>
       <button class="nav-btn nav-history-btn" id="nav-history-btn" type="button" title="查詢並直接載入雲端派工紀錄"><span class="cloud-dot" id="nav-cloud-dot"></span><span class="nav-history-label">歷史查詢</span></button>
-      <span class="app-ver-badge">V3.2</span>
+      <span class="app-ver-badge">V3.3</span>
     </nav>
   </header>
 
@@ -321,8 +326,7 @@
     }
 
     const params = new URLSearchParams(location.search);
-    const activeDateFromStorage = localStorage.getItem("dispatch-active-date-v1");
-    let currentDate = params.get("date") || activeDateFromStorage || todayIso();
+    let currentDate = params.get("date") || todayIso();
 
     function renderPage() {
       $("work-date-picker").value = currentDate;
@@ -385,6 +389,7 @@
         $("accept-hint").innerHTML = `💡 本日每月出勤排定驗收人員：${acceptInspectors.map(n => `<button type="button" class="accept-chip" data-pick-inspector="${esc(n)}">${esc(n)}</button>`).join("")}`;
       } else {
         $("accept-hint").hidden = true;
+        $("accept-hint").innerHTML = "";
       }
 
       // 左側表格渲染
@@ -503,35 +508,54 @@
       renderCloudDatesBar();
     }
 
+    function shiftIsoDate(baseIso, offsetDays) {
+      const [y, m, d] = baseIso.split("-").map(Number);
+      const dt = new Date(y, m - 1, d + offsetDays);
+      return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+    }
+
     function renderCloudDatesBar() {
       const bar = $("cloud-dates-bar");
       if (!bar) return;
       const snap = window.AppCloud?.getSnapshot();
       const rows = snap?.historyRows || [];
-      if (!snap?.loggedIn || !rows.length) {
+      if (!snap?.loggedIn) {
         bar.hidden = true;
         return;
       }
-      const visibleRows = rows.slice(0, 6);
-      const moreBtn = rows.length > 6
-        ? `<button type="button" class="cloud-date-pill" data-open-history="1">⋯ 更多歷史（+${rows.length - 6}）</button>`
+      const today = todayIso();
+      const rowByDate = new Map(rows.map(r => [r.work_date, r]));
+      const windowDates = [];
+      for (let offset = -3; offset <= 3; offset++) {
+        windowDates.push(shiftIsoDate(today, offset));
+      }
+      const windowSet = new Set(windowDates);
+      const outsideCount = rows.filter(r => !windowSet.has(r.work_date)).length;
+      const moreBtn = rows.length
+        ? `<button type="button" class="cloud-date-pill" data-open-history="1">⋯ 更多歷史${outsideCount > 0 ? `（+${outsideCount}）` : ""}</button>`
         : "";
       bar.hidden = false;
-      bar.innerHTML = `<span class="cloud-dates-title">☁ 雲端已預存／已排工日期（最新 6 筆）：</span>` + visibleRows.map(row => {
-        const [, m, d] = row.work_date.split("-").map(Number);
-        const yRoc = Number(row.work_date.slice(0, 4)) - 1911;
-        const label = `${yRoc}/${String(m).padStart(2, "0")}/${String(d).padStart(2, "0")}`;
-        const stats = row.assignmentStats || window.AppCloud.getDispatchAssignmentStats(row.payload?.jobs, row.payload?.assignments);
-        const active = row.work_date === currentDate;
+      bar.innerHTML = `<span class="cloud-dates-title">📅 近 7 日工作（前 3 日～後 3 日）：</span>` + windowDates.map(dateStr => {
+        const row = rowByDate.get(dateStr);
+        const [, m, d] = dateStr.split("-").map(Number);
+        const yRoc = Number(dateStr.slice(0, 4)) - 1911;
+        const isToday = dateStr === today;
+        const label = `${yRoc}/${String(m).padStart(2, "0")}/${String(d).padStart(2, "0")}${isToday ? "(今)" : ""}`;
+        const active = dateStr === currentDate;
         let tag;
-        if (stats.fullyAssigned) {
-          tag = `<span class="cloud-date-tag assigned">✓ 已排工</span>`;
-        } else if (stats.assignedTeams > 0) {
-          tag = `<span class="cloud-date-tag pending">⏳ 待指派 ${stats.assignedTeams}/${stats.totalTeams}</span>`;
+        if (!row) {
+          tag = `<span class="cloud-date-tag empty">無資料</span>`;
         } else {
-          tag = `<span class="cloud-date-tag pending">⏳ 待指派</span>`;
+          const stats = row.assignmentStats || window.AppCloud.getDispatchAssignmentStats(row.payload?.jobs, row.payload?.assignments);
+          if (stats.fullyAssigned) {
+            tag = `<span class="cloud-date-tag assigned">✓ 已排工</span>`;
+          } else if (stats.assignedTeams > 0) {
+            tag = `<span class="cloud-date-tag pending">⏳ 待指派 ${stats.assignedTeams}/${stats.totalTeams}</span>`;
+          } else {
+            tag = `<span class="cloud-date-tag pending">⏳ 待指派</span>`;
+          }
         }
-        return `<button type="button" class="cloud-date-pill${active ? " active" : ""}" data-cloud-date="${esc(row.work_date)}">${esc(label)} ${tag}</button>`;
+        return `<button type="button" class="cloud-date-pill${isToday ? " is-today" : ""}${active ? " active" : ""}" data-cloud-date="${esc(dateStr)}">${esc(label)} ${tag}</button>`;
       }).join("") + moreBtn;
     }
 

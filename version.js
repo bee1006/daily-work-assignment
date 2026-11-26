@@ -1,9 +1,10 @@
 // 全站統一版本管理、Microsoft/Email 登入、RBAC 權限與 Supabase 團隊雲端同步核心
 (function () {
-  window.APP_VERSION = "V3.2";
+  window.APP_VERSION = "V3.3";
   const ADMIN_EMAIL = "u971503@taipower.com.tw";
   const ADMIN_EMAILS = ["u971503@taipower.com.tw", "bee1006@gmail.com"];
   const GUEST_EMAIL = "guest@taipower.local";
+  const DEFAULT_INIT_PASSWORD = "123456";
 
   function normalizeAuthEmail(input) {
     const raw = String(input || "").trim().toLowerCase();
@@ -117,8 +118,12 @@
     return !!cloudState.user && !isApproved();
   }
 
+  function needsPasswordChange() {
+    return !!cloudState.user && isApproved() && cloudState.profile?.must_change_password === true;
+  }
+
   function isLoggedIn() {
-    return !!cloudState.user && isApproved();
+    return !!cloudState.user && isApproved() && !needsPasswordChange();
   }
 
   function isAdmin() {
@@ -177,6 +182,7 @@
       loggedIn: isLoggedIn(),
       isApproved: isApproved(),
       isPendingApproval: isPendingApproval(),
+      needsPasswordChange: needsPasswordChange(),
       pendingUsersCount: cloudState.pendingUsersCount,
       isAdmin: isAdmin(),
       isAssistant: isAssistant(),
@@ -345,6 +351,28 @@
           </div>
           <p id="ac-gate-pending-msg" class="ac-status" role="status"></p>
         </div>
+        <div id="ac-gate-chgpw-wrap" hidden>
+          <div class="ac-pending-box" style="background:#f0f9ff;border-color:#7dd3fc">
+            <div class="ac-pending-title" style="color:#0369a1">🔐 首次登入／重設後必須變更密碼</div>
+            <div id="ac-gate-chgpw-account" class="ac-pending-acct"></div>
+            <p class="ac-pending-desc" style="color:#0c4a6e">
+              為維護系統安全，預設初始密碼 <code>123456</code> 不可繼續使用；管理員無法得知您設定的新密碼，請立即變更專屬密碼。
+            </p>
+          </div>
+          <form id="ac-gate-chgpw-form">
+            <div class="ac-gate-field">
+              <label for="ac-new-pw">新密碼（至少 6 碼，不可為 123456）</label>
+              <input id="ac-new-pw" type="password" autocomplete="new-password" placeholder="請輸入新密碼" required minlength="6">
+            </div>
+            <div class="ac-gate-field">
+              <label for="ac-new-pw-confirm">確認新密碼</label>
+              <input id="ac-new-pw-confirm" type="password" autocomplete="new-password" placeholder="請再次輸入新密碼" required minlength="6">
+            </div>
+            <button id="ac-gate-chgpw-btn" class="ac-gate-submit" type="submit">✓ 儲存新密碼並進入系統</button>
+          </form>
+          <button id="ac-gate-chgpw-logout-btn" class="ac-btn" type="button" style="width:100%;padding:10px 14px;font-size:13px;margin-top:8px">登出／切換其他帳號</button>
+          <p id="ac-gate-chgpw-msg" class="ac-status" role="status"></p>
+        </div>
       </div>
     `;
     document.body.appendChild(gate);
@@ -422,18 +450,18 @@
               <div class="ac-user-list" id="ac-preapproved-list"></div>
             </div>
             <details class="ac-reg-details">
-              <summary>🔑 建立傳統帳號密碼（如 guest 等非 Microsoft 帳號）</summary>
+              <summary>🔑 建立傳統帳號（預設密碼 123456，首登強制改密碼）</summary>
               <div class="ac-auth-row">
-                <input id="ac-reg-email" type="text" placeholder="新帳號或 Email（例：guest2）">
-                <input id="ac-reg-password" type="password" placeholder="密碼（至少 6 碼）">
+                <input id="ac-reg-email" type="text" placeholder="新帳號或 Email（例：u123456）">
                 <select id="ac-reg-role" style="flex:0 0 135px">
                   <option value="inspector">檢驗員</option>
                   <option value="assistant">助理（僅上傳工作）</option>
                   <option value="admin">管理員</option>
                 </select>
                 <select id="ac-reg-staff" style="flex:0 0 130px"></select>
-                <button id="ac-reg-btn" class="ac-btn primary" type="button">➕ 建立帳號</button>
+                <button id="ac-reg-btn" class="ac-btn primary" type="button">➕ 建立帳號（密碼 123456）</button>
               </div>
+              <div style="font-size:11px;color:#92400e;margin-top:6px">預設初始密碼皆為 <strong>123456</strong>；人員登入後必須第一時間自行變更密碼，管理員無法得知其新密碼，僅能點擊「重設密碼」還原為 123456。</div>
             </details>
             <p id="ac-admin-msg" class="ac-status"></p>
             <div style="font-size:12px;font-weight:800;color:#92400e;margin-top:8px">已開通系統帳號</div>
@@ -458,7 +486,7 @@
   }
 
   function setAuthMsg(msg, isError = false) {
-    for (const id of ["ac-auth-msg", "ac-gate-msg", "ac-gate-pending-msg"]) {
+    for (const id of ["ac-auth-msg", "ac-gate-msg", "ac-gate-pending-msg", "ac-gate-chgpw-msg"]) {
       const el = document.getElementById(id);
       if (el) {
         el.textContent = msg;
@@ -543,6 +571,7 @@
     });
     const signedIn = isLoggedIn();
     const pending = isPendingApproval();
+    const mustChangePw = needsPasswordChange();
     const admin = isAdmin();
     const assistant = isAssistant();
 
@@ -551,17 +580,21 @@
     const gateFormWrap = document.getElementById("ac-gate-form-wrap");
     const gatePendingWrap = document.getElementById("ac-gate-pending-wrap");
     const gatePendingAcct = document.getElementById("ac-gate-pending-account");
+    const gateChgPwWrap = document.getElementById("ac-gate-chgpw-wrap");
+    const gateChgPwAcct = document.getElementById("ac-gate-chgpw-account");
     if (gate) {
       if (signedIn) {
         gate.hidden = true;
         document.body.classList.remove("ac-gate-locked");
         if (gatePendingWrap) gatePendingWrap.hidden = true;
+        if (gateChgPwWrap) gateChgPwWrap.hidden = true;
       } else {
         gate.hidden = false;
         document.body.classList.add("ac-gate-locked");
         if (pending) {
           if (gateLoading) gateLoading.hidden = true;
           if (gateFormWrap) gateFormWrap.hidden = true;
+          if (gateChgPwWrap) gateChgPwWrap.hidden = true;
           if (gatePendingWrap) gatePendingWrap.hidden = false;
           if (gatePendingAcct && cloudState.user) {
             const dispName = cloudState.profile?.display_name || cloudState.user.user_metadata?.full_name || cloudState.user.user_metadata?.name || "";
@@ -569,8 +602,18 @@
             const tag = provider === "azure" ? '<span class="ac-provider-tag ms">Microsoft</span>' : '<span class="ac-provider-tag pw">Email</span>';
             gatePendingAcct.innerHTML = `<strong>${esc(dispName || cloudState.user.email || "")}</strong>${tag}<div style="font-size:11px;color:#6d7b86;margin-top:2px">${esc(cloudState.user.email || "")}</div>`;
           }
+        } else if (mustChangePw) {
+          if (gateLoading) gateLoading.hidden = true;
+          if (gateFormWrap) gateFormWrap.hidden = true;
+          if (gatePendingWrap) gatePendingWrap.hidden = true;
+          if (gateChgPwWrap) gateChgPwWrap.hidden = false;
+          if (gateChgPwAcct && cloudState.user) {
+            const disp = formatUserDisplay(cloudState.user.email);
+            gateChgPwAcct.innerHTML = `<strong>${esc(disp)}</strong><div style="font-size:11px;color:#6d7b86;margin-top:2px">${esc(cloudState.user.email || "")}</div>`;
+          }
         } else {
           if (gatePendingWrap) gatePendingWrap.hidden = true;
+          if (gateChgPwWrap) gateChgPwWrap.hidden = true;
           if (gateLoading) gateLoading.hidden = cloudState.ready;
           if (gateFormWrap) gateFormWrap.hidden = !cloudState.ready;
         }
@@ -588,7 +631,7 @@
     const adminBox = document.getElementById("ac-admin-box");
     if (inputs) inputs.hidden = signedIn;
     if (logged) logged.hidden = !signedIn;
-    if (statusEl) statusEl.textContent = signedIn ? "已連線登入" : (pending ? "待管理員開通" : "尚未登入");
+    if (statusEl) statusEl.textContent = signedIn ? "已連線登入" : (pending ? "待管理員開通" : (mustChangePw ? "需立即變更密碼" : "尚未登入"));
     if (signedIn && emailLabel) emailLabel.textContent = formatUserDisplay(cloudState.user.email);
     if (signedIn && roleBadge) {
       if (admin) {
@@ -627,7 +670,7 @@
       if (error) console.warn("sync_my_profile RPC 異常，改查 user_profiles:", error.message);
       const { data: fallbackRow } = await cloudState.supabase
         .from("user_profiles")
-        .select("user_id,email,role,sub_role,staff_id,staff_name,approved,auth_provider,display_name")
+        .select("user_id,email,role,sub_role,staff_id,staff_name,approved,must_change_password,auth_provider,display_name")
         .eq("user_id", uid)
         .maybeSingle();
       row = fallbackRow || {
@@ -636,6 +679,7 @@
         role: ADMIN_EMAILS.includes(lowerEmail) ? "admin" : "inspector",
         sub_role: ADMIN_EMAILS.includes(lowerEmail) ? "admin" : (lowerEmail === GUEST_EMAIL ? "assistant" : "inspector"),
         approved: ADMIN_EMAILS.includes(lowerEmail) || lowerEmail === GUEST_EMAIL,
+        must_change_password: false,
         auth_provider: provider,
         display_name: metaName || null
       };
@@ -1498,7 +1542,7 @@
     const [usersRes, preRes] = await Promise.all([
       cloudState.supabase
         .from("user_profiles")
-        .select("user_id,email,role,sub_role,staff_id,staff_name,approved,auth_provider,display_name,approved_at,updated_at")
+        .select("user_id,email,role,sub_role,staff_id,staff_name,approved,must_change_password,auth_provider,display_name,approved_at,updated_at")
         .order("updated_at", { ascending: false }),
       cloudState.supabase
         .from("preapproved_users")
@@ -1582,14 +1626,20 @@
       const providerTag = u.auth_provider === "azure"
         ? '<span class="ac-provider-tag ms">Microsoft</span>'
         : '<span class="ac-provider-tag pw">密碼</span>';
+      const chgPwTag = (u.auth_provider !== "azure" && u.must_change_password)
+        ? '<span class="ac-provider-tag" style="background:#fef3c7;color:#92400e">待改密碼</span>'
+        : "";
       const titleText = u.display_name ? `${u.display_name}（${formatUserDisplay(u.email)}）` : formatUserDisplay(u.email);
+      const resetPwBtn = (!isBuiltInAdmin && !isSelf && u.auth_provider !== "azure")
+        ? `<button type="button" class="ac-btn" data-reset-pw-uid="${esc(u.user_id)}" data-reset-pw-label="${esc(formatUserDisplay(u.email))}" title="將此帳號密碼重設為預設 123456">🔑 重設密碼</button>`
+        : "";
       const revokeBtn = (!isBuiltInAdmin && !isBuiltInGuest && !isSelf)
         ? `<button type="button" class="ac-btn warn" data-revoke-uid="${esc(u.user_id)}">停用</button>`
         : "";
       return `
         <div class="ac-user-row">
           <div>
-            <strong>${esc(titleText)}</strong>${providerTag}
+            <strong>${esc(titleText)}</strong>${providerTag}${chgPwTag}
             <div style="font-size:10px;color:#6d7b86">${esc(u.email)}</div>
           </div>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
@@ -1601,7 +1651,7 @@
             <select data-user-staff="${esc(u.user_id)}"${currentSubRole === "assistant" ? " disabled" : ""}>
               ${buildStaffOptionsHtml(roster, u.staff_id)}
             </select>
-            ${revokeBtn}
+            ${resetPwBtn}${revokeBtn}
           </div>
         </div>
       `;
@@ -1719,17 +1769,35 @@
     return { error: null };
   }
 
-  async function adminCreateUser(rawAccount, password, targetRole = "inspector", staffId = "") {
+  async function adminResetUserPassword(userId) {
+    if (!isAdmin() || !cloudState.supabase || !userId) return { error: { message: "權限不足" } };
+    if (userId === cloudState.user?.id) {
+      setAdminMsg("無法於此重設本人密碼。", true);
+      return { error: { message: "無法重設本人密碼" } };
+    }
+    const { error } = await cloudState.supabase.rpc("admin_reset_user_password", { p_target_user_id: userId });
+    if (error) {
+      setAdminMsg(`重設密碼失敗：${error.message}`, true);
+      return { error };
+    }
+    setAdminMsg("✓ 已將該帳號密碼重設為預設 123456，對方下次登入必須立即變更密碼。");
+    await refreshAdminUsersList();
+    return { error: null };
+  }
+
+  async function adminCreateUser(rawAccount, passwordOrRole, targetRoleOrStaff, maybeStaffId) {
     if (!isAdmin()) return { error: { message: "僅限管理員建立帳號。" } };
     const cfg = window.APP_SUPABASE_CONFIG;
     if (!cfg?.url || !cfg?.publishableKey || !window.supabase?.createClient) {
       return { error: { message: "Supabase 尚未初始化。" } };
     }
+    const hasRoleAsSecond = ["inspector", "assistant", "admin"].includes(passwordOrRole);
+    const targetRole = hasRoleAsSecond ? passwordOrRole : (targetRoleOrStaff || "inspector");
+    const staffId = hasRoleAsSecond ? (targetRoleOrStaff || "") : (maybeStaffId || "");
     const email = normalizeAuthEmail(rawAccount);
     if (!email) return { error: { message: "請輸入帳號或 Email。" } };
-    if (!password || password.length < 6) return { error: { message: "密碼長度至少需要 6 個字元。" } };
 
-    setAdminMsg("正在建立系統帳號…");
+    setAdminMsg("正在建立系統帳號（預設密碼 123456）…");
     const tempClient = window.supabase.createClient(cfg.url, cfg.publishableKey, {
       auth: {
         persistSession: false,
@@ -1738,7 +1806,7 @@
         storageKey: "ac-admin-signup-tmp"
       }
     });
-    const res = await tempClient.auth.signUp({ email, password });
+    const res = await tempClient.auth.signUp({ email, password: DEFAULT_INIT_PASSWORD });
     if (res.error) {
       setAdminMsg(`建立帳號失敗：${res.error.message}`, true);
       return { error: res.error };
@@ -1760,6 +1828,7 @@
       email,
       ...fields,
       approved: true,
+      must_change_password: true,
       approved_at: nowIso,
       approved_by: cloudState.user?.id || null,
       auth_provider: "email",
@@ -1772,7 +1841,7 @@
       setAdminMsg(`帳號已建立，但寫入角色權限失敗：${profErr.message}`, true);
       return { error: profErr };
     }
-    setAdminMsg(`✓ 已建立帳號「${formatUserDisplay(email)}」（可直接登入）。`);
+    setAdminMsg(`✓ 已建立帳號「${formatUserDisplay(email)}」（初始密碼 123456，對方首次登入須立即變更密碼）。`);
     await refreshAdminUsersList();
     return { error: null, user: res.data.user };
   }
@@ -1877,6 +1946,48 @@
     }
   }
 
+  async function completeFirstLoginPasswordChange(newPassword, confirmPassword) {
+    if (!cloudState.supabase || !cloudState.user) return { error: { message: "尚未登入" } };
+    const pw = String(newPassword || "");
+    const confirmPw = String(confirmPassword || "");
+    if (pw.length < 6) {
+      setAuthMsg("新密碼長度至少需要 6 個字元。", true);
+      return { error: { message: "密碼長度不足 6 碼" } };
+    }
+    if (pw === DEFAULT_INIT_PASSWORD) {
+      setAuthMsg("不可繼續使用預設密碼 123456，請設定其他個人密碼。", true);
+      return { error: { message: "不可使用預設密碼 123456" } };
+    }
+    if (pw !== confirmPw) {
+      setAuthMsg("兩次輸入的新密碼不一致。", true);
+      return { error: { message: "密碼確認不一致" } };
+    }
+    const btn = document.getElementById("ac-gate-chgpw-btn");
+    if (btn) btn.disabled = true;
+    setAuthMsg("正在更新個人密碼…");
+
+    const { error: updErr } = await cloudState.supabase.auth.updateUser({ password: pw });
+    if (updErr) {
+      if (btn) btn.disabled = false;
+      setAuthMsg(`更新密碼失敗：${updErr.message}`, true);
+      return { error: updErr };
+    }
+    const { data: rpcRow, error: rpcErr } = await cloudState.supabase.rpc("complete_password_change");
+    if (btn) btn.disabled = false;
+    if (rpcErr) {
+      setAuthMsg(`寫入變更狀態失敗：${rpcErr.message}`, true);
+      return { error: rpcErr };
+    }
+    const row = Array.isArray(rpcRow) ? rpcRow[0] : rpcRow;
+    cloudState.profile = row || { ...cloudState.profile, must_change_password: false };
+    for (const id of ["ac-new-pw", "ac-new-pw-confirm"]) {
+      const inp = document.getElementById(id);
+      if (inp) inp.value = "";
+    }
+    await onSessionEstablished();
+    return { error: null };
+  }
+
   async function onSessionEstablished() {
     await syncUserProfile();
     if (!isApproved()) {
@@ -1886,6 +1997,16 @@
       updateHeaderAndModalUI();
       renderModalHistoryList([]);
       notifyListeners("pending_approval");
+      return false;
+    }
+    if (needsPasswordChange()) {
+      cloudState.historyRows = [];
+      cloudState.pendingUsersCount = 0;
+      closeModal();
+      updateHeaderAndModalUI();
+      renderModalHistoryList([]);
+      setAuthMsg("請立即設定專屬個人新密碼（不可為 123456）。");
+      notifyListeners("must_change_password");
       return false;
     }
     await pullTeamState();
@@ -1985,6 +2106,11 @@
       if (e.target.id === "ac-gate-form") {
         e.preventDefault();
         performPasswordLogin("ac-gate-email", "ac-gate-password", "ac-gate-login-btn");
+      } else if (e.target.id === "ac-gate-chgpw-form") {
+        e.preventDefault();
+        const pw = document.getElementById("ac-new-pw")?.value || "";
+        const confirmPw = document.getElementById("ac-new-pw-confirm")?.value || "";
+        completeFirstLoginPasswordChange(pw, confirmPw);
       }
     });
 
@@ -2006,7 +2132,7 @@
         recheckApprovalStatus();
         return;
       }
-      if (e.target.closest("#ac-gate-switch-btn")) {
+      if (e.target.closest("#ac-gate-switch-btn") || e.target.closest("#ac-gate-chgpw-logout-btn")) {
         handleLogout();
         return;
       }
@@ -2029,17 +2155,26 @@
       }
       if (e.target.closest("#ac-reg-btn")) {
         const regEmail = document.getElementById("ac-reg-email")?.value || "";
-        const regPw = document.getElementById("ac-reg-password")?.value || "";
         const regRole = document.getElementById("ac-reg-role")?.value || "inspector";
         const regStaff = document.getElementById("ac-reg-staff")?.value || "";
         const btn = document.getElementById("ac-reg-btn");
         if (btn) btn.disabled = true;
-        const { error } = await adminCreateUser(regEmail, regPw, regRole, regStaff);
+        const { error } = await adminCreateUser(regEmail, regRole, regStaff);
         if (btn) btn.disabled = false;
-        if (!error) {
-          if (document.getElementById("ac-reg-email")) document.getElementById("ac-reg-email").value = "";
-          if (document.getElementById("ac-reg-password")) document.getElementById("ac-reg-password").value = "";
+        if (!error && document.getElementById("ac-reg-email")) {
+          document.getElementById("ac-reg-email").value = "";
         }
+        return;
+      }
+      const resetPwBtn = e.target.closest("button[data-reset-pw-uid]");
+      if (resetPwBtn) {
+        const label = resetPwBtn.dataset.resetPwLabel || "此帳號";
+        if (typeof window.confirm === "function" && !window.confirm(`確定要將「${label}」的密碼重設為預設 123456，並要求對方下次登入立即更改密碼嗎？`)) {
+          return;
+        }
+        resetPwBtn.disabled = true;
+        await adminResetUserPassword(resetPwBtn.dataset.resetPwUid);
+        resetPwBtn.disabled = false;
         return;
       }
       const approveBtn = e.target.closest("button[data-approve-uid]");
@@ -2136,6 +2271,7 @@
     isLoggedIn,
     isApproved,
     isPendingApproval,
+    needsPasswordChange,
     isAdmin,
     isAssistant,
     isInspector,
@@ -2151,6 +2287,7 @@
     adminApproveUser,
     adminRevokeUser,
     adminDeleteUserProfile,
+    adminResetUserPassword,
     adminPreapproveEmail,
     adminDeletePreapprovedEmail,
     getSnapshot,

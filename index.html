@@ -56,7 +56,7 @@
   </style>
 </head>
 <body>
-  <header><div class="brand"><div class="mark">台</div><div><strong>台電檢驗員</strong><span>TAIPOWER INSPECTOR</span></div></div><nav class="module-nav" aria-label="系統功能"><a href="attendance.html">每月出勤</a><a href="daily.html">每日工作</a><a href="upload.html">上傳工作</a><a class="current" href="index.html" aria-current="page">派工任務</a><a href="coordinates.html">圖號座標</a><span class="muted">路程安排</span><span class="muted">匯出雲端</span><span class="muted">報表列印</span><button class="nav-btn nav-history-btn" id="nav-history-btn" type="button" title="查詢並直接載入雲端派工紀錄"><span class="cloud-dot" id="nav-cloud-dot"></span><span class="nav-history-label">歷史查詢</span></button><span class="app-ver-badge">V3.2</span></nav></header>
+  <header><div class="brand"><div class="mark">台</div><div><strong>台電檢驗員</strong><span>TAIPOWER INSPECTOR</span></div></div><nav class="module-nav" aria-label="系統功能"><a href="attendance.html">每月出勤</a><a href="daily.html">每日工作</a><a href="upload.html">上傳工作</a><a class="current" href="index.html" aria-current="page">派工任務</a><a href="coordinates.html">圖號座標</a><span class="muted">路程安排</span><span class="muted">匯出雲端</span><span class="muted">報表列印</span><button class="nav-btn nav-history-btn" id="nav-history-btn" type="button" title="查詢並直接載入雲端派工紀錄"><span class="cloud-dot" id="nav-cloud-dot"></span><span class="nav-history-label">歷史查詢</span></button><span class="app-ver-badge">V3.3</span></nav></header>
   <main>
     <div id="preview-notice" class="preview-notice" hidden>這是 GitHub Pages 預覽頁，可以查看派工介面；Excel 上傳需要 Python 後端，請於本機啟動 app.py 使用「上傳工作」。</div>
     <section class="intro"><div><div class="eyebrow">WORKFLOW</div><h1>每日派工工作台</h1><p>直接選擇助理於【上傳工作】預先存入雲端的施工日期，調整參數後點擊「確認指派」並發布。</p></div></section>
@@ -281,11 +281,13 @@
       cloudStatus(`${rocDate(date)} 派工紀錄已儲存到團隊雲端。`);
       await refreshCloudHistory();
     }
+    let loadRequestSeq=0,inFlightPreuploadCount=0,initialLoadStarted=false,userSelectedWorkdate=false;
+    function pickDefaultWorkDate(rows=[]){if(!rows.length)return "";const today=todayIso();const todayRow=rows.find(r=>r.work_date===today);const pendingRow=rows.find(r=>!r.assigned);return todayRow?todayRow.work_date:(pendingRow?pendingRow.work_date:rows[0].work_date);}
     async function loadCloudRecord(selectedDate){
       const date=selectedDate||$("cloud-history").value;
       if(!date||!window.AppCloud?.isLoggedIn())return;
-      cloudStatus(`正在讀取 ${rocDate(date)} 雲端派工紀錄…`);
-      await window.AppCloud.loadCloudDispatch(date,{redirect:true});
+      userSelectedWorkdate=true;
+      await loadPreUploadedDate(date);
     }
     function refreshFirstSelect(){const old=$("first").value;$("first").innerHTML=state.roster.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join("");if(state.roster.some(s=>s.id===old))$("first").value=old;}
     function renderRosterTable(){
@@ -475,7 +477,7 @@
       const restricted=!!window.AppCloud?.isRestrictedInspector();
       const dragAttr=restricted?"false":"true";
       const pendingManual=assigned.filter(item=>!item.staff||!flagsFor(item.staff,selected).attending);
-      $("pending-manual").innerHTML=pendingManual.length?`<article class="pending-work-card"><strong>待處理工作（${pendingManual.length} 組）</strong>${pendingManual.map(item=>{const work=[...new Set(item.team.jobs.map(job=>job.workSummary||job.description.split(/\r?\n/)[0]).filter(Boolean))].join("／"),place=[...new Set(item.team.jobs.map(job=>job.location).filter(Boolean))].join("；"),status=item.staff?`手動指派對象 ${esc(item.staff.name)} 今日未出勤`:"尚未指派";return `<div class="brief-job" draggable="${dragAttr}" data-team-key="${esc(teamAssignmentKey(item.team))}"><div class="brief-title"><span class="class-tag class-${item.category.toLowerCase()}">${item.category}</span>${esc(item.team.crew)} <span class="subtle">${status}</span></div><div class="brief-work">${esc(work||"未填工作內容")}</div><div class="brief-place">${esc(place||"未填施工地點")}</div></div>`}).join("")}</article>`:"";
+      $("pending-manual").innerHTML=pendingManual.length?`<article class="pending-work-card"><strong>待處理工作（${pendingManual.length} 組）</strong>${pendingManual.map(item=>{const work=[...new Set(item.team.jobs.map(job=>job.workSummary||(job.description||"").split(/\r?\n/)[0]).filter(Boolean))].join("／"),place=[...new Set(item.team.jobs.map(job=>job.location).filter(Boolean))].join("；"),status=item.staff?`手動指派對象 ${esc(item.staff.name)} 今日未出勤`:"尚未指派";return `<div class="brief-job" draggable="${dragAttr}" data-team-key="${esc(teamAssignmentKey(item.team))}"><div class="brief-title"><span class="class-tag class-${item.category.toLowerCase()}">${item.category}</span>${esc(item.team.crew)} <span class="subtle">${status}</span></div><div class="brief-work">${esc(work||"未填工作內容")}</div><div class="brief-place">${esc(place||"未填施工地點")}</div></div>`}).join("")}</article>`:"";
       const rows=assigned.map(({team,category,staff,order,proximity,manual,manualDistanceWarning},i)=>{
         const jobsHtml=team.jobs.map(j=>`<div class="jobno">${esc(j.jobNo)}${j.time?` · ${esc(j.time)}`:""}</div>`).join("");
         const desc=[...new Set(team.jobs.map(j=>j.description).filter(Boolean))].join("／");const loc=[...new Set(team.jobs.map(j=>j.location).filter(Boolean))].join("；");const contractors=[...new Set(team.jobs.map(j=>j.contractor).filter(Boolean))].join("、");
@@ -499,7 +501,7 @@
         const routeHtml=items.length?`<div class="route-legs"><div class="distance-pair"><b>建議環狀工作順序（公司出發並返回）</b></div>${routeLegs()}</div>`:"";
         const workload=items.reduce((counts,item)=>{counts[item.category.toLowerCase()]++;return counts},{a:0,b:0,c:0});
         const loadTier=workloadTier(workload);
-        const detail=routeOrder().map(({team,category,proximity,manual})=>{const work=[...new Set(team.jobs.map(j=>j.workSummary||j.description.split(/\r?\n/)[0]).filter(Boolean))].join("／");const place=[...new Set(team.jobs.map(j=>j.location).filter(Boolean))].join("；");const time=[...new Set(team.jobs.map(j=>j.time).filter(Boolean))].join("、");const proximityLabel=proximity?`<div class="assignment-note">${proximity.pairType==="AB"?`A＋B 鄰近配對 · 與 ${esc(proximity.anchorCrew)} 相距`:(proximity.bundle?`C 類候選包同派 · 與 ${esc(proximity.anchorCrew)} 相距`:`${category} 類鄰近併派`)} · ${proximity.km.toFixed(1)} km 直線</div>`:"";return `<div class="brief-job" draggable="${dragAttr}" data-team-key="${esc(teamAssignmentKey(team))}"><div class="brief-title"><span class="class-tag class-${category.toLowerCase()}">${category}</span>${esc(team.crew)}${teamIsNight(team)?`<span class="night-tag">🌙 夜班</span>`:""}${manual?`<span class="pin-tag">固定</span>`:""} <span class="subtle">${esc(time)}</span></div>${proximityLabel}<div class="brief-work">${esc(work||"未填工作內容")}</div><div class="brief-place">${esc(place||"未填施工地點")}</div></div>`}).join("");
+        const detail=routeOrder().map(({team,category,proximity,manual})=>{const work=[...new Set(team.jobs.map(j=>j.workSummary||(j.description||"").split(/\r?\n/)[0]).filter(Boolean))].join("／");const place=[...new Set(team.jobs.map(j=>j.location).filter(Boolean))].join("；");const time=[...new Set(team.jobs.map(j=>j.time).filter(Boolean))].join("、");const proximityLabel=proximity?`<div class="assignment-note">${proximity.pairType==="AB"?`A＋B 鄰近配對 · 與 ${esc(proximity.anchorCrew)} 相距`:(proximity.bundle?`C 類候選包同派 · 與 ${esc(proximity.anchorCrew)} 相距`:`${category} 類鄰近併派`)} · ${proximity.km.toFixed(1)} km 直線</div>`:"";return `<div class="brief-job" draggable="${dragAttr}" data-team-key="${esc(teamAssignmentKey(team))}"><div class="brief-title"><span class="class-tag class-${category.toLowerCase()}">${category}</span>${esc(team.crew)}${teamIsNight(team)?`<span class="night-tag">🌙 夜班</span>`:""}${manual?`<span class="pin-tag">固定</span>`:""} <span class="subtle">${esc(time)}</span></div>${proximityLabel}<div class="brief-work">${esc(work||"未填工作內容")}</div><div class="brief-place">${esc(place||"未填施工地點")}</div></div>`}).join("");
         const codes=codeListFor(items);const number=codesFor(items).length;
         return `<article class="staff-card"${staff?.id?` data-drop-staff="${esc(staff.id)}"`:""}><div class="staff-card-head"><strong>${esc(staff?.name||"待人工指派")}</strong><span>${items.length} 組 · ${count} 案件 · 負載第 ${Number.isFinite(loadTier)?loadTier:"—"} 級（A${workload.a}/B${workload.b}/C${workload.c}）</span></div>${items.length?"":`<p class="staff-drop-help">將工作列拖曳至此指派</p>`}${categoryDistance||routeHtml?`<div class="distance-summary"><strong>同仁工作組間代表點距離（直線公里）</strong>${categoryDistance}${routeHtml}</div>`:""}${detail}<div class="grid-code-list">${codes||""}</div></article>`
       }).join("");
@@ -530,7 +532,7 @@
               staffName:item.staff?.name||null,
               manual:!!item.manual,
               times:[...new Set(item.team.jobs.map(j=>j.time).filter(Boolean))],
-              descriptions:[...new Set(item.team.jobs.map(j=>j.workSummary||j.description.split(/\r?\n/)[0]).filter(Boolean))],
+              descriptions:[...new Set(item.team.jobs.map(j=>j.workSummary||(j.description||"").split(/\r?\n/)[0]).filter(Boolean))],
               locations:[...new Set(item.team.jobs.map(j=>j.location).filter(Boolean))],
               jobCount:item.team.jobs.length
             }))
@@ -564,18 +566,17 @@
     $("staff-summary").addEventListener("dragover",e=>{if(window.AppCloud?.isRestrictedInspector())return;const card=e.target.closest(".staff-card[data-drop-staff]");if(!card)return;e.preventDefault();e.dataTransfer.dropEffect="move";card.classList.add("drop-ready")});
     $("staff-summary").addEventListener("dragleave",e=>{const card=e.target.closest(".staff-card[data-drop-staff]");if(card&&!card.contains(e.relatedTarget))card.classList.remove("drop-ready")});
     $("staff-summary").addEventListener("drop",e=>{if(window.AppCloud?.isRestrictedInspector())return;const card=e.target.closest(".staff-card[data-drop-staff]");if(!card)return;e.preventDefault();card.classList.remove("drop-ready");const teamKey=draggingTeamKey||e.dataTransfer.getData("text/plain"),staffId=card.dataset.dropStaff,date=$("workdate").value;draggingTeamKey=null;if(!teamKey||!staffId||!date)return;const bucket=state.manualAssignments[date]||(state.manualAssignments[date]={});bucket[teamKey]=staffId;persistManualAssignments();renderAssignments(false,{preserveCurrent:true})});
-    $("workdate").addEventListener("change",async()=>{const d=$("workdate").value;if(d&&window.AppCloud?.isLoggedIn()){await loadPreUploadedDate(d);}else{renderRosterTable();renderAnalysis();if($("results").style.display==="block")renderAssignments(false);}});
+    $("workdate").addEventListener("change",async()=>{const d=$("workdate").value;userSelectedWorkdate=true;if(d&&window.AppCloud?.isLoggedIn()){await loadPreUploadedDate(d);}else{renderRosterTable();renderAnalysis();if($("results").style.display==="block")renderAssignments(false);}});
     if($("roster-preview-date"))$("roster-preview-date").addEventListener("change",()=>renderRosterTable());
     $("first").addEventListener("change",()=>{if($("results").style.display==="block")renderAssignments(false)});
     $("proximity-km").addEventListener("change",()=>{renderAnalysis();if($("results").style.display==="block")renderAssignments(false)});
-    if($("refresh-preuploaded-btn"))$("refresh-preuploaded-btn").addEventListener("click",async()=>{if(!window.AppCloud?.isLoggedIn()){window.AppCloud?.openModal();return;}const rows=await refreshCloudHistory();if(rows?.length){const target=$("workdate").value||rows[0].work_date;await loadPreUploadedDate(target);}});
+    if($("refresh-preuploaded-btn"))$("refresh-preuploaded-btn").addEventListener("click",async()=>{if(!window.AppCloud?.isLoggedIn()){window.AppCloud?.openModal();return;}const rows=await refreshCloudHistory();if(rows?.length){const target=$("workdate").value||pickDefaultWorkDate(rows);await loadPreUploadedDate(target);}});
     $("cloud-save").addEventListener("click",saveCloudRecord);
     $("cloud-history").addEventListener("change",updateCloudControls);
     $("cloud-load").addEventListener("click",()=>loadCloudRecord());
 
-    let loadRequestSeq=0,inFlightPreuploadCount=0,initialLoadStarted=false;
     function applyCachedDayToUI(targetDate,cached){
-      state.jobs=cached.jobs||[];
+      state.jobs=(cached.jobs||[]).map(j=>j?.date?j:{...j,date:targetDate});
       state.filename=cached.filename||"已載入工作紀錄";
       state.coordinates=cached.coordinates||{matched:0,decoded:0,total:0,available:false};
       const stats=window.AppCloud?.getDispatchAssignmentStats
@@ -591,6 +592,9 @@
       }
       $("workdate").value=targetDate;
       $("workdate").disabled=false;
+      if($("cloud-history")?.querySelector(`option[value="${CSS.escape(targetDate)}"]`)){
+        $("cloud-history").value=targetDate;
+      }
       if(cached.proximityKm)$("proximity-km").value=cached.proximityKm;
       if(cached.firstStaff&&state.roster.some(s=>s.id===cached.firstStaff))$("first").value=cached.firstStaff;
       applyIndexRbac();
@@ -617,6 +621,14 @@
       if(!targetDate)return false;
       const seq=++loadRequestSeq;
       inFlightPreuploadCount++;
+      if(!$("workdate").querySelector(`option[value="${CSS.escape(targetDate)}"]`)){
+        const opt=document.createElement("option");
+        opt.value=targetDate;
+        opt.textContent=rocDate(targetDate);
+        $("workdate").appendChild(opt);
+      }
+      $("workdate").value=targetDate;
+      $("workdate").disabled=false;
       try{
         let cloudRes=null;
         if(window.AppCloud?.isLoggedIn()){
@@ -638,8 +650,21 @@
             assignments:cloudRes.payload.assignments||{}
           };
         }else{
-          const allCache=JSON.parse(localStorage.getItem("dispatch-session-cache-v1")||"{}")||{};
-          cached=allCache[targetDate];
+          const histRow=window.AppCloud?.getSnapshot?.()?.historyRows?.find(r=>r.work_date===targetDate);
+          if(histRow?.payload?.jobs?.length){
+            cached={
+              date:targetDate,
+              filename:histRow.payload.filename||"雲端歷史紀錄",
+              firstStaff:histRow.first_staff||"",
+              proximityKm:histRow.payload.proximityKm||10,
+              coordinates:histRow.payload.coordinates||{matched:0,decoded:0,total:0,available:false},
+              jobs:histRow.payload.jobs,
+              assignments:histRow.payload.assignments||{}
+            };
+          }else{
+            const allCache=JSON.parse(localStorage.getItem("dispatch-session-cache-v1")||"{}")||{};
+            cached=allCache[targetDate];
+          }
         }
         if(!cached||!cached.jobs?.length){
           state.jobs=[];
@@ -710,9 +735,8 @@
           }
           populateWorkdateFromCloud(rows);
           updateCloudControls();
-          if(initialLoadStarted&&rows.length&&!state.jobs.length&&inFlightPreuploadCount===0){
-            const pendingRow=rows.find(r=>!r.assigned);
-            const autoDate=urlTargetDate||(pendingRow?pendingRow.work_date:rows[0].work_date);
+          if(!userSelectedWorkdate&&initialLoadStarted&&rows.length&&!state.jobs.length&&inFlightPreuploadCount===0){
+            const autoDate=urlTargetDate||pickDefaultWorkDate(rows);
             loadPreUploadedDate(autoDate);
           }
         }
@@ -733,10 +757,10 @@
         populateWorkdateFromCloud(rows);
         updateCloudControls();
       }
+      if(userSelectedWorkdate)return;
       let initialDate=urlTargetDate;
       if(!initialDate&&window.AppCloud?.isLoggedIn()&&rows?.length){
-        const pendingRow=rows.find(r=>!r.assigned);
-        initialDate=pendingRow?pendingRow.work_date:rows[0].work_date;
+        initialDate=pickDefaultWorkDate(rows);
       }
       return restoreSessionIfRequested(initialDate);
     });
